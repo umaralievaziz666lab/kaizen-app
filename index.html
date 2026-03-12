@@ -425,7 +425,7 @@
     const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
     
-    // Инициализация Supabase клиента
+    // Инициализация Supabase клиента (только один раз!)
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // --- СОСТОЯНИЕ ---
@@ -502,12 +502,10 @@
             }
             updateStats();
             
-            // Сохраняем в кеш
             localStorage.setItem('cachedRequests', JSON.stringify(requests));
             
         } catch (error) {
             console.error('Ошибка загрузки заявок:', error);
-            // Пробуем загрузить из кеша
             const cached = localStorage.getItem('cachedRequests');
             if (cached) {
                 requests = JSON.parse(cached);
@@ -522,9 +520,8 @@
                 .from('users')
                 .select('*')
                 .eq('id', empId)
-                .single();
+                .maybeSingle();
             
-            if (error) throw error;
             return data;
         } catch (error) {
             console.error('Ошибка загрузки пользователя:', error);
@@ -551,8 +548,10 @@
                 });
             
             if (error) throw error;
+            return true;
         } catch (error) {
             console.error('Ошибка сохранения пользователя:', error);
+            return false;
         }
     }
     
@@ -594,6 +593,8 @@
     
     // --- ИНИЦИАЛИЗАЦИЯ ---
     async function init() {
+        console.log('Инициализация приложения...');
+        
         // Загружаем кеш для скорости
         const cached = localStorage.getItem('cachedRequests');
         if (cached) {
@@ -607,14 +608,18 @@
         await loadRequests();
         
         // Проверяем сохраненного пользователя
-        const savedUser = localStorage.getItem('kaizenUser') || sessionStorage.getItem('kaizenUser');
+        const savedUser = localStorage.getItem('kaizenUser');
+        console.log('Сохраненный пользователь:', savedUser);
         
         if (savedUser) {
             try {
                 currentUser = JSON.parse(savedUser);
+                console.log('Текущий пользователь из localStorage:', currentUser);
                 
-                // Обновляем данные пользователя
+                // Проверяем в Supabase
                 const dbUser = await loadUser(currentUser.empId);
+                console.log('Пользователь из Supabase:', dbUser);
+                
                 if (dbUser) {
                     currentUser.points = dbUser.points || 0;
                     currentUser.role = dbUser.role || 'user';
@@ -623,19 +628,21 @@
                     currentUser.isTrained = dbUser.is_trained || false;
                     
                     localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-                    sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
                 }
                 
                 showApp();
+                return;
             } catch (e) {
                 console.error('Ошибка загрузки пользователя', e);
-                document.getElementById('registrationScreen').classList.remove('hidden');
+                localStorage.removeItem('kaizenUser');
             }
-        } else {
-            document.getElementById('registrationScreen').classList.remove('hidden');
         }
         
-        // Подписка на изменения в реальном времени
+        // Если дошли сюда - показываем регистрацию
+        console.log('Пользователь не найден, показываем регистрацию');
+        document.getElementById('registrationScreen').classList.remove('hidden');
+        
+        // Подписка на изменения
         supabase
             .channel('requests-changes')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, 
@@ -688,9 +695,14 @@
         };
         
         localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-        sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
         
-        await saveUser(currentUser);
+        const saved = await saveUser(currentUser);
+        
+        if (saved) {
+            console.log('Пользователь успешно сохранен в Supabase');
+        } else {
+            console.warn('Пользователь сохранен только локально');
+        }
         
         btn.classList.remove('btn-loading');
         isSubmitting = false;
@@ -699,6 +711,7 @@
     }
     
     function showApp() {
+        console.log('Показываем главное приложение');
         document.getElementById('registrationScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
         
@@ -722,7 +735,6 @@
     function logout() {
         if(confirm('Выйти из аккаунта?')) {
             localStorage.removeItem('kaizenUser');
-            sessionStorage.removeItem('kaizenUser');
             location.reload();
         }
     }
@@ -872,11 +884,13 @@
         const location = document.getElementById('reqLocation').value;
         const desc = document.getElementById('reqDesc').value;
         
-        // Supabase автоматически назначит ID (serial)
+        const tempId = Date.now();
+        
         const newPost = {
-            id: null, // Будет создано автоматически
+            id: tempId,
             type,
             author: currentUser.name,
+            avatar: currentUser.name.split(' ').map(n => n[0]).join(''),
             date: new Date().toISOString(),
             location,
             desc,
@@ -887,25 +901,19 @@
             assignedTo: null
         };
         
-        // Сначала добавляем локально для скорости
-        const tempId = Date.now(); // Временный ID
-        const tempPost = { ...newPost, id: tempId };
-        requests.unshift(tempPost);
+        requests.unshift(newPost);
         renderFeed();
         toggleCreateModal();
         e.target.reset();
         document.getElementById('mediaPreview').textContent = '';
         
-        // Сохраняем в Supabase
-        const success = await saveRequest({ ...newPost, id: undefined }); // undefined заставит создать новый ID
+        const success = await saveRequest({ ...newPost, id: undefined });
         
         if (success) {
             addPoints(5);
             checkAchievements();
-            // Перезагружаем для получения реального ID
             await loadRequests();
         } else {
-            // Если ошибка, убираем из списка
             requests = requests.filter(r => r.id !== tempId);
             renderFeed();
             alert('Ошибка при отправке. Попробуйте еще раз.');
@@ -1067,7 +1075,6 @@
     async function addPoints(amount) {
         currentUser.points += amount;
         localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-        sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
         await saveUser(currentUser);
         updateProfileUI();
     }
@@ -1108,7 +1115,6 @@
         
         if (newUnlock) {
             localStorage.setItem('kaizenUser', JSON.stringify(p));
-            sessionStorage.setItem('kaizenUser', JSON.stringify(p));
             saveUser(p);
             updateProfileUI();
         }
@@ -1122,7 +1128,6 @@
             if(confirm(`Купить "${item.title}" за ${item.points} баллов?`)) {
                 currentUser.points -= item.points;
                 localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-                sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
                 saveUser(currentUser);
                 updateProfileUI();
                 alert('Покупка успешна! Покажите этот экран администратору для получения.');
@@ -1144,7 +1149,6 @@
             if (sectionId === 'achievements' && currentUser.unseenAchievements?.length > 0) {
                 currentUser.unseenAchievements = [];
                 localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-                sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
                 saveUser(currentUser);
                 updateProfileUI();
             }
@@ -1282,7 +1286,6 @@
             } else { alert('✅ Тестирование успешно пройдено! (Достижение было получено ранее)'); }
             
             localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-            sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
             saveUser(currentUser);
             updateProfileUI();
             toggleTrainingModal();
@@ -1295,7 +1298,6 @@
             getBase64(file).then(url => {
                 currentUser.profilePic = url;
                 localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-                sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
                 saveUser(currentUser);
                 updateProfileUI();
                 alert('Фото профиля обновлено!');
@@ -1585,6 +1587,7 @@
         }
     }
     
+    // Запуск приложения
     init();
 </script>
 </body>
