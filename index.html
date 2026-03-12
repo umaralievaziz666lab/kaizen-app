@@ -5,24 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaizen • Service Desk</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { background: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+        body { 
+            background: #fafafa; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            padding-top: env(safe-area-inset-top, 30px);
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
         .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .primary-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .avatar-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .post-card { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
-        .bottom-nav { box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .bottom-nav { 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            padding-bottom: env(safe-area-inset-bottom, 0);
+        }
         .nav-btn.active { color: #667eea; }
-        .add-btn-main { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); display: flex; align-items: center; justify-content: center; }
+        .add-btn-main { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+        }
         .media-container { max-height: 250px; overflow: hidden; background-color: #f0f0f0; margin-bottom: 10px; cursor: pointer; }
         .media-container img, .media-container video { width: 100%; height: auto; object-fit: cover; }
         #galleryModal { transition: opacity 0.3s ease; }
         #achievementsContent, #shopContent, #trainingContent { max-height: 1000px; transition: max-height 0.3s ease-out; overflow: hidden; }
         .notification-badge { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; background-color: #ef4444; color: white; border-radius: 9999px; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 1px 4px; line-height: 1; z-index: 10; }
+        
+        /* Отступ сверху для контента, чтобы не перекрывать шторку телефона */
+        .content-with-safe-area {
+            padding-top: max(env(safe-area-inset-top, 20px), 20px);
+        }
+        /* Фикс для навигации снизу */
+        .bottom-nav-safe {
+            padding-bottom: env(safe-area-inset-bottom, 0);
+        }
     </style>
 </head>
-<body class="bg-[#fafafa] min-h-full pb-20">
+<body class="bg-[#fafafa] min-h-full">
 
 <div id="registrationScreen" class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
@@ -62,7 +84,7 @@
     </div>
 </div>
 
-<div id="mainApp" class="hidden max-w-lg mx-auto bg-[#fafafa] min-h-screen relative shadow-2xl">
+<div id="mainApp" class="hidden max-w-lg mx-auto bg-[#fafafa] min-h-screen relative shadow-2xl content-with-safe-area">
 
     <header class="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 py-3 flex items-center">
         <div class="flex items-center space-x-2">
@@ -96,7 +118,7 @@
 
         <div class="p-3 bg-white border-b border-gray-100 sticky top-[98px] z-30">
             <div class="flex items-center gap-2 mb-3">
-                <input type="text" id="searchByIdInput" placeholder="Поиск по ID (напр. 00001)" class="text-sm p-2.5 border border-gray-200 rounded-xl bg-gray-50 flex-grow" onkeyup="if(event.key === 'Enter') handleSearchAction()">
+                <input type="text" id="searchByIdInput" placeholder="Поиск по ID" class="text-sm p-2.5 border border-gray-200 rounded-xl bg-gray-50 flex-grow" onkeyup="if(event.key === 'Enter') handleSearchAction()">
                 <button onclick="handleSearchAction()" class="primary-gradient text-white font-bold py-2.5 px-3 rounded-xl shadow-md flex-shrink-0 text-sm transform active:scale-95">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                 </button>
@@ -346,7 +368,7 @@
         </div>
     </div>
 
-    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 max-w-lg mx-auto z-40 pb-safe">
+    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 max-w-lg mx-auto z-40 bottom-nav-safe">
         <div class="grid grid-cols-5 h-16 relative">
             <button onclick="showSection('feed')" id="navFeed" class="nav-btn active flex flex-col items-center justify-center text-gray-900">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg>
@@ -390,7 +412,7 @@
         { id: 'idea_gen', icon: '💡', title: 'Идейный', desc: 'Предложить 5 идей', target: 5, points: 50, targetType: 'ideas' },
         { id: 'safety_guard', icon: '🛡️', title: 'Страж', desc: 'Найти 3 риска', target: 3, points: 30, targetType: 'risks' },
         { id: 'influencer', icon: '🔥', title: 'Влиятельный', desc: 'Получить 10 лайков', target: 10, points: 20, targetType: 'likes' },
-        { id: 'legend', icon: '👑', title: 'Легенда', desc: 'Набрать 500 баллов', target: 500, points: 100, isPoints: true, targetType: 'points' },
+        { id: 'legend', icon: '👑', title: 'Легенда', desc: 'Набрать 500 баллов', target: 500, points: 100, targetType: 'points' },
         { id: 'trained', icon: '✅', title: 'Обученный', desc: 'Успешно завершить обучение', target: 1, points: 20, targetType: 'manual' }
     ];
     
@@ -423,14 +445,36 @@
         try {
             const response = await fetch(`${API_URL}?sheet=requests`);
             const data = await response.json();
-            requests = data.map((r, index) => ({
-                ...r,
-                id: r.id || index + 1,
-                comments: r.comments ? JSON.parse(r.comments) : [],
-                likes: parseInt(r.likes) || 0
-            }));
+            // Фильтруем дубликаты по ID
+            const uniqueRequests = [];
+            const seenIds = new Set();
+            
+            data.forEach(item => {
+                const id = parseInt(item.id) || 0;
+                if (!seenIds.has(id) && id > 0) {
+                    seenIds.add(id);
+                    uniqueRequests.push({
+                        id: id,
+                        type: item.type || 'idea',
+                        author: item.author || 'Неизвестно',
+                        avatar: (item.author || 'Н').split(' ').map(n => n[0]).join(''),
+                        date: item.date || new Date().toISOString(),
+                        location: item.location || 'Не указан',
+                        desc: item.description || '',
+                        likes: parseInt(item.likes) || 0,
+                        status: item.status || 'new',
+                        comments: item.comments ? JSON.parse(item.comments) : [],
+                        media: item.image ? [item.image] : [],
+                        assignedTo: item.assignedTo || null
+                    });
+                }
+            });
+            
+            requests = uniqueRequests;
             renderFeed();
-            updateStats();
+            if (document.getElementById('adminRequestsList')) {
+                renderAdminRequests();
+            }
         } catch (error) {
             console.error('Ошибка загрузки заявок:', error);
             requests = [];
@@ -441,7 +485,7 @@
         try {
             const response = await fetch(`${API_URL}?sheet=users`);
             const users = await response.json();
-            return users.find(u => u.id === empId) || null;
+            return users.find(u => u.id == empId) || null;
         } catch (error) {
             console.error('Ошибка загрузки пользователя:', error);
             return null;
@@ -455,12 +499,12 @@
                 data: {
                     id: user.empId,
                     name: user.name,
-                    points: user.points,
+                    points: user.points || 0,
                     role: user.role || 'user',
                     avatar: user.profilePic || '',
-                    phone: user.phone,
+                    phone: user.phone || '',
                     email: user.email || '',
-                    department: user.dept
+                    department: user.dept || ''
                 }
             };
             await fetch(API_URL, {
@@ -486,7 +530,7 @@
                     author: request.author,
                     authorId: currentUser?.empId || '',
                     date: request.date,
-                    status: request.status,
+                    status: request.status || 'new',
                     image: request.media?.[0] || '',
                     likes: request.likes || 0,
                     comments: JSON.stringify(request.comments || []),
@@ -506,17 +550,31 @@
     
     // --- ИНИЦИАЛИЗАЦИЯ ---
     async function init() {
+        // Сначала загружаем заявки
         await loadRequests();
         
-        const savedUser = localStorage.getItem('hybridUser');
+        // Проверяем, есть ли сохраненный пользователь в localStorage
+        const savedUser = localStorage.getItem('kaizenUser');
         if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            const dbUser = await loadUser(currentUser.empId);
-            if (dbUser) {
-                currentUser.points = parseInt(dbUser.points) || 0;
-                currentUser.role = dbUser.role || 'user';
+            try {
+                currentUser = JSON.parse(savedUser);
+                // Загружаем актуальные данные из таблицы
+                const dbUser = await loadUser(currentUser.empId);
+                if (dbUser) {
+                    currentUser.points = parseInt(dbUser.points) || 0;
+                    currentUser.role = dbUser.role || 'user';
+                    currentUser.completedAchievements = dbUser.completedAchievements ? JSON.parse(dbUser.completedAchievements) : [];
+                    currentUser.unseenAchievements = dbUser.unseenAchievements ? JSON.parse(dbUser.unseenAchievements) : [];
+                    // Сохраняем обновленные данные локально
+                    localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+                }
+                showApp();
+            } catch (e) {
+                console.error('Ошибка загрузки сохраненного пользователя', e);
+                document.getElementById('registrationScreen').classList.remove('hidden');
             }
-            showApp();
+        } else {
+            document.getElementById('registrationScreen').classList.remove('hidden');
         }
         
         document.getElementById('commentForm').addEventListener('submit', addComment);
@@ -558,8 +616,10 @@
             isTrained: false
         };
         
+        // Сохраняем в localStorage
+        localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+        
         await saveUser(currentUser);
-        localStorage.setItem('hybridUser', JSON.stringify(currentUser));
         showApp();
     }
     
@@ -575,15 +635,18 @@
         renderNews();
         
         if (currentUser.role === 'admin') {
-            switchMode('admin');
+            document.getElementById('adminPanel').classList.remove('hidden');
+            document.getElementById('userPanel').classList.add('hidden');
+            renderAdminRequests();
         } else {
-            switchMode('user');
+            document.getElementById('adminPanel').classList.add('hidden');
+            showSection('feed');
         }
     }
     
     function logout() {
         if(confirm('Выйти из аккаунта?')) {
-            localStorage.removeItem('hybridUser');
+            localStorage.removeItem('kaizenUser');
             location.reload();
         }
     }
@@ -608,8 +671,10 @@
         const empty = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchByIdInput');
         
+        if (!feed) return;
+        
         let data = [...requests];
-        let searchIdValue = searchInput.value.trim();
+        let searchIdValue = searchInput ? searchInput.value.trim() : '';
         let isSearchingById = false;
         
         if (searchIdValue !== '') {
@@ -620,41 +685,45 @@
             } else { data = []; }
         }
         
-        if (!isSearchingById) {
-            if (currentFeedTab === 'my') { data = data.filter(r => r.author === currentUser.name); }
-            else if (currentFeedTab === 'assigned') { data = data.filter(r => r.assignedTo === currentUser.name); }
+        if (!isSearchingById && currentUser) {
+            if (currentFeedTab === 'my') { 
+                data = data.filter(r => r.author === currentUser.name); 
+            }
+            else if (currentFeedTab === 'assigned') { 
+                data = data.filter(r => r.assignedTo === currentUser.name); 
+            }
             
-            if (currentFilterType !== 'all') { data = data.filter(r => r.type === currentFilterType); }
+            if (currentFilterType !== 'all') { 
+                data = data.filter(r => r.type === currentFilterType); 
+            }
             
-            if (currentSortBy === 'date') { data.sort((a, b) => new Date(b.date) - new Date(a.date)); }
-            else if (currentSortBy === 'oldest') { data.sort((a, b) => new Date(a.date) - new Date(b.date)); }
-            else if (currentSortBy === 'likes') { data.sort((a, b) => b.likes - a.likes); }
+            if (currentSortBy === 'date') { 
+                data.sort((a, b) => new Date(b.date) - new Date(a.date)); 
+            }
+            else if (currentSortBy === 'oldest') { 
+                data.sort((a, b) => new Date(a.date) - new Date(b.date)); 
+            }
+            else if (currentSortBy === 'likes') { 
+                data.sort((a, b) => b.likes - a.likes); 
+            }
         }
         
         if (data.length === 0) {
             feed.innerHTML = '';
-            empty.classList.remove('hidden');
+            if (empty) empty.classList.remove('hidden');
             return;
         }
         
-        empty.classList.add('hidden');
+        if (empty) empty.classList.add('hidden');
+        
         feed.innerHTML = data.map(post => {
             let mediaHTML = '';
-            if (post.media && post.media.length > 0) {
+            if (post.media && post.media.length > 0 && post.media[0]) {
                 const mediaURL = post.media[0];
-                let mediaType = 'unknown';
-                if (mediaURL.startsWith('data:')) {
-                    if (mediaURL.startsWith('data:image/')) { mediaType = 'image'; }
-                    else if (mediaURL.startsWith('data:video/')) { mediaType = 'video'; }
-                } else {
-                    mediaType = mediaURL.toLowerCase().match(/\.(jpe?g|png|gif|webp)$/i) ? 'image' : 
-                                mediaURL.toLowerCase().match(/\.(mp4|webm|ogg)$/i) ? 'video' : 'unknown';
-                }
-                
-                if (mediaType === 'image') {
-                    mediaHTML = `<div class="media-container mb-3" onclick="showGalleryModal(${post.id}, 0)"><img src="${mediaURL}" alt="Медиафайл" class="w-full">${post.media.length > 1 ? '<span class="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs font-semibold px-2 py-1 rounded-full">1 / ' + post.media.length + '</span>' : ''}</div>`;
-                } else if (mediaType === 'video') {
-                    mediaHTML = `<div class="media-container mb-3 relative" onclick="showGalleryModal(${post.id}, 0)"><video src="${mediaURL}" class="w-full" poster="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100%' height='100%' viewBox='0 0 100 100'></svg>"></video><div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 text-white text-4xl pointer-events-none">▶</div></div>`;
+                if (mediaURL.startsWith('data:image/') || mediaURL.match(/\.(jpe?g|png|gif|webp)/i)) {
+                    mediaHTML = `<div class="media-container mb-3" onclick="showGalleryModal(${post.id}, 0)"><img src="${mediaURL}" alt="Медиа" class="w-full"></div>`;
+                } else if (mediaURL.startsWith('data:video/') || mediaURL.match(/\.(mp4|webm|ogg)/i)) {
+                    mediaHTML = `<div class="media-container mb-3 relative" onclick="showGalleryModal(${post.id}, 0)"><video src="${mediaURL}" class="w-full"></video><div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 text-white text-4xl pointer-events-none">▶</div></div>`;
                 }
             }
             
@@ -665,7 +734,7 @@
                 <div class="post-card sm:rounded-xl border-x-0 sm:border-x border-t border-b sm:border-gray-200">
                     <div class="p-3 flex items-center justify-between">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center text-sm font-bold text-gray-600">${post.avatar}</div>
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-gray-200 to-gray-300 flex items-center justify-center text-sm font-bold text-gray-600">${post.avatar || '??'}</div>
                             <div>
                                 <div class="font-bold text-sm text-gray-900 leading-tight">${post.author}</div>
                                 <div class="text-xs text-gray-500 flex items-center gap-1">
@@ -702,7 +771,7 @@
                             ${getStatusText(post.status)}
                         </div>
                         
-                        ${currentUser.role === 'admin' ? `<button onclick="deletePost(${post.id})" class="ml-2 text-xs text-red-400 hover:text-red-600">Удалить</button>` : ''}
+                        ${currentUser && currentUser.role === 'admin' ? `<button onclick="deletePost(${post.id})" class="ml-2 text-xs text-red-400 hover:text-red-600">Удалить</button>` : ''}
                     </div>
                 </div>
             `;
@@ -730,6 +799,7 @@
         const location = document.getElementById('reqLocation').value;
         const desc = document.getElementById('reqDesc').value;
         
+        // Генерируем новый ID
         const maxId = requests.length > 0 ? Math.max(...requests.map(r => r.id)) : 0;
         const newId = maxId + 1;
         
@@ -748,21 +818,28 @@
             assignedTo: null
         };
         
+        // Сначала сохраняем в таблицу
         await saveRequest(newPost);
+        
+        // Затем добавляем в локальный массив
         requests.unshift(newPost);
         
         addPoints(5);
         checkAchievements();
         
         renderFeed();
+        if (document.getElementById('adminRequestsList')) {
+            renderAdminRequests();
+        }
         toggleCreateModal();
         e.target.reset();
         document.getElementById('mediaPreview').textContent = '';
     });
     
     function updateProfileUI() {
+        if (!currentUser) return;
+        
         const p = currentUser;
-        if (!p) return;
         
         const avatarEl = document.getElementById('profileAvatar');
         const initials = p.name.split(' ').map(n => n[0]).join('');
@@ -819,6 +896,7 @@
         document.getElementById('statCompleted').textContent = statCompleted;
         
         const achContainer = document.getElementById('achievementsList');
+        if (!achContainer) return;
         
         const ideas = myReqs.filter(r => r.type === 'idea').length;
         const risks = myReqs.filter(r => r.type === 'risk').length;
@@ -866,52 +944,60 @@
         }).join('');
         
         const shopContainer = document.getElementById('shopList');
-        shopContainer.innerHTML = shopItems.map(item => {
-            const canBuy = p.points >= item.points;
-            const neededPoints = item.points;
-            const currentPoints = p.points;
-            const progressText = `${Math.min(currentPoints, neededPoints)}/${neededPoints} б.`;
-            
-            const statusHTML = canBuy 
-                ? '<div class="text-[10px] font-bold text-green-600 mt-0.5">Доступно!</div>'
-                : `<div class="text-[10px] font-semibold text-gray-500 mt-0.5">${progressText}</div>`;
+        if (shopContainer) {
+            shopContainer.innerHTML = shopItems.map(item => {
+                const canBuy = p.points >= item.points;
+                const neededPoints = item.points;
+                const currentPoints = p.points;
+                const progressText = `${Math.min(currentPoints, neededPoints)}/${neededPoints} б.`;
                 
-            return `
-                <div class="bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 shadow-sm relative overflow-hidden group">
-                    <div class="w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-xl flex-shrink-0">${item.icon}</div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-xs font-bold text-gray-900 truncate">${item.title}</div>
-                        <div class="text-xs font-semibold ${canBuy ? 'text-green-600' : 'text-purple-600'}">${item.points} б.</div>
-                        ${statusHTML}
+                const statusHTML = canBuy 
+                    ? '<div class="text-[10px] font-bold text-green-600 mt-0.5">Доступно!</div>'
+                    : `<div class="text-[10px] font-semibold text-gray-500 mt-0.5">${progressText}</div>`;
+                    
+                return `
+                    <div class="bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 shadow-sm relative overflow-hidden group">
+                        <div class="w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-xl flex-shrink-0">${item.icon}</div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-xs font-bold text-gray-900 truncate">${item.title}</div>
+                            <div class="text-xs font-semibold ${canBuy ? 'text-green-600' : 'text-purple-600'}">${item.points} б.</div>
+                            ${statusHTML}
+                        </div>
+                        <button onclick="buyItem(${item.id})" ${!canBuy ? 'disabled' : ''} class="absolute inset-0 w-full h-full bg-black bg-opacity-0 hover:bg-opacity-5 transition flex items-center justify-center opacity-0 group-hover:opacity-100 disabled:hidden cursor-pointer"></button>
                     </div>
-                    <button onclick="buyItem(${item.id})" ${!canBuy ? 'disabled' : ''} class="absolute inset-0 w-full h-full bg-black bg-opacity-0 hover:bg-opacity-5 transition flex items-center justify-center opacity-0 group-hover:opacity-100 disabled:hidden cursor-pointer"></button>
-                </div>
-            `;
-        }).join('');
+                `;
+            }).join('');
+        }
         
         const unseenCount = p.unseenAchievements?.length || 0;
         const profileBadge = document.getElementById('profileBadge');
         const achievementsBadge = document.getElementById('achievementsBadge');
         
         if (unseenCount > 0) {
-            profileBadge.textContent = unseenCount;
-            profileBadge.classList.remove('hidden');
-            achievementsBadge.textContent = unseenCount;
-            achievementsBadge.classList.remove('hidden');
+            if (profileBadge) {
+                profileBadge.textContent = unseenCount;
+                profileBadge.classList.remove('hidden');
+            }
+            if (achievementsBadge) {
+                achievementsBadge.textContent = unseenCount;
+                achievementsBadge.classList.remove('hidden');
+            }
         } else {
-            profileBadge.classList.add('hidden');
-            achievementsBadge.classList.add('hidden');
+            if (profileBadge) profileBadge.classList.add('hidden');
+            if (achievementsBadge) achievementsBadge.classList.add('hidden');
         }
     }
     
     async function addPoints(amount) {
         currentUser.points += amount;
-        localStorage.setItem('hybridUser', JSON.stringify(currentUser));
+        localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
         await saveUser(currentUser);
         updateProfileUI();
     }
     
     function checkAchievements() {
+        if (!currentUser) return;
+        
         const p = currentUser;
         const myReqs = requests.filter(r => r.author === p.name);
         const ideas = myReqs.filter(r => r.type === 'idea').length;
@@ -944,18 +1030,20 @@
         });
         
         if (newUnlock) {
-            localStorage.setItem('hybridUser', JSON.stringify(p));
+            localStorage.setItem('kaizenUser', JSON.stringify(p));
             saveUser(p);
             updateProfileUI();
         }
     }
     
     function buyItem(id) {
+        if (!currentUser) return;
+        
         const item = shopItems.find(i => i.id === id);
         if (currentUser.points >= item.points) {
             if(confirm(`Купить "${item.title}" за ${item.points} баллов?`)) {
                 currentUser.points -= item.points;
-                localStorage.setItem('hybridUser', JSON.stringify(currentUser));
+                localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
                 saveUser(currentUser);
                 updateProfileUI();
                 alert('Покупка успешна! Покажите этот экран администратору для получения.');
@@ -967,21 +1055,23 @@
         const content = document.getElementById(sectionId + 'Content');
         const toggleIcon = document.getElementById(sectionId + 'Toggle');
         
+        if (!content) return;
+        
         if (content.style.maxHeight === '0px' || !content.style.maxHeight || content.style.maxHeight === '0px') {
             content.style.maxHeight = content.scrollHeight + 'px';
             content.style.marginBottom = '1rem';
-            toggleIcon.classList.add('rotate-180');
+            if (toggleIcon) toggleIcon.classList.add('rotate-180');
             
             if (sectionId === 'achievements' && currentUser.unseenAchievements?.length > 0) {
                 currentUser.unseenAchievements = [];
-                localStorage.setItem('hybridUser', JSON.stringify(currentUser));
+                localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
                 saveUser(currentUser);
                 updateProfileUI();
             }
         } else {
             content.style.maxHeight = '0px';
             content.style.marginBottom = '0';
-            toggleIcon.classList.remove('rotate-180');
+            if (toggleIcon) toggleIcon.classList.remove('rotate-180');
         }
     }
     
@@ -1002,7 +1092,9 @@
             updateProfileUI();
             ['achievementsContent', 'shopContent', 'trainingContent'].forEach(id => {
                 const el = document.getElementById(id);
-                if (el && el.style.maxHeight !== '0px') { el.style.maxHeight = el.scrollHeight + 'px'; }
+                if (el && el.style.maxHeight !== '0px') { 
+                    el.style.maxHeight = el.scrollHeight + 'px'; 
+                }
             });
         } else if (section === 'feed') {
             sectionToShowId = 'userPanel';
@@ -1018,7 +1110,9 @@
             renderNews();
         }
         
-        document.getElementById(sectionToShowId).classList.remove('hidden');
+        const sectionEl = document.getElementById(sectionToShowId);
+        if (sectionEl) sectionEl.classList.remove('hidden');
+        
         const navButtonEl = document.getElementById(navButtonId);
         if (navButtonEl) {
             navButtonEl.classList.add('active', 'text-gray-900');
@@ -1028,6 +1122,8 @@
     
     function renderNews() {
         const newsSection = document.getElementById('newsSection');
+        if (!newsSection) return;
+        
         newsSection.innerHTML = `
             <div class="p-4 pt-4">
                 <h3 class="text-xl font-bold text-gray-900 mb-4">Корпоративные новости</h3>
@@ -1035,39 +1131,60 @@
             </div>`;
         
         const newsList = document.getElementById('newsListContainer');
-        newsList.innerHTML = newsItems.map(item => `
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full ${item.color.replace('-100', '-50')} flex items-center justify-center text-lg font-bold flex-shrink-0">${item.icon}</div>
-                        <div class="text-xs font-bold ${item.color.replace('bg-', 'text-').replace('-100', '-600')} uppercase tracking-wider">${item.source}</div>
+        if (newsList) {
+            newsList.innerHTML = newsItems.map(item => `
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-full ${item.color.replace('-100', '-50')} flex items-center justify-center text-lg font-bold flex-shrink-0">${item.icon}</div>
+                            <div class="text-xs font-bold ${item.color.replace('bg-', 'text-').replace('-100', '-600')} uppercase tracking-wider">${item.source}</div>
+                        </div>
+                        <div class="text-xs text-gray-400">${formatDate(item.date)}</div>
                     </div>
-                    <div class="text-xs text-gray-400">${formatDate(item.date)}</div>
+                    <h4 class="text-base font-bold text-gray-800 mb-1">${item.title}</h4>
+                    <p class="text-sm text-gray-600">${item.content}</p>
                 </div>
-                <h4 class="text-base font-bold text-gray-800 mb-1">${item.title}</h4>
-                <p class="text-sm text-gray-600">${item.content}</p>
-            </div>
-        `).join('');
+            `).join('');
+        }
     }
     
-    function toggleTrainingModal() { document.getElementById('trainingModal').classList.toggle('hidden'); }
+    function toggleTrainingModal() { 
+        const modal = document.getElementById('trainingModal');
+        if (modal) modal.classList.toggle('hidden'); 
+    }
     
     function showTrainingModal() {
         if (currentUser.isTrained) { alert('Вы уже прошли обучение и получили достижение!'); return; }
-        document.getElementById('trainingVideoFrame').src = "https://www.youtube.com/embed/dQw4w9WgXcQ?controls=0";
-        document.getElementById('trainingTest').classList.add('hidden');
-        document.getElementById('videoLesson').classList.remove('hidden');
-        document.getElementById('videoOverlay').classList.remove('hidden');
-        document.getElementById('trainingTestForm').reset();
-        document.getElementById('trainingModal').classList.remove('hidden');
+        const frame = document.getElementById('trainingVideoFrame');
+        if (frame) frame.src = "https://www.youtube.com/embed/dQw4w9WgXcQ?controls=0";
+        
+        const testDiv = document.getElementById('trainingTest');
+        const videoDiv = document.getElementById('videoLesson');
+        const overlay = document.getElementById('videoOverlay');
+        
+        if (testDiv) testDiv.classList.add('hidden');
+        if (videoDiv) videoDiv.classList.remove('hidden');
+        if (overlay) overlay.classList.remove('hidden');
+        
+        const form = document.getElementById('trainingTestForm');
+        if (form) form.reset();
+        
+        const modal = document.getElementById('trainingModal');
+        if (modal) modal.classList.remove('hidden');
     }
     
     function startTraining() {
-        document.getElementById('videoOverlay').classList.add('hidden');
-        document.getElementById('trainingVideoFrame').src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
+        const overlay = document.getElementById('videoOverlay');
+        if (overlay) overlay.classList.add('hidden');
+        
+        const frame = document.getElementById('trainingVideoFrame');
+        if (frame) frame.src = "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1";
+        
         setTimeout(() => {
-            document.getElementById('videoLesson').classList.add('hidden');
-            document.getElementById('trainingTest').classList.remove('hidden');
+            const videoDiv = document.getElementById('videoLesson');
+            const testDiv = document.getElementById('trainingTest');
+            if (videoDiv) videoDiv.classList.add('hidden');
+            if (testDiv) testDiv.classList.remove('hidden');
         }, 5000);
     }
     
@@ -1090,7 +1207,7 @@
                 } else { alert('✅ Тестирование успешно пройдено!'); }
             } else { alert('✅ Тестирование успешно пройдено! (Достижение было получено ранее)'); }
             
-            localStorage.setItem('hybridUser', JSON.stringify(currentUser));
+            localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
             saveUser(currentUser);
             updateProfileUI();
             toggleTrainingModal();
@@ -1100,57 +1217,73 @@
     function handleAvatarUpload(event) {
         const file = event.target.files[0];
         if (file) {
-            try {
-                const dataUrl = getBase64(file);
-                dataUrl.then(url => {
-                    currentUser.profilePic = url;
-                    localStorage.setItem('hybridUser', JSON.stringify(currentUser));
-                    saveUser(currentUser);
-                    updateProfileUI();
-                    alert('Фото профиля обновлено!');
-                });
-            } catch (error) {
-                alert('Ошибка при загрузке фото. Пожалуйста, убедитесь, что это файл изображения.');
+            getBase64(file).then(url => {
+                currentUser.profilePic = url;
+                localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+                saveUser(currentUser);
+                updateProfileUI();
+                alert('Фото профиля обновлено!');
+            }).catch(error => {
+                alert('Ошибка при загрузке фото.');
                 console.error("Avatar upload error:", error);
-            }
+            });
         }
     }
     
-    function toggleSettingsDropdown(event) { if(event) event.stopPropagation(); document.getElementById('settingsDropdown').classList.toggle('hidden'); }
+    function toggleSettingsDropdown(event) { 
+        if(event) event.stopPropagation(); 
+        const dropdown = document.getElementById('settingsDropdown');
+        if (dropdown) dropdown.classList.toggle('hidden'); 
+    }
     
     function showCommentsModal(postId) {
         const post = requests.find(r => r.id === postId);
         if (!post) return;
-        document.getElementById('currentPostId').value = postId;
+        
+        const idField = document.getElementById('currentPostId');
+        if (idField) idField.value = postId;
+        
         renderComments(post.comments || []);
-        document.getElementById('commentCount').textContent = post.comments?.length || 0;
-        document.getElementById('commentsModal').classList.remove('hidden');
+        
+        const countSpan = document.getElementById('commentCount');
+        if (countSpan) countSpan.textContent = post.comments?.length || 0;
+        
+        const modal = document.getElementById('commentsModal');
+        if (modal) modal.classList.remove('hidden');
     }
     
     function toggleCommentsModal() {
-        document.getElementById('commentsModal').classList.toggle('hidden');
-        document.getElementById('commentText').value = '';
+        const modal = document.getElementById('commentsModal');
+        if (modal) modal.classList.toggle('hidden');
+        
+        const textarea = document.getElementById('commentText');
+        if (textarea) textarea.value = '';
     }
     
     function renderComments(comments) {
         const list = document.getElementById('commentsList');
         const empty = document.getElementById('commentsEmpty');
         
+        if (!list) return;
+        
         if (comments.length === 0) {
-            empty.classList.remove('hidden');
-            list.innerHTML = '';
-            list.appendChild(empty);
+            if (empty) {
+                empty.classList.remove('hidden');
+                list.innerHTML = '';
+                list.appendChild(empty);
+            }
             return;
         }
         
-        empty.classList.add('hidden');
+        if (empty) empty.classList.add('hidden');
+        
         list.innerHTML = comments.map(c => `
             <div class="flex gap-3">
-                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">${c.author.split(' ').map(n=>n[0]).join('')}</div>
+                <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">${(c.author || '?').split(' ').map(n=>n[0]).join('')}</div>
                 <div class="flex-grow">
                     <div class="font-bold text-sm text-gray-900">${c.author}</div>
                     <p class="text-gray-700 text-sm">${c.text}</p>
-                    <div class="text-xs text-gray-400 mt-1">${formatDate(c.date)} в ${new Date(c.date).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div class="text-xs text-gray-400 mt-1">${formatDate(c.date)}</div>
                 </div>
             </div>
         `).join('');
@@ -1159,9 +1292,10 @@
     async function addComment(e) {
         e.preventDefault();
         
-        const postId = document.getElementById('currentPostId').value;
-        const text = document.getElementById('commentText').value.trim();
-        if (!text) return;
+        const postId = document.getElementById('currentPostId')?.value;
+        const text = document.getElementById('commentText')?.value.trim();
+        
+        if (!postId || !text) return;
         
         const post = requests.find(r => r.id == postId);
         if (!post) return;
@@ -1175,8 +1309,11 @@
         renderComments(post.comments);
         renderFeed();
         
-        document.getElementById('commentText').value = '';
-        document.getElementById('commentCount').textContent = post.comments.length;
+        const textarea = document.getElementById('commentText');
+        if (textarea) textarea.value = '';
+        
+        const countSpan = document.getElementById('commentCount');
+        if (countSpan) countSpan.textContent = post.comments.length;
     }
     
     function showGalleryModal(postId, mediaIndex) {
@@ -1186,11 +1323,12 @@
         
         const mediaURL = post.media[mediaIndex];
         const contentDiv = document.getElementById('galleryContent');
-        let mediaType = mediaURL.startsWith('data:image/') || mediaURL.toLowerCase().match(/\.(jpe?g|png|gif|webp)$/i) ? 'image' : 'video';
+        if (!contentDiv) return;
         
         contentDiv.innerHTML = '';
         let element;
-        if (mediaType === 'image') {
+        
+        if (mediaURL.startsWith('data:image/') || mediaURL.match(/\.(jpe?g|png|gif|webp)/i)) {
             element = document.createElement('img');
             element.src = mediaURL;
             element.className = 'max-w-full max-h-full object-contain';
@@ -1201,19 +1339,28 @@
             element.autoplay = true;
             element.className = 'max-w-full max-h-full object-contain';
         }
+        
         element.onclick = (e) => e.stopPropagation();
         contentDiv.appendChild(element);
-        document.getElementById('galleryModal').classList.remove('hidden');
+        
+        const modal = document.getElementById('galleryModal');
+        if (modal) modal.classList.remove('hidden');
     }
     
     function toggleGalleryModal() {
-        document.getElementById('galleryModal').classList.toggle('hidden');
-        document.getElementById('galleryContent').innerHTML = '';
+        const modal = document.getElementById('galleryModal');
+        if (modal) modal.classList.toggle('hidden');
+        
+        const content = document.getElementById('galleryContent');
+        if (content) content.innerHTML = '';
     }
     
     function updateStats() {
-        document.getElementById('totalRequests').textContent = requests.length;
-        document.getElementById('inProgressRequests').textContent = requests.filter(r => r.status === 'work').length;
+        const totalEl = document.getElementById('totalRequests');
+        const workEl = document.getElementById('inProgressRequests');
+        
+        if (totalEl) totalEl.textContent = requests.length;
+        if (workEl) workEl.textContent = requests.filter(r => r.status === 'work').length;
     }
     
     function assignRequest(postId, assignedToName) {
@@ -1222,15 +1369,17 @@
             r.assignedTo = assignedToName === 'none' ? null : assignedToName;
             saveRequest(r);
             renderFeed();
+            renderAdminRequests();
         }
     }
     
     function changeStatus(id, newStatus) {
-        const r = requests.find(r => r.id === id);
+        const r = requests.find(r => r.id == id);
         if (r) {
             r.status = newStatus;
             saveRequest(r);
             renderFeed();
+            renderAdminRequests();
             updateStats();
         }
     }
@@ -1238,8 +1387,11 @@
     function previewMedia(event) {
         const file = event.target.files[0];
         const previewDiv = document.getElementById('mediaPreview');
-        if (file) { previewDiv.textContent = `Выбран файл: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} МБ)`; }
-        else { previewDiv.textContent = ''; }
+        if (file && previewDiv) { 
+            previewDiv.textContent = `Выбран файл: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} МБ)`; 
+        } else if (previewDiv) { 
+            previewDiv.textContent = ''; 
+        }
     }
     
     function getBase64(file) {
@@ -1254,13 +1406,20 @@
     
     function switchFeedTab(tab) {
         currentFeedTab = tab;
-        document.querySelectorAll('#feedTabs button').forEach(btn => { btn.className = 'flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700'; });
+        document.querySelectorAll('#feedTabs button').forEach(btn => { 
+            btn.className = 'flex-1 py-3 text-sm font-medium text-gray-500 hover:text-gray-700'; 
+        });
         const activeBtn = document.getElementById(tab + 'FeedTab');
-        if (activeBtn) { activeBtn.className = 'flex-1 py-3 text-sm font-semibold text-gray-900 border-b-2 border-gray-900'; }
+        if (activeBtn) { 
+            activeBtn.className = 'flex-1 py-3 text-sm font-semibold text-gray-900 border-b-2 border-gray-900'; 
+        }
         applyFilter();
     }
     
-    function toggleCreateModal() { document.getElementById('createModal').classList.toggle('hidden'); }
+    function toggleCreateModal() { 
+        const modal = document.getElementById('createModal');
+        if (modal) modal.classList.toggle('hidden'); 
+    }
     
     async function likePost(id) {
         const r = requests.find(r => r.id === id);
@@ -1271,29 +1430,16 @@
         }
     }
     
-    function switchMode(mode) {
-        if(mode === 'admin' && currentUser.role === 'admin') {
-            document.getElementById('adminPanel').classList.remove('hidden');
-            document.getElementById('userPanel').classList.add('hidden');
-            document.getElementById('userProfile').classList.add('hidden');
-            document.getElementById('messagesSection').classList.add('hidden');
-            document.getElementById('newsSection').classList.add('hidden');
-            updateStats();
-            renderAdminRequests();
-        } else if (mode === 'user') {
-            document.getElementById('adminPanel').classList.add('hidden');
-            showSection('feed');
-        }
-    }
-    
     function renderAdminRequests() {
         const list = document.getElementById('adminRequestsList');
+        if (!list) return;
+        
         list.innerHTML = requests.map(r => {
             const userOptions = allUsers.map(u => `<option value="${u}" ${r.assignedTo === u ? 'selected' : ''}>${u}</option>`).join('');
             return `
                 <div class="bg-white p-3 rounded-lg border border-gray-200 text-sm flex items-center justify-between gap-3">
                     <div class="flex-1 min-w-0">
-                        <span class="font-bold text-gray-900 truncate">#${r.id} ${r.desc.substring(0, 30)}...</span>
+                        <span class="font-bold text-gray-900 truncate">#${r.id} ${(r.desc || '').substring(0, 30)}...</span>
                         <div class="text-xs text-gray-400">От: ${r.author}</div>
                     </div>
                     <select onchange="assignRequest(${r.id}, this.value)" class="text-xs border rounded p-1 bg-gray-50 flex-shrink-0">
@@ -1328,10 +1474,13 @@
             await saveRequest({ id, _delete: true });
             renderFeed();
             updateStats();
-            renderAdminRequests();
+            if (document.getElementById('adminRequestsList')) {
+                renderAdminRequests();
+            }
         }
     }
     
+    // Запуск
     init();
 </script>
 </body>
