@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админ-панель Kaizen & Service Desk</title>
+    <title>Админ-панель Kaizen • Supabase</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: #f4f7f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
         .sidebar { background: #2c3e50; transition: width 0.3s ease-in-out; }
@@ -19,15 +20,50 @@
         .main-content { min-height: 100vh; }
         .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
         .table-header { background: #ecf0f1; }
-        .data-row:hover { background: #f9f9f9; }
+        .data-row:hover { background: #f9f9f9; cursor: pointer; }
         .status-new { background-color: #e5f5e8; color: #2ecc71; }
         .status-work { background-color: #f7f3e5; color: #f39c12; }
         .status-approved { background-color: #e3e9f7; color: #3498db; }
         .history-item { border-left: 3px solid #3b82f6; padding-left: 1rem; margin-bottom: 0.5rem; }
         .status-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-align: center; }
+        .btn-loading {
+            opacity: 0.7;
+            pointer-events: none;
+            position: relative;
+        }
+        .btn-loading:after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            top: 50%;
+            left: 50%;
+            margin-left: -8px;
+            margin-top: -8px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spinner 0.6s linear infinite;
+        }
+        @keyframes spinner {
+            to { transform: rotate(360deg); }
+        }
+        .refresh-indicator {
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+            padding: 5px;
+            display: none;
+        }
+        .refresh-indicator.active {
+            display: block;
+        }
     </style>
 </head>
 <body class="flex">
+
+<!-- Индикатор загрузки -->
+<div id="refreshIndicator" class="refresh-indicator fixed top-0 left-0 right-0 bg-blue-500 text-white py-1 z-50 hidden">Загрузка данных...</div>
 
 <aside id="sidebar" class="sidebar w-64 min-h-screen text-white p-4 flex flex-col justify-between transition-all duration-300 z-50">
     <div class="sidebar-header border-b border-gray-700 pb-3 mb-8 flex justify-between items-center overflow-hidden">
@@ -68,9 +104,8 @@
     <header class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-30">
         <h2 class="text-xl font-semibold text-gray-800">Админ-панель</h2>
         <div class="flex items-center space-x-4">
-            <button class="text-gray-500 hover:text-blue-600 relative p-2 rounded-full hover:bg-gray-100 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                <span class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
+            <button onclick="refreshData()" class="text-gray-500 hover:text-blue-600 p-2 rounded-full hover:bg-gray-100 transition" title="Обновить данные">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             </button>
             <div class="flex items-center space-x-2 border-l pl-4">
                 <div class="text-right">
@@ -83,10 +118,14 @@
     </header>
 
     <main class="flex-1 p-6 main-content">
+        <!-- Управление заявками -->
         <div id="requestsView">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-3xl font-bold text-gray-800">Управление заявками</h2>
-                <button onclick="forceResetData()" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md transition text-sm">Сбросить данные</button>
+                <button onclick="refreshData()" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md transition text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    Обновить
+                </button>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="card p-5 border-l-4 border-blue-500">
@@ -133,7 +172,6 @@
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Дата</th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Ответственный</th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Статус</th>
-                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Срок</th>
                         </tr>
                     </thead>
                     <tbody id="requestsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
@@ -141,6 +179,7 @@
             </div>
         </div>
 
+        <!-- Аналитика -->
         <div id="analyticsView" class="hidden">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Аналитика и Дашборд</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -159,6 +198,7 @@
             </div>
         </div>
 
+        <!-- Новости -->
         <div id="newsView" class="hidden">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Управление Новостями</h2>
             <div class="flex justify-between items-center mb-4">
@@ -174,6 +214,7 @@
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex-1">Заголовок</th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Дата</th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Автор</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Действия</th>
                         </tr>
                     </thead>
                     <tbody id="newsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
@@ -181,11 +222,11 @@
             </div>
         </div>
 
+        <!-- Пользователи -->
         <div id="usersView" class="hidden">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Управление пользователями</h2>
             <div class="flex justify-between items-center mb-4">
                 <p class="text-gray-600">Всего пользователей: <span class="font-bold text-lg text-blue-600" id="totalUsersCount">0</span></p>
-                <button onclick="showAddUserModal()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition">+ Добавить пользователя</button>
             </div>
             <div class="card overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
@@ -204,6 +245,7 @@
             </div>
         </div>
 
+        <!-- Участки -->
         <div id="locationsView" class="hidden">
             <h2 class="text-3xl font-bold text-gray-800 mb-6">Управление участками</h2>
             <div class="flex justify-between items-center mb-4">
@@ -215,7 +257,6 @@
                         <tr>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">ID</th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
-                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Дочерних</th>
                             <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Действие</th>
                         </tr>
                     </thead>
@@ -226,7 +267,7 @@
     </main>
 </div>
 
-<!-- Модальные окна (сокращены для краткости, но функционал сохранён) -->
+<!-- Модальное окно просмотра заявки -->
 <div id="viewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
     <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="p-6">
@@ -236,7 +277,13 @@
             </div>
             <div id="modalContent" class="space-y-4"></div>
             <div class="mt-6 pt-4 border-t">
-                <h4 class="font-semibold mb-2">Комментарии:</h4>
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-semibold">Комментарии:</h4>
+                    <button onclick="showHistoryModal(currentModalRequestId)" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1 px-3 rounded-md text-sm transition flex items-center">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        История
+                    </button>
+                </div>
                 <div id="modalComments" class="space-y-3 max-h-48 overflow-y-auto"></div>
                 <div class="mt-4">
                     <input type="text" id="adminCommentInput" placeholder="Добавить комментарий..." class="w-full p-2 border rounded-md">
@@ -247,12 +294,91 @@
     </div>
 </div>
 
+<!-- Модальное окно истории -->
+<div id="historyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="card w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-xl font-bold text-gray-800">История изменений</h3>
+                <button onclick="toggleHistoryModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div id="historyList" class="space-y-3"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно медиа -->
+<div id="mediaModal" class="hidden fixed inset-0 bg-black z-[100] flex items-center justify-center p-4">
+    <button onclick="toggleMediaModal()" class="absolute top-4 right-4 text-white text-4xl leading-none z-10">&times;</button>
+    <div id="mediaModalContent" class="w-full h-full flex items-center justify-center"></div>
+</div>
+
+<!-- Модальное окно новостей -->
+<div id="newsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="card w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-xl font-bold text-gray-800" id="newsModalTitle">Добавить новость</h3>
+                <button onclick="toggleNewsModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <form onsubmit="saveNews(event)">
+                <input type="hidden" id="newsId">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Заголовок</label>
+                    <input type="text" id="newsTitle" required class="w-full p-2 border rounded-md">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Текст новости</label>
+                    <textarea id="newsText" rows="4" required class="w-full p-2 border rounded-md"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Автор</label>
+                    <input type="text" id="newsAuthor" value="Администратор" class="w-full p-2 border rounded-md">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Источник</label>
+                    <input type="text" id="newsSource" placeholder="Например: Столовая" class="w-full p-2 border rounded-md">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Иконка</label>
+                    <input type="text" id="newsIcon" value="📰" class="w-full p-2 border rounded-md">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition">Сохранить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно участков -->
+<div id="locationModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="card w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-xl font-bold text-gray-800" id="locationModalTitle">Добавить участок</h3>
+                <button onclick="toggleLocationModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <form onsubmit="saveLocation(event)">
+                <input type="hidden" id="locId">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Название</label>
+                    <input type="text" id="locName" required class="w-full p-2 border rounded-md">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition">Сохранить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
-    // --- КОНФИГУРАЦИЯ ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyubDLEgXbfdFT2zS336FV1BYiFatbiRydA-AGeczfukrpaGg-mMZBEaFBdSq53z3JF/exec';
+    // === НАСТРОЙКИ SUPABASE ===
+    const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
     
+    // Инициализация Supabase клиента
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     // --- СОСТОЯНИЕ ---
-    let currentUser = { name: 'Тестовый Администратор', empId: '00000', role: 'Администратор' };
+    let currentUser = { name: 'Администратор', empId: '00000', role: 'Администратор' };
     let requests = [];
     let users = [];
     let locations = [];
@@ -262,133 +388,259 @@
     let typeChartInstance = null;
     let authorChartInstance = null;
     let isSidebarCollapsed = false;
-    
+    let isLoading = false;
+
     // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
     function getPaddedId(id) { return String(id).padStart(5, '0'); }
-    function formatFullDate(iso) { if (!iso) return '—'; const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; }
-    function formatFullDateTime(iso) { if (!iso) return '—'; const d = new Date(iso); return `${formatFullDate(iso)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
-    function getStatusText(s) { if(s==='new') return 'Новая'; if(s==='work') return 'В работе'; return 'Завершено'; }
-    function getStatusColor(s) { if(s==='new') return 'status-new'; if(s==='work') return 'status-work'; return 'status-approved'; }
-    
-    function getDueDateClass(dueDateIso) {
-        if (!dueDateIso) return 'text-gray-500';
-        const today = new Date(); today.setHours(0, 0, 0, 0);
-        const due = new Date(dueDateIso); due.setHours(0, 0, 0, 0);
-        const oneWeek = 7 * 24 * 60 * 60 * 1000;
-        const timeRemaining = due.getTime() - today.getTime();
-        return timeRemaining <= oneWeek ? 'text-red-600 font-bold' : 'text-gray-900';
+    function formatDate(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
     }
-    
-    // --- РАБОТА С API ---
+    function formatDateTime(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return `${formatDate(iso)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+    function getStatusText(s) {
+        if(s==='new') return 'Новая';
+        if(s==='work') return 'В работе';
+        if(s==='approved') return 'Завершено';
+        return s;
+    }
+    function getStatusColor(s) {
+        if(s==='new') return 'status-new';
+        if(s==='work') return 'status-work';
+        if(s==='approved') return 'status-approved';
+        return 'bg-gray-100 text-gray-700';
+    }
+    function getRoleColor(role) {
+        if(role === 'Администратор') return 'bg-red-200 text-red-800';
+        if(role === 'Начальник') return 'bg-blue-200 text-blue-800';
+        if(role === 'Мастер') return 'bg-yellow-200 text-yellow-800';
+        if(role === 'Инженер') return 'bg-indigo-200 text-indigo-800';
+        return 'bg-gray-200 text-gray-800';
+    }
+
+    // --- ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE ---
+    async function showLoading(show = true) {
+        const indicator = document.getElementById('refreshIndicator');
+        if (indicator) {
+            if (show) {
+                indicator.classList.remove('hidden');
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.add('hidden');
+                indicator.classList.remove('active');
+            }
+        }
+    }
+
     async function loadRequests() {
+        if (isLoading) return;
+        isLoading = true;
+        showLoading(true);
+        
         try {
-            const response = await fetch(`${API_URL}?sheet=requests`);
-            const data = await response.json();
-            requests = data.map((r, index) => ({
-                id: r.id || index + 1,
+            const { data, error } = await supabase
+                .from('requests')
+                .select('*')
+                .order('date', { ascending: false });
+            
+            if (error) throw error;
+            
+            requests = (data || []).map(r => ({
+                id: r.id,
                 type: r.type,
                 desc: r.description,
                 location: r.location,
                 author: r.author,
-                authorId: r.authorId,
+                authorId: r.author_id,
                 date: r.date,
                 status: r.status || 'new',
                 media: r.image ? [r.image] : [],
-                likes: parseInt(r.likes) || 0,
-                comments: r.comments ? JSON.parse(r.comments) : [],
-                assignedTo: r.assignedTo || null,
-                history: [{ type: 'create', detail: 'Заявка создана', by: r.author, date: r.date }]
+                likes: r.likes || 0,
+                comments: r.comments || [],
+                assignedTo: r.assigned_to
             }));
+            
             renderRequests();
             updateStats();
+            renderAnalytics(); // Обновляем аналитику при загрузке
         } catch (error) {
             console.error('Ошибка загрузки заявок:', error);
             requests = [];
+        } finally {
+            isLoading = false;
+            showLoading(false);
         }
     }
-    
+
     async function loadUsers() {
         try {
-            const response = await fetch(`${API_URL}?sheet=users`);
-            users = await response.json();
+            const { data, error } = await supabase
+                .from('users')
+                .select('*');
+            
+            if (error) throw error;
+            
+            users = (data || []).map(u => ({
+                id: u.id,
+                name: u.name,
+                role: u.role || 'Работник',
+                location: u.department || '—',
+                points: u.points || 0,
+                email: u.email || '',
+                achievements: u.completed_achievements || []
+            }));
+            
             renderUsers();
+            document.getElementById('totalUsersCount').textContent = users.length;
         } catch (error) {
             console.error('Ошибка загрузки пользователей:', error);
             users = [];
         }
     }
-    
+
+    async function loadNews() {
+        try {
+            const { data, error } = await supabase
+                .from('news')
+                .select('*')
+                .order('date', { ascending: false });
+            
+            if (error) throw error;
+            
+            news = data || [];
+            renderNews();
+            document.getElementById('totalNewsCount').textContent = news.length;
+        } catch (error) {
+            console.error('Ошибка загрузки новостей:', error);
+            news = [];
+        }
+    }
+
     async function saveRequest(request) {
         try {
-            const payload = {
-                sheetName: 'requests',
-                data: {
+            const { error } = await supabase
+                .from('requests')
+                .upsert({
                     id: request.id,
                     type: request.type,
                     description: request.desc,
                     location: request.location,
                     author: request.author,
-                    authorId: request.authorId || '',
+                    author_id: request.authorId,
                     date: request.date,
                     status: request.status,
-                    image: request.media?.[0] || '',
+                    image: request.media?.[0] || null,
                     likes: request.likes || 0,
-                    comments: JSON.stringify(request.comments || []),
-                    assignedTo: request.assignedTo || ''
-                }
-            };
-            await fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+                    comments: request.comments || [],
+                    assigned_to: request.assignedTo
+                });
+            
+            if (error) throw error;
+            return true;
         } catch (error) {
             console.error('Ошибка сохранения заявки:', error);
+            return false;
         }
     }
-    
+
+    async function saveUser(user) {
+        try {
+            const { error } = await supabase
+                .from('users')
+                .upsert({
+                    id: user.id,
+                    name: user.name,
+                    role: user.role,
+                    department: user.location,
+                    points: user.points,
+                    email: user.email
+                });
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error('Ошибка сохранения пользователя:', error);
+        }
+    }
+
+    async function saveNewsItem(newsItem) {
+        try {
+            const { error } = await supabase
+                .from('news')
+                .upsert(newsItem);
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error('Ошибка сохранения новости:', error);
+        }
+    }
+
+    async function deleteNewsItem(id) {
+        try {
+            const { error } = await supabase
+                .from('news')
+                .delete()
+                .eq('id', id);
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error('Ошибка удаления новости:', error);
+        }
+    }
+
     // --- ИНИЦИАЛИЗАЦИЯ ---
     async function initAdminPanel() {
         document.getElementById('adminNameDisplay').textContent = currentUser.name;
         document.getElementById('headerAdminNameDisplay').textContent = currentUser.name;
         document.getElementById('headerAdminRoleDisplay').textContent = currentUser.role;
         
-        await loadRequests();
-        await loadUsers();
+        // Загружаем все данные
+        await Promise.all([
+            loadRequests(),
+            loadUsers(),
+            loadNews()
+        ]);
         
-        locations = getInitialLocations();
-        news = getInitialNews();
-        
-        renderNews();
+        // Локальные данные для участков
+        locations = [
+            { id: 1, name: 'Производство' },
+            { id: 2, name: 'Склад' },
+            { id: 3, name: 'Офис' },
+            { id: 4, name: 'Цех 1' },
+            { id: 5, name: 'Цех 2' }
+        ];
         renderLocations();
+        
+        // Подписка на изменения
+        supabase
+            .channel('admin-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, 
+                () => { loadRequests(); })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, 
+                () => { loadUsers(); })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'news' }, 
+                () => { loadNews(); })
+            .subscribe();
+        
         switchView('requestsView');
     }
-    
-    function getInitialLocations() {
-        return [
-            { id: 1001, name: 'Общий', parentId: null },
-            { id: 1002, name: 'Участок Помола Сырья', parentId: null },
-            { id: 1003, name: 'Молотковая дробилка №1', parentId: 1002 },
-            { id: 1004, name: 'Мельница шаровая №3', parentId: 1002 },
-            { id: 1005, name: 'Отдел IT', parentId: null },
-            { id: 1006, name: 'Служба главного инженера', parentId: null }
-        ];
+
+    function refreshData() {
+        loadRequests();
+        loadUsers();
+        loadNews();
     }
-    
-    function getInitialNews() {
-        return [
-            { id: 1, title: 'Успешный запуск пилотного проекта Kaizen!', text: 'Система Kaizen успешно прошла тестирование.', author: 'Администрация', date: new Date(Date.now() - 86400000 * 7).toISOString(), media: [] },
-            { id: 2, title: 'Обновление правил подачи рисков', text: 'С 1 декабря 2025 года вступает в силу новый регламент.', author: 'Служба безопасности', date: new Date(Date.now() - 86400000 * 3).toISOString(), media: [] }
-        ];
-    }
-    
+
+    // --- УПРАВЛЕНИЕ ЗАЯВКАМИ ---
     function updateStats() {
         document.getElementById('statTotal').textContent = requests.length;
         document.getElementById('statWork').textContent = requests.filter(r => r.status === 'work').length;
         document.getElementById('statNew').textContent = requests.filter(r => r.status === 'new').length;
     }
-    
+
     function clearFilters() {
         document.getElementById('searchFilter').value = '';
         document.getElementById('typeFilter').value = 'all';
@@ -397,7 +649,7 @@
         document.getElementById('endDateFilter').value = '';
         renderRequests();
     }
-    
+
     function renderRequests() {
         const tableBody = document.getElementById('requestsTableBody');
         const searchVal = document.getElementById('searchFilter').value.toLowerCase();
@@ -410,106 +662,89 @@
         const endTimestamp = endDateVal ? new Date(endDateVal).setHours(23,59,59,999) : null;
         
         let filteredRequests = requests.filter(r => {
-            const searchMatch = searchVal === '' || r.id.toString().includes(searchVal) || r.desc.toLowerCase().includes(searchVal);
+            const searchMatch = searchVal === '' || 
+                r.id.toString().includes(searchVal) || 
+                (r.desc || '').toLowerCase().includes(searchVal);
             const typeMatch = typeFilter === 'all' || r.type === typeFilter;
             const statusMatch = statusFilter === 'all' || r.status === statusFilter;
-            const requestDate = new Date(r.date).getTime();
-            const dateMatch = (!startTimestamp || requestDate >= startTimestamp) && (!endTimestamp || requestDate <= endTimestamp);
+            const requestDate = r.date ? new Date(r.date).getTime() : 0;
+            const dateMatch = (!startTimestamp || requestDate >= startTimestamp) && 
+                             (!endTimestamp || requestDate <= endTimestamp);
             return searchMatch && typeMatch && statusMatch && dateMatch;
-        }).sort((a, b) => b.id - a.id);
+        });
         
         tableBody.innerHTML = filteredRequests.map(r => {
             const statusText = getStatusText(r.status);
             const statusClass = getStatusColor(r.status);
-            const typeText = r.type === 'idea' ? '<span class="text-blue-600 font-semibold">Идея</span>' : '<span class="text-red-600 font-semibold">Риск</span>';
-            const createDate = formatFullDate(r.date);
-            const dueDateText = formatFullDate(r.dueDate);
-            const dueDateClass = getDueDateClass(r.dueDate);
+            const typeText = r.type === 'idea' 
+                ? '<span class="text-blue-600 font-semibold">💡 Идея</span>' 
+                : '<span class="text-red-600 font-semibold">⚠️ Риск</span>';
             
-            const mediaThumb = r.media && r.media[0] ? `<div class="w-10 h-10 bg-gray-100 rounded-md border flex items-center justify-center text-xs">📷</div>` : '<span class="text-gray-300">—</span>';
+            const mediaThumb = r.media && r.media[0] 
+                ? '<span class="text-blue-500">📷</span>' 
+                : '<span class="text-gray-300">—</span>';
             
             return `
-                <tr class="data-row cursor-pointer" onclick="showViewModal(${r.id})">
+                <tr class="data-row" onclick="showViewModal(${r.id})">
                     <td class="px-3 py-3 text-sm font-medium text-gray-900">${getPaddedId(r.id)}</td>
                     <td class="px-3 py-3 text-sm">${typeText}</td>
                     <td class="px-3 py-3 text-center">${mediaThumb}</td>
-                    <td class="px-3 py-3 text-sm text-gray-700 max-w-xs overflow-hidden truncate" title="${r.desc}">${r.desc}</td>
-                    <td class="px-3 py-3 text-sm text-gray-700">${r.author}</td>
-                    <td class="px-3 py-3 text-sm text-gray-500">${createDate}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700 max-w-xs truncate" title="${r.desc || ''}">${r.desc || ''}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700">${r.author || '—'}</td>
+                    <td class="px-3 py-3 text-sm text-gray-500">${formatDate(r.date)}</td>
                     <td class="px-3 py-3 text-sm text-gray-700">${r.assignedTo || '—'}</td>
                     <td class="px-3 py-3"><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    <td class="px-3 py-3 text-sm ${dueDateClass}">${dueDateText}</td>
                 </tr>
             `;
         }).join('');
         
         if (filteredRequests.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-gray-500">Заявки не найдены</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-gray-500">Заявки не найдены</td></tr>';
         }
     }
-    
-    function renderNews() {
-        const tableBody = document.getElementById('newsTableBody');
-        document.getElementById('totalNewsCount').textContent = news.length;
-        tableBody.innerHTML = news.map(n => `
-            <tr class="data-row cursor-pointer" onclick="showNewsDetailsModal(${n.id})">
-                <td class="px-3 py-3 text-sm font-medium">${n.id}</td>
-                <td class="px-3 py-3 text-center">${n.media && n.media[0] ? '📷' : '—'}</td>
-                <td class="px-3 py-3 text-sm text-gray-800">${n.title}</td>
-                <td class="px-3 py-3 text-sm text-gray-500">${formatFullDate(n.date)}</td>
-                <td class="px-3 py-3 text-sm text-gray-700">${n.author || '—'}</td>
-            </tr>
-        `).join('');
+
+    async function changeStatus(id, newStatus) {
+        const r = requests.find(r => r.id == id);
+        if (r) {
+            r.status = newStatus;
+            const success = await saveRequest(r);
+            if (success) {
+                renderRequests();
+                updateStats();
+                if (currentModalRequestId === id) showViewModal(id);
+            }
+        }
     }
-    
-    function renderUsers() {
-        const tableBody = document.getElementById('usersTableBody');
-        document.getElementById('totalUsersCount').textContent = users.length;
-        tableBody.innerHTML = users.map(u => `
-            <tr class="data-row">
-                <td class="px-3 py-3 text-sm font-medium">${u.id}</td>
-                <td class="px-3 py-3 text-sm text-blue-600 font-semibold cursor-pointer hover:underline" onclick="showUserCardModal(${u.id})">${u.name}</td>
-                <td class="px-3 py-3 text-sm"><span class="status-badge ${getRoleColor(u.role)}">${u.role}</span></td>
-                <td class="px-3 py-3 text-sm">${u.location || '—'}</td>
-                <td class="px-3 py-3 text-sm text-yellow-600 font-bold">${u.points}</td>
-                <td class="px-3 py-3 text-sm">
-                    <select onchange="changeUserRole(${u.id}, this.value)" class="p-1 border rounded-md text-xs">
-                        <option value="${u.role}" selected>${u.role}</option>
-                        <option value="Администратор">Администратор</option>
-                        <option value="Начальник">Начальник</option>
-                        <option value="Мастер">Мастер</option>
-                        <option value="Работник">Работник</option>
-                    </select>
-                </td>
-            </tr>
-        `).join('');
+
+    async function assignRequest(id, assignedToName) {
+        const r = requests.find(r => r.id == id);
+        if (r) {
+            r.assignedTo = assignedToName === 'none' ? null : assignedToName;
+            await saveRequest(r);
+            renderRequests();
+        }
     }
-    
-    function getRoleColor(role) {
-        if(role === 'Администратор') return 'bg-red-200 text-red-800';
-        if(role === 'Начальник') return 'bg-blue-200 text-blue-800';
-        if(role === 'Мастер') return 'bg-yellow-200 text-yellow-800';
-        return 'bg-gray-200 text-gray-800';
+
+    async function addAdminComment() {
+        const input = document.getElementById('adminCommentInput');
+        const text = input.value.trim();
+        const r = requests.find(req => req.id === currentModalRequestId);
+        
+        if (r && text) {
+            if (!r.comments) r.comments = [];
+            r.comments.push({ 
+                author: currentUser.name, 
+                text: text, 
+                date: new Date().toISOString() 
+            });
+            await saveRequest(r);
+            input.value = '';
+            showViewModal(currentModalRequestId);
+            renderRequests();
+        }
     }
-    
-    function renderLocations() {
-        const tableBody = document.getElementById('locationsTableBody');
-        tableBody.innerHTML = locations.map(l => {
-            const childCount = locations.filter(child => child.parentId === l.id).length;
-            return `
-                <tr class="data-row">
-                    <td class="px-3 py-3 text-sm text-gray-500">${l.id}</td>
-                    <td class="px-3 py-3 text-sm ${l.parentId ? 'pl-8 font-normal' : 'pl-4 font-semibold'}">${l.name}</td>
-                    <td class="px-3 py-3 text-sm text-gray-700">${childCount}</td>
-                    <td class="px-3 py-3 text-sm space-x-2">
-                        <button onclick="showLocationModal('edit', ${l.id})" class="text-blue-600 hover:text-blue-800">Ред.</button>
-                        <button onclick="deleteLocation(${l.id})" class="text-red-600 hover:text-red-800">Удал.</button>
-                    </td>
-                </tr>
-            `;
-        }).join('');
-    }
-    
+
+    // --- ПРОСМОТР ЗАЯВКИ ---
     function showViewModal(id) {
         const r = requests.find(r => r.id === id);
         if (!r) return;
@@ -517,80 +752,340 @@
         
         document.getElementById('modalTitle').textContent = `Детали заявки ID: ${getPaddedId(r.id)}`;
         
+        const allUsers = users.map(u => u.name);
+        const userOptions = allUsers.map(u => 
+            `<option value="${u}" ${r.assignedTo === u ? 'selected' : ''}>${u}</option>`
+        ).join('');
+        
+        const statusOptions = ['new', 'work', 'approved'].map(s => 
+            `<option value="${s}" ${r.status === s ? 'selected' : ''}>${getStatusText(s)}</option>`
+        ).join('');
+        
+        let mediaHTML = '';
+        if (r.media && r.media[0]) {
+            mediaHTML = `
+                <div class="mt-4">
+                    <p class="font-semibold mb-2">Медиафайл:</p>
+                    <img src="${r.media[0]}" class="max-h-48 rounded-md border cursor-pointer" onclick="openMediaModal('${r.media[0]}')">
+                </div>
+            `;
+        }
+        
         const modalContent = document.getElementById('modalContent');
         modalContent.innerHTML = `
             <div class="grid grid-cols-2 gap-4 text-sm mb-4 pb-4 border-b">
                 <div><p class="text-gray-500">Тип:</p><p class="font-bold">${r.type === 'idea' ? '💡 Идея' : '⚠️ Риск'}</p></div>
                 <div><p class="text-gray-500">Автор:</p><p class="font-bold">${r.author}</p></div>
-                <div><p class="text-gray-500">Дата:</p><p class="font-bold">${formatFullDate(r.date)}</p></div>
-                <div><p class="text-gray-500">Участок:</p><p class="font-bold">${r.location}</p></div>
+                <div><p class="text-gray-500">Дата:</p><p class="font-bold">${formatDateTime(r.date)}</p></div>
+                <div><p class="text-gray-500">Участок:</p><p class="font-bold">${r.location || '—'}</p></div>
             </div>
-            <div><p class="font-semibold mb-1">Описание:</p><p class="text-gray-700">${r.desc}</p></div>
-            ${r.media && r.media[0] ? `<div class="mt-4"><p class="font-semibold mb-2">Медиа:</p><img src="${r.media[0]}" class="max-h-48 rounded-md border"></div>` : ''}
+            <div><p class="font-semibold mb-1">Описание:</p><p class="text-gray-700">${r.desc || ''}</p></div>
+            ${mediaHTML}
+            <div class="p-4 border border-gray-200 bg-gray-50 rounded-md mt-6">
+                <h4 class="font-bold text-gray-700 mb-3">Управление</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Статус</label>
+                        <select onchange="changeStatus(${r.id}, this.value)" class="text-sm border rounded p-1 w-full ${getStatusColor(r.status)}">
+                            ${statusOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Ответственный</label>
+                        <select onchange="assignRequest(${r.id}, this.value)" class="text-sm border rounded p-1 bg-white w-full">
+                            <option value="none" ${!r.assignedTo ? 'selected' : ''}>Не назначен</option>
+                            ${userOptions}
+                        </select>
+                    </div>
+                </div>
+            </div>
         `;
         
         const commentsHtml = r.comments && r.comments.length > 0 
-            ? r.comments.map(c => `<div class="border p-2 rounded-md bg-gray-50"><p class="font-medium text-sm">${c.author}:</p><p class="text-gray-700 text-sm">${c.text}</p><span class="text-xs text-gray-400">${formatFullDateTime(c.date)}</span></div>`).join('')
+            ? r.comments.map(c => `
+                <div class="border p-2 rounded-md bg-gray-50">
+                    <p class="font-medium text-sm">${c.author}:</p>
+                    <p class="text-gray-700 text-sm">${c.text}</p>
+                    <span class="text-xs text-gray-400">${formatDateTime(c.date)}</span>
+                </div>
+            `).join('')
             : '<p class="text-gray-500 text-sm">Нет комментариев.</p>';
-        document.getElementById('modalComments').innerHTML = commentsHtml;
         
+        document.getElementById('modalComments').innerHTML = commentsHtml;
         document.getElementById('viewModal').classList.remove('hidden');
     }
-    
-    function toggleViewModal() { document.getElementById('viewModal').classList.toggle('hidden'); }
-    
-    function addAdminComment() {
-        const input = document.getElementById('adminCommentInput');
-        const text = input.value.trim();
-        const r = requests.find(req => req.id === currentModalRequestId);
+
+    function toggleViewModal() { 
+        document.getElementById('viewModal').classList.toggle('hidden'); 
+    }
+
+    // --- ИСТОРИЯ (упрощенно) ---
+    function showHistoryModal(id) {
+        const historyList = document.getElementById('historyList');
+        historyList.innerHTML = '<p class="text-gray-500">История изменений будет доступна в следующей версии</p>';
+        toggleHistoryModal();
+    }
+
+    function toggleHistoryModal() {
+        document.getElementById('historyModal').classList.toggle('hidden');
+    }
+
+    // --- МЕДИА ---
+    function openMediaModal(url) {
+        const content = document.getElementById('mediaModalContent');
+        content.innerHTML = `<img src="${url}" class="max-w-full max-h-full object-contain">`;
+        toggleMediaModal();
+    }
+
+    function toggleMediaModal() {
+        document.getElementById('mediaModal').classList.toggle('hidden');
+    }
+
+    // --- АНАЛИТИКА ---
+    function renderAnalytics() {
+        const statusCounts = { new: 0, work: 0, approved: 0 };
+        const typeCounts = { idea: 0, risk: 0 };
+        const authorCounts = {};
         
-        if (r && text) {
-            if (!r.comments) r.comments = [];
-            r.comments.push({ author: currentUser.name, text: text, date: new Date().toISOString() });
-            saveRequest(r);
-            input.value = '';
-            showViewModal(currentModalRequestId);
-            renderRequests();
+        requests.forEach(r => {
+            statusCounts[r.status] = (statusCounts[r.status] || 0) + 1;
+            typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+            authorCounts[r.author] = (authorCounts[r.author] || 0) + 1;
+        });
+        
+        const sortedAuthors = Object.entries(authorCounts)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+        
+        // Статус
+        const statusCtx = document.getElementById('statusChart')?.getContext('2d');
+        if (statusCtx) {
+            if (statusChartInstance) statusChartInstance.destroy();
+            statusChartInstance = new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Новая', 'В работе', 'Завершено'],
+                    datasets: [{
+                        data: [statusCounts.new, statusCounts.work, statusCounts.approved],
+                        backgroundColor: ['#2ecc71', '#f39c12', '#3498db']
+                    }]
+                }
+            });
+        }
+        
+        // Тип
+        const typeCtx = document.getElementById('typeChart')?.getContext('2d');
+        if (typeCtx) {
+            if (typeChartInstance) typeChartInstance.destroy();
+            typeChartInstance = new Chart(typeCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Идеи', 'Риски'],
+                    datasets: [{
+                        data: [typeCounts.idea, typeCounts.risk],
+                        backgroundColor: ['#9b59b6', '#e74c3c']
+                    }]
+                }
+            });
+        }
+        
+        // Авторы
+        const authorCtx = document.getElementById('authorChart')?.getContext('2d');
+        if (authorCtx) {
+            if (authorChartInstance) authorChartInstance.destroy();
+            authorChartInstance = new Chart(authorCtx, {
+                type: 'bar',
+                data: {
+                    labels: sortedAuthors.map(([name]) => name),
+                    datasets: [{
+                        label: 'Количество заявок',
+                        data: sortedAuthors.map(([, count]) => count),
+                        backgroundColor: '#1abc9c'
+                    }]
+                },
+                options: {
+                    scales: { y: { beginAtZero: true } },
+                    plugins: { legend: { display: false } }
+                }
+            });
         }
     }
-    
-    async function changeStatus(id, newStatus) {
-        const r = requests.find(r => r.id === id);
-        if (r) {
-            r.status = newStatus;
-            await saveRequest(r);
-            renderRequests();
-            updateStats();
-            if (currentModalRequestId === id) showViewModal(id);
+
+    // --- НОВОСТИ ---
+    function renderNews() {
+        const tableBody = document.getElementById('newsTableBody');
+        tableBody.innerHTML = news.map(n => `
+            <tr>
+                <td class="px-3 py-3 text-sm font-medium">${n.id}</td>
+                <td class="px-3 py-3 text-center">${n.media && n.media[0] ? '📷' : '—'}</td>
+                <td class="px-3 py-3 text-sm text-gray-800">${n.title || ''}</td>
+                <td class="px-3 py-3 text-sm text-gray-500">${formatDate(n.date)}</td>
+                <td class="px-3 py-3 text-sm text-gray-700">${n.author || '—'}</td>
+                <td class="px-3 py-3 text-sm space-x-2">
+                    <button onclick="editNews(${n.id})" class="text-blue-600 hover:text-blue-800">✏️</button>
+                    <button onclick="deleteNews(${n.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function toggleNewsModal() {
+        document.getElementById('newsModal').classList.toggle('hidden');
+    }
+
+    function showNewsModal(mode, id = null) {
+        document.getElementById('newsModalTitle').textContent = mode === 'add' ? 'Добавить новость' : 'Редактировать новость';
+        document.getElementById('newsId').value = id || '';
+        
+        if (mode === 'edit' && id) {
+            const n = news.find(n => n.id === id);
+            if (n) {
+                document.getElementById('newsTitle').value = n.title || '';
+                document.getElementById('newsText').value = n.content || '';
+                document.getElementById('newsAuthor').value = n.author || 'Администратор';
+                document.getElementById('newsSource').value = n.source || '';
+                document.getElementById('newsIcon').value = n.icon || '📰';
+            }
+        } else {
+            document.getElementById('newsTitle').value = '';
+            document.getElementById('newsText').value = '';
+            document.getElementById('newsAuthor').value = 'Администратор';
+            document.getElementById('newsSource').value = '';
+            document.getElementById('newsIcon').value = '📰';
+        }
+        
+        toggleNewsModal();
+    }
+
+    async function saveNews(event) {
+        event.preventDefault();
+        
+        const id = document.getElementById('newsId').value;
+        const newsItem = {
+            id: id ? parseInt(id) : undefined,
+            title: document.getElementById('newsTitle').value,
+            content: document.getElementById('newsText').value,
+            author: document.getElementById('newsAuthor').value,
+            source: document.getElementById('newsSource').value,
+            icon: document.getElementById('newsIcon').value,
+            date: new Date().toISOString(),
+            media: []
+        };
+        
+        await saveNewsItem(newsItem);
+        await loadNews();
+        toggleNewsModal();
+    }
+
+    async function deleteNews(id) {
+        if (confirm('Удалить новость?')) {
+            await deleteNewsItem(id);
+            await loadNews();
         }
     }
-    
-    async function assignRequest(id, assignedToName) {
-        const r = requests.find(r => r.id === id);
-        if (r) {
-            r.assignedTo = assignedToName === 'none' ? null : assignedToName;
-            await saveRequest(r);
-            renderRequests();
+
+    // --- ПОЛЬЗОВАТЕЛИ ---
+    function renderUsers() {
+        const tableBody = document.getElementById('usersTableBody');
+        tableBody.innerHTML = users.map(u => {
+            const roleClass = getRoleColor(u.role);
+            return `
+                <tr>
+                    <td class="px-3 py-3 text-sm font-medium">${u.id}</td>
+                    <td class="px-3 py-3 text-sm text-blue-600 font-semibold">${u.name}</td>
+                    <td class="px-3 py-3 text-sm"><span class="status-badge ${roleClass}">${u.role}</span></td>
+                    <td class="px-3 py-3 text-sm">${u.location}</td>
+                    <td class="px-3 py-3 text-sm text-yellow-600 font-bold">${u.points}</td>
+                    <td class="px-3 py-3 text-sm">
+                        <select onchange="changeUserRole('${u.id}', this.value)" class="p-1 border rounded-md text-xs">
+                            <option value="${u.role}" selected>${u.role}</option>
+                            <option value="Администратор">Администратор</option>
+                            <option value="Начальник">Начальник</option>
+                            <option value="Мастер">Мастер</option>
+                            <option value="Работник">Работник</option>
+                        </select>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function changeUserRole(id, newRole) {
+        const user = users.find(u => u.id == id);
+        if (user) {
+            user.role = newRole;
+            await saveUser({
+                id: user.id,
+                name: user.name,
+                role: newRole,
+                location: user.location,
+                points: user.points,
+                email: user.email
+            });
+            renderUsers();
         }
     }
-    
-    async function deletePost(id) {
-        if(confirm(`Удалить заявку ID: ${getPaddedId(id)}?`)) {
-            requests = requests.filter(r => r.id !== id);
-            await saveRequest({ id, _delete: true });
-            renderRequests();
-            updateStats();
-            toggleViewModal();
+
+    // --- УЧАСТКИ ---
+    function renderLocations() {
+        const tableBody = document.getElementById('locationsTableBody');
+        tableBody.innerHTML = locations.map(l => `
+            <tr>
+                <td class="px-3 py-3 text-sm text-gray-500">${l.id}</td>
+                <td class="px-3 py-3 text-sm">${l.name}</td>
+                <td class="px-3 py-3 text-sm space-x-2">
+                    <button onclick="editLocation(${l.id})" class="text-blue-600 hover:text-blue-800">✏️</button>
+                    <button onclick="deleteLocation(${l.id})" class="text-red-600 hover:text-red-800">🗑️</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function toggleLocationModal() {
+        document.getElementById('locationModal').classList.toggle('hidden');
+    }
+
+    function showLocationModal(mode, id = null) {
+        document.getElementById('locationModalTitle').textContent = mode === 'add' ? 'Добавить участок' : 'Редактировать участок';
+        document.getElementById('locId').value = id || '';
+        
+        if (mode === 'edit' && id) {
+            const loc = locations.find(l => l.id === id);
+            if (loc) {
+                document.getElementById('locName').value = loc.name;
+            }
+        } else {
+            document.getElementById('locName').value = '';
+        }
+        
+        toggleLocationModal();
+    }
+
+    function saveLocation(event) {
+        event.preventDefault();
+        const id = document.getElementById('locId').value;
+        const name = document.getElementById('locName').value;
+        
+        if (id) {
+            const loc = locations.find(l => l.id === parseInt(id));
+            if (loc) loc.name = name;
+        } else {
+            const newId = Math.max(...locations.map(l => l.id), 0) + 1;
+            locations.push({ id: newId, name });
+        }
+        
+        renderLocations();
+        toggleLocationModal();
+    }
+
+    function deleteLocation(id) {
+        if (confirm('Удалить участок?')) {
+            locations = locations.filter(l => l.id !== id);
+            renderLocations();
         }
     }
-    
-    function forceResetData() {
-        if(confirm("Сбросить все данные и восстановить тестовые?")) {
-            localStorage.clear();
-            location.reload();
-        }
-    }
-    
+
+    // --- НАВИГАЦИЯ ---
     function switchView(viewId) {
         document.querySelectorAll('#requestsView, #analyticsView, #newsView, #usersView, #locationsView').forEach(v => v.classList.add('hidden'));
         document.querySelectorAll('.nav-item').forEach(el => {
@@ -607,43 +1102,7 @@
         
         if (viewId === 'analyticsView') renderAnalytics();
     }
-    
-    function renderAnalytics() {
-        const statusCounts = { new: 0, work: 0, approved: 0 };
-        const typeCounts = { idea: 0, risk: 0 };
-        const authorCounts = {};
-        
-        requests.forEach(r => {
-            statusCounts[r.status] = (statusCounts[r.status] || 0) + 1;
-            typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
-            authorCounts[r.author] = (authorCounts[r.author] || 0) + 1;
-        });
-        
-        const sortedAuthors = Object.entries(authorCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-        
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        if (statusChartInstance) statusChartInstance.destroy();
-        statusChartInstance = new Chart(statusCtx, {
-            type: 'doughnut',
-            data: { labels: ['Новая', 'В работе', 'Завершено'], datasets: [{ data: [statusCounts.new, statusCounts.work, statusCounts.approved], backgroundColor: ['#2ecc71', '#f39c12', '#3498db'] }] }
-        });
-        
-        const typeCtx = document.getElementById('typeChart').getContext('2d');
-        if (typeChartInstance) typeChartInstance.destroy();
-        typeChartInstance = new Chart(typeCtx, {
-            type: 'pie',
-            data: { labels: ['Идеи', 'Риски'], datasets: [{ data: [typeCounts.idea, typeCounts.risk], backgroundColor: ['#9b59b6', '#e74c3c'] }] }
-        });
-        
-        const authorCtx = document.getElementById('authorChart').getContext('2d');
-        if (authorChartInstance) authorChartInstance.destroy();
-        authorChartInstance = new Chart(authorCtx, {
-            type: 'bar',
-            data: { labels: sortedAuthors.map(([name]) => name), datasets: [{ label: 'Количество заявок', data: sortedAuthors.map(([, count]) => count), backgroundColor: '#1abc9c' }] },
-            options: { scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
-        });
-    }
-    
+
     function toggleSidebar() {
         const sidebar = document.getElementById('sidebar');
         const toggleIcon = document.getElementById('sidebarToggleIcon');
@@ -657,9 +1116,15 @@
             toggleIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8"></path>';
         }
     }
-    
-    function logoutAdmin() { alert("Выход из админ-панели"); }
-    
+
+    function logoutAdmin() { 
+        if(confirm('Выйти из админ-панели?')) {
+            localStorage.removeItem('kaizenAdmin');
+            location.reload();
+        }
+    }
+
+    // Запуск
     window.onload = initAdminPanel;
 </script>
 </body>
