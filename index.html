@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Kaizen • Service Desk</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { 
             background: #fafafa; 
@@ -34,15 +35,12 @@
         #achievementsContent, #shopContent, #trainingContent { max-height: 1000px; transition: max-height 0.3s ease-out; overflow: hidden; }
         .notification-badge { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; background-color: #ef4444; color: white; border-radius: 9999px; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 1px 4px; line-height: 1; z-index: 10; }
         
-        /* Отступ сверху для контента, чтобы не перекрывать шторку телефона */
         .content-with-safe-area {
             padding-top: max(env(safe-area-inset-top, 20px), 20px);
         }
-        /* Фикс для навигации снизу */
         .bottom-nav-safe {
             padding-bottom: env(safe-area-inset-bottom, 0);
         }
-        /* Анимация загрузки */
         .btn-loading {
             opacity: 0.7;
             pointer-events: none;
@@ -65,23 +63,9 @@
         @keyframes spinner {
             to { transform: rotate(360deg); }
         }
-        /* Индикатор обновления */
-        .refresh-indicator {
-            text-align: center;
-            font-size: 12px;
-            color: #888;
-            padding: 5px;
-            display: none;
-        }
-        .refresh-indicator.active {
-            display: block;
-        }
     </style>
 </head>
 <body class="bg-[#fafafa] min-h-full">
-
-<!-- Индикатор обновления в фоне -->
-<div id="refreshIndicator" class="refresh-indicator">Обновление данных...</div>
 
 <div id="registrationScreen" class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
@@ -191,7 +175,12 @@
         <p class="text-gray-500">Здесь будет чат для прямого общения с администратором.</p>
     </div>
 
-    <div id="newsSection" class="hidden min-h-screen bg-[#fafafa] pb-24"></div>
+    <div id="newsSection" class="hidden min-h-screen bg-[#fafafa] pb-24">
+        <div class="p-4 pt-4">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">Корпоративные новости</h3>
+            <div id="newsListContainer" class="space-y-4"></div>
+        </div>
+    </div>
 
     <div id="userProfile" class="hidden bg-[#fafafa] min-h-screen pb-24">
         <div class="bg-white px-4 py-2 flex justify-end gap-2 sticky top-[53px] z-10">
@@ -432,14 +421,17 @@
 </div>
 
 <script>
-    // --- КОНФИГУРАЦИЯ ---
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyubDLEgXbfdFT2zS336FV1BYiFatbiRydA-AGeczfukrpaGg-mMZBEaFBdSq53z3JF/exec';
+    // === НАСТРОЙКИ SUPABASE ===
+    const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
     
+    // Инициализация Supabase клиента
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     // --- СОСТОЯНИЕ ---
     let currentUser = null;
     let requests = [];
-    let isSubmitting = false; // Флаг для защиты от двойного нажатия
-    let isLoading = false; // Флаг загрузки
+    let isSubmitting = false;
     let currentFeedTab = 'all';
     let currentFilterType = 'all';
     let currentSortBy = 'date';
@@ -479,51 +471,30 @@
         return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}г.`;
     }
     
-    // --- РАБОТА С API GOOGLE SHEETS (с кешированием) ---
-    async function loadRequests(showIndicator = false) {
-        if (isLoading) return; // Предотвращаем множественные загрузки
-        
-        isLoading = true;
-        if (showIndicator) {
-            document.getElementById('refreshIndicator').classList.add('active');
-        }
-        
+    // --- ЗАГРУЗКА ДАННЫХ ИЗ SUPABASE ---
+    async function loadRequests() {
         try {
-            const response = await fetch(`${API_URL}?sheet=requests`);
-            const data = await response.json();
+            const { data, error } = await supabase
+                .from('requests')
+                .select('*')
+                .order('date', { ascending: false });
             
-            // Фильтруем дубликаты по ID
-            const uniqueRequests = [];
-            const seenIds = new Set();
+            if (error) throw error;
             
-            data.forEach(item => {
-                const id = parseInt(item.id) || 0;
-                if (!seenIds.has(id) && id > 0) {
-                    seenIds.add(id);
-                    uniqueRequests.push({
-                        id: id,
-                        type: item.type || 'idea',
-                        author: item.author || 'Неизвестно',
-                        avatar: (item.author || 'Н').split(' ').map(n => n[0]).join(''),
-                        date: item.date || new Date().toISOString(),
-                        location: item.location || 'Не указан',
-                        desc: item.description || '',
-                        likes: parseInt(item.likes) || 0,
-                        status: item.status || 'new',
-                        comments: item.comments ? JSON.parse(item.comments) : [],
-                        media: item.image ? [item.image] : [],
-                        assignedTo: item.assignedTo || null
-                    });
-                }
-            });
-            
-            // Сортируем по дате (новые сверху)
-            uniqueRequests.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            requests = uniqueRequests;
-            
-            // Сохраняем в localStorage для быстрого доступа
-            localStorage.setItem('cachedRequests', JSON.stringify(requests));
+            requests = (data || []).map(r => ({
+                id: r.id,
+                type: r.type,
+                author: r.author,
+                avatar: (r.author || 'Н').split(' ').map(n => n[0]).join(''),
+                date: r.date,
+                location: r.location,
+                desc: r.description,
+                likes: r.likes || 0,
+                status: r.status || 'new',
+                comments: r.comments || [],
+                media: r.image ? [r.image] : [],
+                assignedTo: r.assigned_to
+            }));
             
             renderFeed();
             if (document.getElementById('adminRequestsList')) {
@@ -531,25 +502,30 @@
             }
             updateStats();
             
+            // Сохраняем в кеш
+            localStorage.setItem('cachedRequests', JSON.stringify(requests));
+            
         } catch (error) {
             console.error('Ошибка загрузки заявок:', error);
-            // Если ошибка, пробуем загрузить из кеша
+            // Пробуем загрузить из кеша
             const cached = localStorage.getItem('cachedRequests');
             if (cached) {
                 requests = JSON.parse(cached);
                 renderFeed();
             }
-        } finally {
-            isLoading = false;
-            document.getElementById('refreshIndicator').classList.remove('active');
         }
     }
     
     async function loadUser(empId) {
         try {
-            const response = await fetch(`${API_URL}?sheet=users`);
-            const users = await response.json();
-            return users.find(u => u.id == empId) || null;
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', empId)
+                .single();
+            
+            if (error) throw error;
+            return data;
         } catch (error) {
             console.error('Ошибка загрузки пользователя:', error);
             return null;
@@ -558,9 +534,9 @@
     
     async function saveUser(user) {
         try {
-            const payload = {
-                sheetName: 'users',
-                data: {
+            const { error } = await supabase
+                .from('users')
+                .upsert({
                     id: user.empId,
                     name: user.name,
                     points: user.points || 0,
@@ -568,54 +544,44 @@
                     avatar: user.profilePic || '',
                     phone: user.phone || '',
                     email: user.email || '',
-                    department: user.dept || ''
-                }
-            };
-            // Отправляем без ожидания, чтобы не тормозить интерфейс
-            fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            }).catch(e => console.log('Фоновая отправка пользователя'));
+                    department: user.dept || '',
+                    completed_achievements: user.completedAchievements || [],
+                    unseen_achievements: user.unseenAchievements || [],
+                    is_trained: user.isTrained || false
+                });
+            
+            if (error) throw error;
         } catch (error) {
             console.error('Ошибка сохранения пользователя:', error);
         }
     }
     
     async function saveRequest(request) {
-        if (isSubmitting) return false; // Защита от двойного нажатия
+        if (isSubmitting) return false;
         
         isSubmitting = true;
         const btn = document.getElementById('submitPostBtn');
         if (btn) btn.classList.add('btn-loading');
         
         try {
-            const payload = {
-                sheetName: 'requests',
-                data: {
+            const { error } = await supabase
+                .from('requests')
+                .upsert({
                     id: request.id,
                     type: request.type,
                     description: request.desc,
                     location: request.location,
                     author: request.author,
-                    authorId: currentUser?.empId || '',
+                    author_id: currentUser?.empId || null,
                     date: request.date,
                     status: request.status || 'new',
-                    image: request.media?.[0] || '',
+                    image: request.media?.[0] || null,
                     likes: request.likes || 0,
-                    comments: JSON.stringify(request.comments || []),
-                    assignedTo: request.assignedTo || ''
-                }
-            };
+                    comments: request.comments || [],
+                    assigned_to: request.assignedTo || null
+                });
             
-            await fetch(API_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            
+            if (error) throw error;
             return true;
         } catch (error) {
             console.error('Ошибка сохранения заявки:', error);
@@ -628,7 +594,7 @@
     
     // --- ИНИЦИАЛИЗАЦИЯ ---
     async function init() {
-        // Пытаемся загрузить кешированные заявки сразу для скорости
+        // Загружаем кеш для скорости
         const cached = localStorage.getItem('cachedRequests');
         if (cached) {
             try {
@@ -637,35 +603,44 @@
             } catch (e) {}
         }
         
-        // Загружаем свежие данные в фоне
-        loadRequests(true);
+        // Загружаем свежие данные
+        await loadRequests();
         
-        // Проверяем сохраненного пользователя в разных хранилищах
+        // Проверяем сохраненного пользователя
         const savedUser = localStorage.getItem('kaizenUser') || sessionStorage.getItem('kaizenUser');
         
         if (savedUser) {
             try {
                 currentUser = JSON.parse(savedUser);
                 
-                // Обновляем данные пользователя в фоне
-                loadUser(currentUser.empId).then(dbUser => {
-                    if (dbUser) {
-                        currentUser.points = parseInt(dbUser.points) || 0;
-                        currentUser.role = dbUser.role || 'user';
-                        localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-                        sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-                        updateProfileUI();
-                    }
-                });
+                // Обновляем данные пользователя
+                const dbUser = await loadUser(currentUser.empId);
+                if (dbUser) {
+                    currentUser.points = dbUser.points || 0;
+                    currentUser.role = dbUser.role || 'user';
+                    currentUser.completedAchievements = dbUser.completed_achievements || [];
+                    currentUser.unseenAchievements = dbUser.unseen_achievements || [];
+                    currentUser.isTrained = dbUser.is_trained || false;
+                    
+                    localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+                    sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+                }
                 
                 showApp();
             } catch (e) {
-                console.error('Ошибка загрузки сохраненного пользователя', e);
+                console.error('Ошибка загрузки пользователя', e);
                 document.getElementById('registrationScreen').classList.remove('hidden');
             }
         } else {
             document.getElementById('registrationScreen').classList.remove('hidden');
         }
+        
+        // Подписка на изменения в реальном времени
+        supabase
+            .channel('requests-changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, 
+                () => { loadRequests(); })
+            .subscribe();
         
         document.getElementById('commentForm').addEventListener('submit', addComment);
         document.getElementById('trainingTestForm').addEventListener('submit', (e) => { e.preventDefault(); checkTest(); });
@@ -685,7 +660,6 @@
     async function handleRegistration(e) {
         e.preventDefault();
         
-        // Защита от двойной регистрации
         if (isSubmitting) return;
         isSubmitting = true;
         
@@ -713,7 +687,6 @@
             isTrained: false
         };
         
-        // Сохраняем в оба хранилища для надежности
         localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
         sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
         
@@ -778,17 +751,13 @@
         
         let data = [...requests];
         let searchIdValue = searchInput ? searchInput.value.trim() : '';
-        let isSearchingById = false;
         
         if (searchIdValue !== '') {
             let searchId = parseInt(searchIdValue.replace(/[^0-9]/g, ''), 10);
             if (!isNaN(searchId)) {
                 data = data.filter(r => r.id === searchId);
-                isSearchingById = true;
             } else { data = []; }
-        }
-        
-        if (!isSearchingById && currentUser) {
+        } else if (currentUser) {
             if (currentFeedTab === 'my') { 
                 data = data.filter(r => r.author === currentUser.name); 
             }
@@ -801,7 +770,7 @@
             }
             
             if (currentSortBy === 'date') { 
-                // Уже отсортировано при загрузке
+                // Уже отсортировано
             }
             else if (currentSortBy === 'oldest') { 
                 data.sort((a, b) => new Date(a.date) - new Date(b.date)); 
@@ -884,7 +853,6 @@
     document.getElementById('createForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Защита от двойного нажатия
         if (isSubmitting) return;
         
         const fileInput = document.getElementById('reqMediaFile');
@@ -904,14 +872,11 @@
         const location = document.getElementById('reqLocation').value;
         const desc = document.getElementById('reqDesc').value;
         
-        const maxId = requests.length > 0 ? Math.max(...requests.map(r => r.id)) : 0;
-        const newId = maxId + 1;
-        
+        // Supabase автоматически назначит ID (serial)
         const newPost = {
-            id: newId,
+            id: null, // Будет создано автоматически
             type,
             author: currentUser.name,
-            avatar: currentUser.name.split(' ').map(n => n[0]).join(''),
             date: new Date().toISOString(),
             location,
             desc,
@@ -922,24 +887,26 @@
             assignedTo: null
         };
         
-        // Сначала добавляем в локальный массив (мгновенно)
-        requests.unshift(newPost);
+        // Сначала добавляем локально для скорости
+        const tempId = Date.now(); // Временный ID
+        const tempPost = { ...newPost, id: tempId };
+        requests.unshift(tempPost);
         renderFeed();
         toggleCreateModal();
         e.target.reset();
         document.getElementById('mediaPreview').textContent = '';
         
-        // Потом отправляем в таблицу (в фоне)
-        const success = await saveRequest(newPost);
+        // Сохраняем в Supabase
+        const success = await saveRequest({ ...newPost, id: undefined }); // undefined заставит создать новый ID
         
         if (success) {
             addPoints(5);
             checkAchievements();
-            // Обновляем данные в фоне
-            loadRequests();
+            // Перезагружаем для получения реального ID
+            await loadRequests();
         } else {
             // Если ошибка, убираем из списка
-            requests = requests.filter(r => r.id !== newId);
+            requests = requests.filter(r => r.id !== tempId);
             renderFeed();
             alert('Ошибка при отправке. Попробуйте еще раз.');
         }
@@ -1101,7 +1068,7 @@
         currentUser.points += amount;
         localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
         sessionStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-        saveUser(currentUser);
+        await saveUser(currentUser);
         updateProfileUI();
     }
     
@@ -1236,12 +1203,6 @@
     function renderNews() {
         const newsSection = document.getElementById('newsSection');
         if (!newsSection) return;
-        
-        newsSection.innerHTML = `
-            <div class="p-4 pt-4">
-                <h3 class="text-xl font-bold text-gray-900 mb-4">Корпоративные новости</h3>
-                <div id="newsListContainer" class="space-y-4"></div>
-            </div>`;
         
         const newsList = document.getElementById('newsListContainer');
         if (newsList) {
@@ -1407,7 +1368,6 @@
     async function addComment(e) {
         e.preventDefault();
         
-        // Защита от двойного нажатия
         if (isSubmitting) return;
         isSubmitting = true;
         
@@ -1434,7 +1394,6 @@
         if (!post.comments) post.comments = [];
         post.comments.push(newComment);
         
-        // Обновляем интерфейс сразу
         renderComments(post.comments);
         renderFeed();
         
@@ -1444,7 +1403,6 @@
         const countSpan = document.getElementById('commentCount');
         if (countSpan) countSpan.textContent = post.comments.length;
         
-        // Отправляем в фоне
         await saveRequest(post);
         addPoints(1);
         
@@ -1606,17 +1564,27 @@
     
     async function deletePost(id) {
         if(confirm('Удалить?')) {
-            requests = requests.filter(r => r.id !== id);
-            await saveRequest({ id, _delete: true });
-            renderFeed();
-            updateStats();
-            if (document.getElementById('adminRequestsList')) {
-                renderAdminRequests();
+            try {
+                const { error } = await supabase
+                    .from('requests')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                requests = requests.filter(r => r.id !== id);
+                renderFeed();
+                updateStats();
+                if (document.getElementById('adminRequestsList')) {
+                    renderAdminRequests();
+                }
+            } catch (error) {
+                console.error('Ошибка удаления:', error);
+                alert('Ошибка при удалении');
             }
         }
     }
     
-    // Запуск
     init();
 </script>
 </body>
