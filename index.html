@@ -425,7 +425,7 @@
     const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
     
-    // Инициализация Supabase клиента (только один раз!)
+    // Инициализация Supabase клиента
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // --- СОСТОЯНИЕ ---
@@ -679,6 +679,8 @@
         const email = document.getElementById('regEmail').value;
         const dept = document.getElementById('regDepartment').value;
         
+        console.log('Регистрация пользователя:', { name, empId, phone, email, dept });
+        
         currentUser = {
             name: name,
             empId: empId,
@@ -694,19 +696,23 @@
             isTrained: false
         };
         
+        // Сохраняем в localStorage
         localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+        console.log('Пользователь сохранен в localStorage');
         
-        const saved = await saveUser(currentUser);
-        
-        if (saved) {
-            console.log('Пользователь успешно сохранен в Supabase');
-        } else {
-            console.warn('Пользователь сохранен только локально');
+        // Пытаемся сохранить в Supabase (в фоне)
+        try {
+            await saveUser(currentUser);
+            console.log('Пользователь сохранен в Supabase');
+        } catch (error) {
+            console.warn('Не удалось сохранить в Supabase, но локально пользователь есть');
         }
         
         btn.classList.remove('btn-loading');
         isSubmitting = false;
         
+        // ВАЖНО: Сразу показываем главное приложение!
+        console.log('Показываем главное приложение после регистрации');
         showApp();
     }
     
@@ -722,7 +728,7 @@
         updateProfileUI();
         renderNews();
         
-        if (currentUser.role === 'admin') {
+        if (currentUser && currentUser.role === 'admin') {
             document.getElementById('adminPanel').classList.remove('hidden');
             document.getElementById('userPanel').classList.add('hidden');
             renderAdminRequests();
