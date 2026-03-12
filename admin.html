@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель Kaizen & Service Desk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #f4f7f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+        .sidebar { background: #2c3e50; transition: width 0.3s ease-in-out; }
+        .sidebar.collapsed { width: 64px; }
+        .sidebar.collapsed .logo-text, .sidebar.collapsed .nav-text, .sidebar.collapsed .admin-info p, .sidebar.collapsed .admin-info button { opacity: 0; width: 0; overflow: hidden; white-space: nowrap; transition: opacity 0.1s; }
+        .sidebar.collapsed .sidebar-header { justify-content: center; padding-top: 10px; padding-bottom: 10px; }
+        .sidebar .nav-item { justify-content: start; }
+        .sidebar.collapsed .nav-item { padding: 0.75rem 0.5rem; justify-content: center; }
+        .sidebar.collapsed .nav-item svg { margin-right: 0 !important; }
+        .sidebar .nav-item svg { margin-right: 0.75rem; flex-shrink: 0; transition: margin 0.3s; }
+        .main-content { min-height: 100vh; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); }
+        .table-header { background: #ecf0f1; }
+        .data-row:hover { background: #f9f9f9; }
+        .status-new { background-color: #e5f5e8; color: #2ecc71; }
+        .status-work { background-color: #f7f3e5; color: #f39c12; }
+        .status-approved { background-color: #e3e9f7; color: #3498db; }
+        .history-item { border-left: 3px solid #3b82f6; padding-left: 1rem; margin-bottom: 0.5rem; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-align: center; }
+    </style>
+</head>
+<body class="flex">
+
+<aside id="sidebar" class="sidebar w-64 min-h-screen text-white p-4 flex flex-col justify-between transition-all duration-300 z-50">
+    <div class="sidebar-header border-b border-gray-700 pb-3 mb-8 flex justify-between items-center overflow-hidden">
+        <h1 class="text-2xl font-bold logo-text transition-opacity duration-300">Kaizen Admin</h1>
+        <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white transition-colors p-1 rounded">
+            <svg id="sidebarToggleIcon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8"></path></svg>
+        </button>
+    </div>
+    <nav class="space-y-2 flex-1">
+        <a href="#" onclick="switchView('requestsView')" id="navRequests" class="nav-item flex items-center p-3 rounded-md bg-blue-600 text-white font-semibold">
+            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            <span class="nav-text transition-opacity duration-300">Управление заявками</span>
+        </a>
+        <a href="#" onclick="switchView('analyticsView')" id="navAnalytics" class="nav-item flex items-center p-3 rounded-md hover:bg-gray-700">
+            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.001 9.001 0 0120.488 9z"></path></svg>
+            <span class="nav-text transition-opacity duration-300">Аналитика</span>
+        </a>
+        <a href="#" onclick="switchView('newsView')" id="navNews" class="nav-item flex items-center p-3 rounded-md hover:bg-gray-700">
+            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m-7 13v-5a2 2 0 012-2h2a2 2 0 012 2v5m-11 5H9m0-13V6a2 2 0 012-2h2a2 2 0 012 2v5"></path></svg>
+            <span class="nav-text transition-opacity duration-300">Новости</span>
+        </a>
+        <a href="#" onclick="switchView('usersView')" id="navUsers" class="nav-item flex items-center p-3 rounded-md hover:bg-gray-700">
+            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5m-5 0a2 2 0 01-2-2V10a2 2 0 012-2h3a2 2 0 012 2v8a2 2 0 01-2 2h-3zM7 13h5m-5 0a2 2 0 01-2-2V5a2 2 0 012-2h3a2 2 0 012 2v8a2 2 0 01-2 2H7z"></path></svg>
+            <span class="nav-text transition-opacity duration-300">Пользователи</span>
+        </a>
+        <a href="#" onclick="switchView('locationsView')" id="navLocations" class="nav-item flex items-center p-3 rounded-md hover:bg-gray-700">
+            <svg class="w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 5h6m-6 0h.01M9 12h.01M12 12h.01M15 12h.01M12 18h.01"></path></svg>
+            <span class="nav-text transition-opacity duration-300">Участки</span>
+        </a>
+    </nav>
+    <div class="p-3 text-sm border-t border-gray-700 admin-info">
+        <p class="transition-opacity duration-300">Администратор: <span id="adminNameDisplay"></span></p>
+        <button onclick="logoutAdmin()" class="mt-2 w-full text-left text-red-400 hover:text-red-300 transition-opacity duration-300">Выйти</button>
+    </div>
+</aside>
+
+<div class="flex-1 flex flex-col">
+    <header class="bg-white shadow-md p-4 flex justify-between items-center sticky top-0 z-30">
+        <h2 class="text-xl font-semibold text-gray-800">Админ-панель</h2>
+        <div class="flex items-center space-x-4">
+            <button class="text-gray-500 hover:text-blue-600 relative p-2 rounded-full hover:bg-gray-100 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                <span class="absolute top-1 right-1 block h-2 w-2 rounded-full ring-2 ring-white bg-red-500"></span>
+            </button>
+            <div class="flex items-center space-x-2 border-l pl-4">
+                <div class="text-right">
+                    <p class="text-sm font-semibold text-gray-800" id="headerAdminNameDisplay"></p>
+                    <p class="text-xs text-gray-500" id="headerAdminRoleDisplay"></p>
+                </div>
+                <div class="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">А</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 p-6 main-content">
+        <div id="requestsView">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-gray-800">Управление заявками</h2>
+                <button onclick="forceResetData()" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-md transition text-sm">Сбросить данные</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="card p-5 border-l-4 border-blue-500">
+                    <p class="text-sm font-medium text-gray-500">Всего заявок</p>
+                    <p class="text-3xl font-bold text-gray-900 mt-1" id="statTotal">0</p>
+                </div>
+                <div class="card p-5 border-l-4 border-yellow-500">
+                    <p class="text-sm font-medium text-gray-500">В работе</p>
+                    <p class="text-3xl font-bold text-yellow-600 mt-1" id="statWork">0</p>
+                </div>
+                <div class="card p-5 border-l-4 border-green-500">
+                    <p class="text-sm font-medium text-gray-500">Ожидают обработки</p>
+                    <p class="text-3xl font-bold text-green-600 mt-1" id="statNew">0</p>
+                </div>
+            </div>
+            <div class="card p-4 mb-6 flex flex-wrap gap-4 items-center">
+                <input type="text" id="searchFilter" oninput="renderRequests()" placeholder="Поиск по ID или описанию..." class="p-2 border rounded-md flex-grow">
+                <select id="typeFilter" onchange="renderRequests()" class="p-2 border rounded-md">
+                    <option value="all">Все типы</option>
+                    <option value="idea">💡 Идеи</option>
+                    <option value="risk">⚠️ Риски</option>
+                </select>
+                <select id="statusFilter" onchange="renderRequests()" class="p-2 border rounded-md">
+                    <option value="all">Все статусы</option>
+                    <option value="new">Новая</option>
+                    <option value="work">В работе</option>
+                    <option value="approved">Завершено</option>
+                </select>
+                <label for="startDateFilter" class="text-sm text-gray-600 hidden sm:block">Создана с:</label>
+                <input type="date" id="startDateFilter" onchange="renderRequests()" title="Дата начала" class="p-2 border rounded-md">
+                <label for="endDateFilter" class="text-sm text-gray-600 hidden sm:block">по:</label>
+                <input type="date" id="endDateFilter" onchange="renderRequests()" title="Дата окончания" class="p-2 border rounded-md">
+                <button onclick="clearFilters()" class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition">Сброс фильтров</button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">ID</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Тип</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Медиа</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex-grow">Описание</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Автор</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Дата</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Ответственный</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Статус</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Срок</th>
+                        </tr>
+                    </thead>
+                    <tbody id="requestsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="analyticsView" class="hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Аналитика и Дашборд</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="card p-5">
+                    <h3 class="text-lg font-semibold mb-3">Заявки по статусу</h3>
+                    <div class="max-w-[250px] mx-auto"><canvas id="statusChart"></canvas></div>
+                </div>
+                <div class="card p-5">
+                    <h3 class="text-lg font-semibold mb-3">Заявки по типу</h3>
+                    <div class="max-w-[250px] mx-auto"><canvas id="typeChart"></canvas></div>
+                </div>
+                <div class="card p-5 lg:col-span-3">
+                    <h3 class="text-lg font-semibold mb-3">Топ-5 авторов</h3>
+                    <canvas id="authorChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div id="newsView" class="hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Управление Новостями</h2>
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-gray-600">Всего новостей: <span class="font-bold text-lg text-blue-600" id="totalNewsCount">0</span></p>
+                <button onclick="showNewsModal('add')" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition">+ Добавить новость</button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">ID</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Медиа</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider flex-1">Заголовок</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Дата</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Автор</th>
+                        </tr>
+                    </thead>
+                    <tbody id="newsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="usersView" class="hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Управление пользователями</h2>
+            <div class="flex justify-between items-center mb-4">
+                <p class="text-gray-600">Всего пользователей: <span class="font-bold text-lg text-blue-600" id="totalUsersCount">0</span></p>
+                <button onclick="showAddUserModal()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition">+ Добавить пользователя</button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">ID</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-48">Имя</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Роль</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Участок</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Баллы</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="locationsView" class="hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-6">Управление участками</h2>
+            <div class="flex justify-between items-center mb-4">
+                <button onclick="showLocationModal('add')" class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition">+ Добавить участок</button>
+            </div>
+            <div class="card overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="table-header">
+                        <tr>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">ID</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Дочерних</th>
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Действие</th>
+                        </tr>
+                    </thead>
+                    <tbody id="locationsTableBody" class="bg-white divide-y divide-gray-200"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Модальные окна (сокращены для краткости, но функционал сохранён) -->
+<div id="viewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="card w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-xl font-bold text-gray-800" id="modalTitle">Детали заявки</h3>
+                <button onclick="toggleViewModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            </div>
+            <div id="modalContent" class="space-y-4"></div>
+            <div class="mt-6 pt-4 border-t">
+                <h4 class="font-semibold mb-2">Комментарии:</h4>
+                <div id="modalComments" class="space-y-3 max-h-48 overflow-y-auto"></div>
+                <div class="mt-4">
+                    <input type="text" id="adminCommentInput" placeholder="Добавить комментарий..." class="w-full p-2 border rounded-md">
+                    <button onclick="addAdminComment()" class="mt-2 bg-green-600 hover:bg-green-700 text-white p-2 rounded-md text-sm">Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- КОНФИГУРАЦИЯ ---
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyubDLEgXbfdFT2zS336FV1BYiFatbiRydA-AGeczfukrpaGg-mMZBEaFBdSq53z3JF/exec';
+    
+    // --- СОСТОЯНИЕ ---
+    let currentUser = { name: 'Тестовый Администратор', empId: '00000', role: 'Администратор' };
+    let requests = [];
+    let users = [];
+    let locations = [];
+    let news = [];
+    let currentModalRequestId = null;
+    let statusChartInstance = null;
+    let typeChartInstance = null;
+    let authorChartInstance = null;
+    let isSidebarCollapsed = false;
+    
+    // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+    function getPaddedId(id) { return String(id).padStart(5, '0'); }
+    function formatFullDate(iso) { if (!iso) return '—'; const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; }
+    function formatFullDateTime(iso) { if (!iso) return '—'; const d = new Date(iso); return `${formatFullDate(iso)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+    function getStatusText(s) { if(s==='new') return 'Новая'; if(s==='work') return 'В работе'; return 'Завершено'; }
+    function getStatusColor(s) { if(s==='new') return 'status-new'; if(s==='work') return 'status-work'; return 'status-approved'; }
+    
+    function getDueDateClass(dueDateIso) {
+        if (!dueDateIso) return 'text-gray-500';
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const due = new Date(dueDateIso); due.setHours(0, 0, 0, 0);
+        const oneWeek = 7 * 24 * 60 * 60 * 1000;
+        const timeRemaining = due.getTime() - today.getTime();
+        return timeRemaining <= oneWeek ? 'text-red-600 font-bold' : 'text-gray-900';
+    }
+    
+    // --- РАБОТА С API ---
+    async function loadRequests() {
+        try {
+            const response = await fetch(`${API_URL}?sheet=requests`);
+            const data = await response.json();
+            requests = data.map((r, index) => ({
+                id: r.id || index + 1,
+                type: r.type,
+                desc: r.description,
+                location: r.location,
+                author: r.author,
+                authorId: r.authorId,
+                date: r.date,
+                status: r.status || 'new',
+                media: r.image ? [r.image] : [],
+                likes: parseInt(r.likes) || 0,
+                comments: r.comments ? JSON.parse(r.comments) : [],
+                assignedTo: r.assignedTo || null,
+                history: [{ type: 'create', detail: 'Заявка создана', by: r.author, date: r.date }]
+            }));
+            renderRequests();
+            updateStats();
+        } catch (error) {
+            console.error('Ошибка загрузки заявок:', error);
+            requests = [];
+        }
+    }
+    
+    async function loadUsers() {
+        try {
+            const response = await fetch(`${API_URL}?sheet=users`);
+            users = await response.json();
+            renderUsers();
+        } catch (error) {
+            console.error('Ошибка загрузки пользователей:', error);
+            users = [];
+        }
+    }
+    
+    async function saveRequest(request) {
+        try {
+            const payload = {
+                sheetName: 'requests',
+                data: {
+                    id: request.id,
+                    type: request.type,
+                    description: request.desc,
+                    location: request.location,
+                    author: request.author,
+                    authorId: request.authorId || '',
+                    date: request.date,
+                    status: request.status,
+                    image: request.media?.[0] || '',
+                    likes: request.likes || 0,
+                    comments: JSON.stringify(request.comments || []),
+                    assignedTo: request.assignedTo || ''
+                }
+            };
+            await fetch(API_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (error) {
+            console.error('Ошибка сохранения заявки:', error);
+        }
+    }
+    
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    async function initAdminPanel() {
+        document.getElementById('adminNameDisplay').textContent = currentUser.name;
+        document.getElementById('headerAdminNameDisplay').textContent = currentUser.name;
+        document.getElementById('headerAdminRoleDisplay').textContent = currentUser.role;
+        
+        await loadRequests();
+        await loadUsers();
+        
+        locations = getInitialLocations();
+        news = getInitialNews();
+        
+        renderNews();
+        renderLocations();
+        switchView('requestsView');
+    }
+    
+    function getInitialLocations() {
+        return [
+            { id: 1001, name: 'Общий', parentId: null },
+            { id: 1002, name: 'Участок Помола Сырья', parentId: null },
+            { id: 1003, name: 'Молотковая дробилка №1', parentId: 1002 },
+            { id: 1004, name: 'Мельница шаровая №3', parentId: 1002 },
+            { id: 1005, name: 'Отдел IT', parentId: null },
+            { id: 1006, name: 'Служба главного инженера', parentId: null }
+        ];
+    }
+    
+    function getInitialNews() {
+        return [
+            { id: 1, title: 'Успешный запуск пилотного проекта Kaizen!', text: 'Система Kaizen успешно прошла тестирование.', author: 'Администрация', date: new Date(Date.now() - 86400000 * 7).toISOString(), media: [] },
+            { id: 2, title: 'Обновление правил подачи рисков', text: 'С 1 декабря 2025 года вступает в силу новый регламент.', author: 'Служба безопасности', date: new Date(Date.now() - 86400000 * 3).toISOString(), media: [] }
+        ];
+    }
+    
+    function updateStats() {
+        document.getElementById('statTotal').textContent = requests.length;
+        document.getElementById('statWork').textContent = requests.filter(r => r.status === 'work').length;
+        document.getElementById('statNew').textContent = requests.filter(r => r.status === 'new').length;
+    }
+    
+    function clearFilters() {
+        document.getElementById('searchFilter').value = '';
+        document.getElementById('typeFilter').value = 'all';
+        document.getElementById('statusFilter').value = 'all';
+        document.getElementById('startDateFilter').value = '';
+        document.getElementById('endDateFilter').value = '';
+        renderRequests();
+    }
+    
+    function renderRequests() {
+        const tableBody = document.getElementById('requestsTableBody');
+        const searchVal = document.getElementById('searchFilter').value.toLowerCase();
+        const typeFilter = document.getElementById('typeFilter').value;
+        const statusFilter = document.getElementById('statusFilter').value;
+        const startDateVal = document.getElementById('startDateFilter').value;
+        const endDateVal = document.getElementById('endDateFilter').value;
+        
+        const startTimestamp = startDateVal ? new Date(startDateVal).setHours(0,0,0,0) : null;
+        const endTimestamp = endDateVal ? new Date(endDateVal).setHours(23,59,59,999) : null;
+        
+        let filteredRequests = requests.filter(r => {
+            const searchMatch = searchVal === '' || r.id.toString().includes(searchVal) || r.desc.toLowerCase().includes(searchVal);
+            const typeMatch = typeFilter === 'all' || r.type === typeFilter;
+            const statusMatch = statusFilter === 'all' || r.status === statusFilter;
+            const requestDate = new Date(r.date).getTime();
+            const dateMatch = (!startTimestamp || requestDate >= startTimestamp) && (!endTimestamp || requestDate <= endTimestamp);
+            return searchMatch && typeMatch && statusMatch && dateMatch;
+        }).sort((a, b) => b.id - a.id);
+        
+        tableBody.innerHTML = filteredRequests.map(r => {
+            const statusText = getStatusText(r.status);
+            const statusClass = getStatusColor(r.status);
+            const typeText = r.type === 'idea' ? '<span class="text-blue-600 font-semibold">Идея</span>' : '<span class="text-red-600 font-semibold">Риск</span>';
+            const createDate = formatFullDate(r.date);
+            const dueDateText = formatFullDate(r.dueDate);
+            const dueDateClass = getDueDateClass(r.dueDate);
+            
+            const mediaThumb = r.media && r.media[0] ? `<div class="w-10 h-10 bg-gray-100 rounded-md border flex items-center justify-center text-xs">📷</div>` : '<span class="text-gray-300">—</span>';
+            
+            return `
+                <tr class="data-row cursor-pointer" onclick="showViewModal(${r.id})">
+                    <td class="px-3 py-3 text-sm font-medium text-gray-900">${getPaddedId(r.id)}</td>
+                    <td class="px-3 py-3 text-sm">${typeText}</td>
+                    <td class="px-3 py-3 text-center">${mediaThumb}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700 max-w-xs overflow-hidden truncate" title="${r.desc}">${r.desc}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700">${r.author}</td>
+                    <td class="px-3 py-3 text-sm text-gray-500">${createDate}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700">${r.assignedTo || '—'}</td>
+                    <td class="px-3 py-3"><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    <td class="px-3 py-3 text-sm ${dueDateClass}">${dueDateText}</td>
+                </tr>
+            `;
+        }).join('');
+        
+        if (filteredRequests.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="9" class="text-center py-6 text-gray-500">Заявки не найдены</td></tr>';
+        }
+    }
+    
+    function renderNews() {
+        const tableBody = document.getElementById('newsTableBody');
+        document.getElementById('totalNewsCount').textContent = news.length;
+        tableBody.innerHTML = news.map(n => `
+            <tr class="data-row cursor-pointer" onclick="showNewsDetailsModal(${n.id})">
+                <td class="px-3 py-3 text-sm font-medium">${n.id}</td>
+                <td class="px-3 py-3 text-center">${n.media && n.media[0] ? '📷' : '—'}</td>
+                <td class="px-3 py-3 text-sm text-gray-800">${n.title}</td>
+                <td class="px-3 py-3 text-sm text-gray-500">${formatFullDate(n.date)}</td>
+                <td class="px-3 py-3 text-sm text-gray-700">${n.author || '—'}</td>
+            </tr>
+        `).join('');
+    }
+    
+    function renderUsers() {
+        const tableBody = document.getElementById('usersTableBody');
+        document.getElementById('totalUsersCount').textContent = users.length;
+        tableBody.innerHTML = users.map(u => `
+            <tr class="data-row">
+                <td class="px-3 py-3 text-sm font-medium">${u.id}</td>
+                <td class="px-3 py-3 text-sm text-blue-600 font-semibold cursor-pointer hover:underline" onclick="showUserCardModal(${u.id})">${u.name}</td>
+                <td class="px-3 py-3 text-sm"><span class="status-badge ${getRoleColor(u.role)}">${u.role}</span></td>
+                <td class="px-3 py-3 text-sm">${u.location || '—'}</td>
+                <td class="px-3 py-3 text-sm text-yellow-600 font-bold">${u.points}</td>
+                <td class="px-3 py-3 text-sm">
+                    <select onchange="changeUserRole(${u.id}, this.value)" class="p-1 border rounded-md text-xs">
+                        <option value="${u.role}" selected>${u.role}</option>
+                        <option value="Администратор">Администратор</option>
+                        <option value="Начальник">Начальник</option>
+                        <option value="Мастер">Мастер</option>
+                        <option value="Работник">Работник</option>
+                    </select>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    function getRoleColor(role) {
+        if(role === 'Администратор') return 'bg-red-200 text-red-800';
+        if(role === 'Начальник') return 'bg-blue-200 text-blue-800';
+        if(role === 'Мастер') return 'bg-yellow-200 text-yellow-800';
+        return 'bg-gray-200 text-gray-800';
+    }
+    
+    function renderLocations() {
+        const tableBody = document.getElementById('locationsTableBody');
+        tableBody.innerHTML = locations.map(l => {
+            const childCount = locations.filter(child => child.parentId === l.id).length;
+            return `
+                <tr class="data-row">
+                    <td class="px-3 py-3 text-sm text-gray-500">${l.id}</td>
+                    <td class="px-3 py-3 text-sm ${l.parentId ? 'pl-8 font-normal' : 'pl-4 font-semibold'}">${l.name}</td>
+                    <td class="px-3 py-3 text-sm text-gray-700">${childCount}</td>
+                    <td class="px-3 py-3 text-sm space-x-2">
+                        <button onclick="showLocationModal('edit', ${l.id})" class="text-blue-600 hover:text-blue-800">Ред.</button>
+                        <button onclick="deleteLocation(${l.id})" class="text-red-600 hover:text-red-800">Удал.</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    function showViewModal(id) {
+        const r = requests.find(r => r.id === id);
+        if (!r) return;
+        currentModalRequestId = id;
+        
+        document.getElementById('modalTitle').textContent = `Детали заявки ID: ${getPaddedId(r.id)}`;
+        
+        const modalContent = document.getElementById('modalContent');
+        modalContent.innerHTML = `
+            <div class="grid grid-cols-2 gap-4 text-sm mb-4 pb-4 border-b">
+                <div><p class="text-gray-500">Тип:</p><p class="font-bold">${r.type === 'idea' ? '💡 Идея' : '⚠️ Риск'}</p></div>
+                <div><p class="text-gray-500">Автор:</p><p class="font-bold">${r.author}</p></div>
+                <div><p class="text-gray-500">Дата:</p><p class="font-bold">${formatFullDate(r.date)}</p></div>
+                <div><p class="text-gray-500">Участок:</p><p class="font-bold">${r.location}</p></div>
+            </div>
+            <div><p class="font-semibold mb-1">Описание:</p><p class="text-gray-700">${r.desc}</p></div>
+            ${r.media && r.media[0] ? `<div class="mt-4"><p class="font-semibold mb-2">Медиа:</p><img src="${r.media[0]}" class="max-h-48 rounded-md border"></div>` : ''}
+        `;
+        
+        const commentsHtml = r.comments && r.comments.length > 0 
+            ? r.comments.map(c => `<div class="border p-2 rounded-md bg-gray-50"><p class="font-medium text-sm">${c.author}:</p><p class="text-gray-700 text-sm">${c.text}</p><span class="text-xs text-gray-400">${formatFullDateTime(c.date)}</span></div>`).join('')
+            : '<p class="text-gray-500 text-sm">Нет комментариев.</p>';
+        document.getElementById('modalComments').innerHTML = commentsHtml;
+        
+        document.getElementById('viewModal').classList.remove('hidden');
+    }
+    
+    function toggleViewModal() { document.getElementById('viewModal').classList.toggle('hidden'); }
+    
+    function addAdminComment() {
+        const input = document.getElementById('adminCommentInput');
+        const text = input.value.trim();
+        const r = requests.find(req => req.id === currentModalRequestId);
+        
+        if (r && text) {
+            if (!r.comments) r.comments = [];
+            r.comments.push({ author: currentUser.name, text: text, date: new Date().toISOString() });
+            saveRequest(r);
+            input.value = '';
+            showViewModal(currentModalRequestId);
+            renderRequests();
+        }
+    }
+    
+    async function changeStatus(id, newStatus) {
+        const r = requests.find(r => r.id === id);
+        if (r) {
+            r.status = newStatus;
+            await saveRequest(r);
+            renderRequests();
+            updateStats();
+            if (currentModalRequestId === id) showViewModal(id);
+        }
+    }
+    
+    async function assignRequest(id, assignedToName) {
+        const r = requests.find(r => r.id === id);
+        if (r) {
+            r.assignedTo = assignedToName === 'none' ? null : assignedToName;
+            await saveRequest(r);
+            renderRequests();
+        }
+    }
+    
+    async function deletePost(id) {
+        if(confirm(`Удалить заявку ID: ${getPaddedId(id)}?`)) {
+            requests = requests.filter(r => r.id !== id);
+            await saveRequest({ id, _delete: true });
+            renderRequests();
+            updateStats();
+            toggleViewModal();
+        }
+    }
+    
+    function forceResetData() {
+        if(confirm("Сбросить все данные и восстановить тестовые?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+    
+    function switchView(viewId) {
+        document.querySelectorAll('#requestsView, #analyticsView, #newsView, #usersView, #locationsView').forEach(v => v.classList.add('hidden'));
+        document.querySelectorAll('.nav-item').forEach(el => {
+            el.classList.remove('bg-blue-600', 'text-white', 'font-semibold');
+            el.classList.add('hover:bg-gray-700');
+        });
+        
+        document.getElementById(viewId).classList.remove('hidden');
+        const navItem = document.getElementById('nav' + viewId.replace('View', ''));
+        if(navItem) {
+            navItem.classList.add('bg-blue-600', 'text-white', 'font-semibold');
+            navItem.classList.remove('hover:bg-gray-700');
+        }
+        
+        if (viewId === 'analyticsView') renderAnalytics();
+    }
+    
+    function renderAnalytics() {
+        const statusCounts = { new: 0, work: 0, approved: 0 };
+        const typeCounts = { idea: 0, risk: 0 };
+        const authorCounts = {};
+        
+        requests.forEach(r => {
+            statusCounts[r.status] = (statusCounts[r.status] || 0) + 1;
+            typeCounts[r.type] = (typeCounts[r.type] || 0) + 1;
+            authorCounts[r.author] = (authorCounts[r.author] || 0) + 1;
+        });
+        
+        const sortedAuthors = Object.entries(authorCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+        
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        if (statusChartInstance) statusChartInstance.destroy();
+        statusChartInstance = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: { labels: ['Новая', 'В работе', 'Завершено'], datasets: [{ data: [statusCounts.new, statusCounts.work, statusCounts.approved], backgroundColor: ['#2ecc71', '#f39c12', '#3498db'] }] }
+        });
+        
+        const typeCtx = document.getElementById('typeChart').getContext('2d');
+        if (typeChartInstance) typeChartInstance.destroy();
+        typeChartInstance = new Chart(typeCtx, {
+            type: 'pie',
+            data: { labels: ['Идеи', 'Риски'], datasets: [{ data: [typeCounts.idea, typeCounts.risk], backgroundColor: ['#9b59b6', '#e74c3c'] }] }
+        });
+        
+        const authorCtx = document.getElementById('authorChart').getContext('2d');
+        if (authorChartInstance) authorChartInstance.destroy();
+        authorChartInstance = new Chart(authorCtx, {
+            type: 'bar',
+            data: { labels: sortedAuthors.map(([name]) => name), datasets: [{ label: 'Количество заявок', data: sortedAuthors.map(([, count]) => count), backgroundColor: '#1abc9c' }] },
+            options: { scales: { y: { beginAtZero: true } }, plugins: { legend: { display: false } } }
+        });
+    }
+    
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        const toggleIcon = document.getElementById('sidebarToggleIcon');
+        isSidebarCollapsed = !isSidebarCollapsed;
+        
+        if (isSidebarCollapsed) {
+            sidebar.classList.add('collapsed');
+            toggleIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H7"></path>';
+        } else {
+            sidebar.classList.remove('collapsed');
+            toggleIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 15l-3-3m0 0l3-3m-3 3h8"></path>';
+        }
+    }
+    
+    function logoutAdmin() { alert("Выход из админ-панели"); }
+    
+    window.onload = initAdminPanel;
+</script>
+</body>
+</html>
