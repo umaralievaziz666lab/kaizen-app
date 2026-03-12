@@ -1,278 +1,107 @@
-<!doctype html>
-<html lang="ru">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kaizen App</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Тест Supabase</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body { background: #fafafa; font-family: sans-serif; }
-        .primary-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .btn-loading { opacity: 0.7; pointer-events: none; }
-    </style>
 </head>
-<body class="bg-[#fafafa]">
-
-<!-- ЭКРАН РЕГИСТРАЦИИ -->
-<div id="registrationScreen" class="min-h-screen flex items-center justify-center p-4">
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <h1 class="text-2xl font-bold text-center mb-8">Добро пожаловать!</h1>
-        <form id="registrationForm" class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">ФИО</label>
-                <input type="text" id="regFullName" required class="w-full px-4 py-2 border rounded-xl" value="Тестовый Пользователь">
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Табельный номер</label>
-                <input type="text" id="regEmployeeId" required class="w-full px-4 py-2 border rounded-xl" value="12345">
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Телефон</label>
-                <input type="tel" id="regPhone" required class="w-full px-4 py-2 border rounded-xl" value="+79991234567">
-            </div>
-            <div>
-                <label class="block text-sm font-medium mb-1">Участок</label>
-                <select id="regDepartment" class="w-full px-4 py-2 border rounded-xl">
-                    <option value="production">Производство</option>
-                    <option value="office">Офис</option>
-                </select>
-            </div>
-            <button type="submit" id="registerBtn" class="w-full primary-gradient text-white font-bold py-3 rounded-xl">
-                Начать работу
-            </button>
-        </form>
-    </div>
-</div>
-
-<!-- ГЛАВНОЕ ПРИЛОЖЕНИЕ -->
-<div id="mainApp" class="hidden max-w-lg mx-auto p-4">
-    <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
-        <h2 class="text-xl font-bold" id="welcomeMessage">Добро пожаловать!</h2>
-        <p class="text-gray-600" id="userInfo"></p>
-    </div>
+<body>
+    <h1>Тест подключения к Supabase</h1>
+    <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc;"></div>
     
-    <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
-        <h3 class="font-bold mb-2">Создать тестовую заявку</h3>
-        <button onclick="testCreateRequest()" class="w-full bg-blue-500 text-white py-2 rounded-lg mb-2">
-            Создать заявку в Supabase
-        </button>
-        <div id="requestResult" class="text-sm mt-2"></div>
-    </div>
-    
-    <div class="bg-white rounded-xl shadow-lg p-4">
-        <h3 class="font-bold mb-2">Последние заявки</h3>
-        <div id="requestsList" class="space-y-2"></div>
-    </div>
-    
-    <button onclick="logout()" class="mt-4 w-full bg-red-500 text-white py-2 rounded-lg">
-        Выйти
-    </button>
-</div>
-
-<script>
-    // === НАСТРОЙКИ SUPABASE ===
-    const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
-    
-    // ✅ ПРАВИЛЬНО: создаем клиент через window.supabase
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    
-    console.log('✅ Supabase клиент создан');
-
-    // --- СОСТОЯНИЕ ---
-    let currentUser = null;
-
-    // --- РЕГИСТРАЦИЯ ---
-    async function handleRegistration(e) {
-        e.preventDefault();
+    <script>
+        const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
         
-        const btn = document.getElementById('registerBtn');
-        btn.classList.add('btn-loading');
-        btn.textContent = 'Регистрация...';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        try {
-            const name = document.getElementById('regFullName').value;
-            const empId = document.getElementById('regEmployeeId').value;
-            const phone = document.getElementById('regPhone').value;
-            const dept = document.getElementById('regDepartment').value;
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '🔄 Проверяем подключение...';
             
-            console.log('Регистрируем пользователя:', { name, empId });
-            
-            // Создаем объект пользователя
-            currentUser = {
-                empId: empId,
-                name: name,
-                phone: phone,
-                dept: dept,
-                points: 0,
-                role: empId === '11111' ? 'admin' : 'user'
-            };
-            
-            // 1. Сохраняем в localStorage
-            localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-            console.log('✅ Пользователь сохранен в localStorage');
-            
-            // 2. Пытаемся сохранить в Supabase
             try {
-                const { error } = await supabaseClient
+                // 1. Проверяем таблицы
+                resultDiv.innerHTML += '<br><br>📊 Проверяем таблицы...';
+                
+                const { error: usersError } = await supabaseClient
                     .from('users')
-                    .upsert({
-                        id: empId,
-                        name: name,
-                        points: 0,
-                        role: currentUser.role,
-                        phone: phone,
-                        department: dept
-                    });
+                    .select('*')
+                    .limit(1);
                 
-                if (error) {
-                    console.warn('⚠️ Ошибка сохранения в Supabase:', error.message);
-                    // Показываем пользователю, но не блокируем вход
-                    alert('Предупреждение: ' + error.message + '\nНо вы можете продолжать работу локально.');
+                if (usersError) {
+                    resultDiv.innerHTML += '<br>❌ Ошибка users: ' + usersError.message;
                 } else {
-                    console.log('✅ Пользователь сохранен в Supabase');
+                    resultDiv.innerHTML += '<br>✅ Таблица users доступна';
                 }
-            } catch (supabaseError) {
-                console.warn('⚠️ Ошибка подключения к Supabase:', supabaseError);
-            }
-            
-            // 3. ВАЖНО: Сразу показываем главное приложение!
-            document.getElementById('registrationScreen').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            
-            // 4. Обновляем интерфейс
-            document.getElementById('welcomeMessage').textContent = `Привет, ${name}!`;
-            document.getElementById('userInfo').textContent = `Табельный: ${empId} | Участок: ${dept}`;
-            
-            // 5. Загружаем заявки
-            loadRequests();
-            
-            console.log('✅ Главное приложение открыто');
-            
-        } catch (error) {
-            console.error('❌ Ошибка регистрации:', error);
-            alert('Ошибка при регистрации');
-        } finally {
-            btn.classList.remove('btn-loading');
-            btn.textContent = 'Начать работу';
-        }
-    }
-
-    // --- ЗАГРУЗКА ЗАЯВОК ---
-    async function loadRequests() {
-        try {
-            const { data, error } = await supabaseClient
-                .from('requests')
-                .select('*')
-                .order('date', { ascending: false })
-                .limit(5);
-            
-            if (error) {
-                console.error('Ошибка загрузки заявок:', error);
-                return;
-            }
-            
-            const list = document.getElementById('requestsList');
-            if (data && data.length > 0) {
-                list.innerHTML = data.map(req => `
-                    <div class="border p-2 rounded">
-                        <div class="font-semibold">${req.type === 'idea' ? '💡' : '⚠️'} ${req.description}</div>
-                        <div class="text-xs text-gray-500">Автор: ${req.author} • ${new Date(req.date).toLocaleString()}</div>
-                    </div>
-                `).join('');
-            } else {
-                list.innerHTML = '<p class="text-gray-500">Пока нет заявок</p>';
-            }
-        } catch (e) {
-            console.error('Ошибка:', e);
-        }
-    }
-
-    // --- ТЕСТОВАЯ ЗАЯВКА ---
-    async function testCreateRequest() {
-        if (!currentUser) {
-            alert('Сначала зарегистрируйтесь');
-            return;
-        }
-        
-        const resultDiv = document.getElementById('requestResult');
-        resultDiv.innerHTML = 'Отправка...';
-        
-        try {
-            const { data, error } = await supabaseClient
-                .from('requests')
-                .insert([
-                    {
-                        type: 'idea',
-                        description: 'Тестовая заявка от ' + currentUser.name,
-                        location: currentUser.dept,
-                        author: currentUser.name,
-                        author_id: currentUser.empId,
-                        status: 'new',
-                        date: new Date().toISOString()
+                
+                const { error: requestsError } = await supabaseClient
+                    .from('requests')
+                    .select('*')
+                    .limit(1);
+                
+                if (requestsError) {
+                    resultDiv.innerHTML += '<br>❌ Ошибка requests: ' + requestsError.message;
+                } else {
+                    resultDiv.innerHTML += '<br>✅ Таблица requests доступна';
+                }
+                
+                // 2. Пробуем создать пользователя
+                resultDiv.innerHTML += '<br><br>📝 Создаем тестового пользователя...';
+                const testUserId = 'test_' + Date.now();
+                
+                const { data: userData, error: userInsertError } = await supabaseClient
+                    .from('users')
+                    .insert([
+                        {
+                            id: testUserId,
+                            name: 'Тестовый пользователь',
+                            points: 0,
+                            role: 'user'
+                        }
+                    ])
+                    .select();
+                
+                if (userInsertError) {
+                    resultDiv.innerHTML += '<br>❌ Ошибка создания пользователя: ' + userInsertError.message;
+                } else {
+                    resultDiv.innerHTML += '<br>✅ Пользователь создан с ID: ' + testUserId;
+                    
+                    // 3. Пробуем создать заявку с этим пользователем
+                    resultDiv.innerHTML += '<br><br>📝 Создаем тестовую заявку...';
+                    
+                    const { data: requestData, error: requestInsertError } = await supabaseClient
+                        .from('requests')
+                        .insert([
+                            {
+                                type: 'idea',
+                                description: 'Тестовая заявка',
+                                location: 'Тест',
+                                author: 'Тестовый пользователь',
+                                author_id: testUserId,
+                                status: 'new',
+                                date: new Date().toISOString()
+                            }
+                        ])
+                        .select();
+                    
+                    if (requestInsertError) {
+                        resultDiv.innerHTML += '<br>❌ Ошибка создания заявки: ' + requestInsertError.message;
+                        
+                        // Показываем детали ошибки
+                        if (requestInsertError.message.includes('foreign key')) {
+                            resultDiv.innerHTML += '<br><br>🔧 Проблема с внешним ключом. Нужно отключить RLS или настроить политики.';
+                        }
+                    } else {
+                        resultDiv.innerHTML += '<br>✅ Заявка успешно создана!';
                     }
-                ]);
-            
-            if (error) {
-                console.error('Ошибка:', error);
-                resultDiv.innerHTML = '❌ Ошибка: ' + error.message + '<br>' +
-                    'Нужно настроить RLS в Supabase. Зайдите в SQL Editor и выполните политики доступа.';
-            } else {
-                console.log('✅ Заявка создана:', data);
-                resultDiv.innerHTML = '✅ Заявка успешно создана!';
-                loadRequests(); // Обновляем список
-            }
-        } catch (e) {
-            console.error('Ошибка:', e);
-            resultDiv.innerHTML = '❌ Ошибка: ' + e.message;
-        }
-    }
-
-    // --- ВЫХОД ---
-    function logout() {
-        localStorage.removeItem('kaizenUser');
-        location.reload();
-    }
-
-    // --- ИНИЦИАЛИЗАЦИЯ ---
-    async function init() {
-        console.log('🚀 Запуск приложения...');
-        
-        // Проверяем сохраненного пользователя
-        const savedUser = localStorage.getItem('kaizenUser');
-        
-        if (savedUser) {
-            try {
-                currentUser = JSON.parse(savedUser);
-                console.log('👤 Найден пользователь:', currentUser);
+                }
                 
-                // Показываем главное приложение
-                document.getElementById('registrationScreen').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                
-                document.getElementById('welcomeMessage').textContent = `С возвращением, ${currentUser.name}!`;
-                document.getElementById('userInfo').textContent = `Табельный: ${currentUser.empId} | Участок: ${currentUser.dept}`;
-                
-                loadRequests();
-                return;
-            } catch (e) {
-                console.error('Ошибка парсинга пользователя');
-                localStorage.removeItem('kaizenUser');
+            } catch (error) {
+                resultDiv.innerHTML += '<br>❌ Критическая ошибка: ' + error.message;
+                console.error('Детали ошибки:', error);
             }
         }
         
-        // Показываем регистрацию
-        console.log('📝 Показываем форму регистрации');
-        document.getElementById('registrationScreen').classList.remove('hidden');
-    }
-
-    // --- НАВЕШИВАЕМ ОБРАБОТЧИКИ ---
-    document.getElementById('registrationForm').addEventListener('submit', handleRegistration);
-    
-    // Запускаем
-    init();
-</script>
-
+        testConnection();
+    </script>
 </body>
 </html>
