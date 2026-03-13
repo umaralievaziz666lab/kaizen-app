@@ -5,119 +5,40 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Тест подключения к Supabase</h1>
-    <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc; white-space: pre-line;"></div>
-    
+    <h1>Тест Supabase</h1>
+    <div id="status" style="color: blue;">Загрузка...</div>
+    <div id="result" style="margin-top: 20px;"></div>
+
     <script>
+        // Просто объявляем переменные
         const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
         
+        // Создаем клиент
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        async function testConnection() {
-            const result = document.getElementById('result');
-            result.innerHTML = '🔄 Проверяем подключение...\n';
-            
-            try {
-                // 1. Проверяем таблицу users
-                result.innerHTML += '\n📊 Проверяем таблицу users...';
-                const { data: users, error: usersError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .limit(1);
-                
-                if (usersError) {
-                    result.innerHTML += '\n❌ Ошибка users: ' + usersError.message;
-                } else {
-                    result.innerHTML += '\n✅ Таблица users доступна';
-                }
-                
-                // 2. Проверяем таблицу requests
-                result.innerHTML += '\n\n📊 Проверяем таблицу requests...';
-                const { data: requests, error: reqError } = await supabase
-                    .from('requests')
-                    .select('*')
-                    .limit(1);
-                
-                if (reqError) {
-                    result.innerHTML += '\n❌ Ошибка requests: ' + reqError.message;
-                } else {
-                    result.innerHTML += '\n✅ Таблица requests доступна';
-                }
-                
-                // 3. Создаем тестового пользователя
-                result.innerHTML += '\n\n📝 Создаем тестового пользователя...';
-                const testId = 'test_' + Date.now();
-                
-                const { data: userData, error: userInsertError } = await supabase
-                    .from('users')
-                    .insert([
-                        {
-                            id: testId,
-                            name: 'Тестовый пользователь',
-                            points: 0,
-                            role: 'user'
-                        }
-                    ])
-                    .select();
-                
-                if (userInsertError) {
-                    result.innerHTML += '\n❌ Ошибка создания пользователя: ' + userInsertError.message;
-                } else {
-                    result.innerHTML += '\n✅ Пользователь создан с ID: ' + testId;
-                    
-                    // 4. Создаем тестовую заявку
-                    result.innerHTML += '\n\n📝 Создаем тестовую заявку...';
-                    
-                    const { data: reqData, error: reqInsertError } = await supabase
-                        .from('requests')
-                        .insert([
-                            {
-                                type: 'idea',
-                                description: 'Тестовая заявка',
-                                location: 'Тест',
-                                author: 'Тестовый пользователь',
-                                author_id: testId,
-                                status: 'new',
-                                date: new Date().toISOString()
-                            }
-                        ])
-                        .select();
-                    
-                    if (reqInsertError) {
-                        result.innerHTML += '\n❌ Ошибка создания заявки: ' + reqInsertError.message;
-                    } else {
-                        result.innerHTML += '\n✅ Заявка успешно создана!';
-                    }
-                }
-                
-                // 5. Проверяем созданные записи
-                result.innerHTML += '\n\n🔍 Проверяем созданные записи...';
-                
-                const { data: checkUsers } = await supabase
-                    .from('users')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(3);
-                
-                const { data: checkReqs } = await supabase
-                    .from('requests')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(3);
-                
-                result.innerHTML += '\n\n👤 Последние пользователи: ' + (checkUsers?.length || 0);
-                result.innerHTML += '\n📋 Последние заявки: ' + (checkReqs?.length || 0);
-                
-                result.innerHTML += '\n\n✅ ТЕСТ ЗАВЕРШЕН!';
-                
-            } catch (error) {
-                result.innerHTML += '\n\n❌ КРИТИЧЕСКАЯ ОШИБКА: ' + error.message;
-                console.error(error);
-            }
-        }
+        // Пишем в консоль
+        console.log('Клиент создан:', supabase);
         
-        testConnection();
+        // Меняем текст на странице
+        document.getElementById('status').innerHTML = '✅ Клиент создан, пробуем подключиться...';
+        
+        // Пробуем самый простой запрос
+        supabase
+            .from('users')
+            .select('count', { count: 'exact', head: true })
+            .then(response => {
+                console.log('Ответ:', response);
+                if (response.error) {
+                    document.getElementById('result').innerHTML = '❌ Ошибка: ' + response.error.message;
+                } else {
+                    document.getElementById('result').innerHTML = '✅ Подключение работает!';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                document.getElementById('result').innerHTML = '❌ Ошибка: ' + error.message;
+            });
     </script>
 </body>
 </html>
