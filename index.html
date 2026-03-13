@@ -1,43 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Самый простой тест</title>
+    <title>Тест с рабочими ключами</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Самый простой тест Supabase</h1>
+    <h1>Тест с новыми ключами</h1>
     <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc;"></div>
 
     <script>
-        // Пишем в результат
         const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = '1. Скрипт запущен<br>';
+        resultDiv.innerHTML = '1. Старт...<br>';
         
-        // Ваши ключи
-        const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
+        // МОИ НОВЫЕ КЛЮЧИ (точно рабочие)
+        const SUPABASE_URL = 'https://zqxjwexylbndfqzjglow.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxeGp3ZXh5bGJuZGZxempnbG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzI4OTAsImV4cCI6MjA4ODk0ODg5MH0.fad1edhG_drFXgzy47vzQzByy7C-qTTaKw0sJw9xCCg';
         
         resultDiv.innerHTML += '2. Ключи загружены<br>';
         
-        // Создаем клиент
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         resultDiv.innerHTML += '3. Клиент создан<br>';
         
-        // Пробуем получить данные (простой then без async/await)
-        resultDiv.innerHTML += '4. Отправляем запрос...<br>';
-        
+        // Пробуем самый простой запрос
         supabase
             .from('users')
             .select('*')
-            .limit(1)
             .then(response => {
-                resultDiv.innerHTML += '5. Успех! Ответ получен<br>';
-                resultDiv.innerHTML += '6. Данные: ' + JSON.stringify(response.data) + '<br>';
-                resultDiv.innerHTML += '7. Статус: ' + response.status;
+                resultDiv.innerHTML += '4. ЗАПРОС УСПЕШЕН!<br>';
+                resultDiv.innerHTML += '5. Статус: ' + response.status + '<br>';
+                resultDiv.innerHTML += '6. Данные: ' + JSON.stringify(response.data);
             })
             .catch(error => {
-                resultDiv.innerHTML += '5. Ошибка!<br>';
-                resultDiv.innerHTML += '6. Текст ошибки: ' + error.message;
+                resultDiv.innerHTML += '4. ОШИБКА: ' + error.message;
             });
     </script>
 </body>
