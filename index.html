@@ -1,76 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Тест создания записей</title>
+    <title>Самый простой тест</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Тест создания записей</h1>
+    <h1>Самый простой тест Supabase</h1>
     <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc;"></div>
 
     <script>
+        // Пишем в результат
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '1. Скрипт запущен<br>';
+        
+        // Ваши ключи
         const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
         
+        resultDiv.innerHTML += '2. Ключи загружены<br>';
+        
+        // Создаем клиент
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const result = document.getElementById('result');
+        resultDiv.innerHTML += '3. Клиент создан<br>';
         
-        async function runTest() {
-            result.innerHTML = '🔄 Начинаем тест...<br>';
-            
-            // 1. Создаем пользователя
-            result.innerHTML += '📝 Создаем пользователя...<br>';
-            const testId = 'user_' + Date.now();
-            
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .insert([
-                    {
-                        id: testId,
-                        name: 'Тестовый Пользователь',
-                        points: 0,
-                        role: 'user',
-                        phone: '+79991234567',
-                        department: 'Тест'
-                    }
-                ])
-                .select();
-            
-            if (userError) {
-                result.innerHTML += '❌ Ошибка создания пользователя: ' + userError.message + '<br>';
-                return;
-            }
-            
-            result.innerHTML += '✅ Пользователь создан! ID: ' + testId + '<br>';
-            
-            // 2. Создаем заявку
-            result.innerHTML += '📝 Создаем заявку...<br>';
-            
-            const { data: reqData, error: reqError } = await supabase
-                .from('requests')
-                .insert([
-                    {
-                        type: 'idea',
-                        description: 'Тестовая заявка',
-                        location: 'Тестовый участок',
-                        author: 'Тестовый Пользователь',
-                        author_id: testId,
-                        status: 'new',
-                        date: new Date().toISOString()
-                    }
-                ])
-                .select();
-            
-            if (reqError) {
-                result.innerHTML += '❌ Ошибка создания заявки: ' + reqError.message + '<br>';
-                return;
-            }
-            
-            result.innerHTML += '✅ Заявка создана!<br>';
-            result.innerHTML += '✅ ТЕСТ ПРОЙДЕН! Все работает!';
-        }
+        // Пробуем получить данные (простой then без async/await)
+        resultDiv.innerHTML += '4. Отправляем запрос...<br>';
         
-        runTest();
+        supabase
+            .from('users')
+            .select('*')
+            .limit(1)
+            .then(response => {
+                resultDiv.innerHTML += '5. Успех! Ответ получен<br>';
+                resultDiv.innerHTML += '6. Данные: ' + JSON.stringify(response.data) + '<br>';
+                resultDiv.innerHTML += '7. Статус: ' + response.status;
+            })
+            .catch(error => {
+                resultDiv.innerHTML += '5. Ошибка!<br>';
+                resultDiv.innerHTML += '6. Текст ошибки: ' + error.message;
+            });
     </script>
 </body>
 </html>
