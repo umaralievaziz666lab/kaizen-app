@@ -1,80 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Тест Supabase</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <title>Простой тест</title>
 </head>
 <body>
-    <h1>Тест подключения к Supabase</h1>
-    <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc;"></div>
+    <h1>Проверка JavaScript</h1>
+    <div id="result"></div>
 
     <script>
-        // НОВЫЕ КЛЮЧИ
-        const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
+        // Самая простая проверка - просто пишем текст
+        document.getElementById('result').innerHTML = '✅ JavaScript работает! Текущее время: ' + new Date().toLocaleTimeString();
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        async function runTest() {
-            const result = document.getElementById('result');
-            result.innerHTML = '🔄 Проверяем подключение...<br>';
-            
-            try {
-                // 1. Проверяем таблицу users
-                result.innerHTML += '📊 Проверяем users...<br>';
-                const { data: users, error: usersError } = await supabase
-                    .from('users')
-                    .select('*')
-                    .limit(1);
-                
-                if (usersError) {
-                    result.innerHTML += '❌ Ошибка users: ' + usersError.message + '<br>';
-                } else {
-                    result.innerHTML += '✅ Таблица users доступна<br>';
-                }
-                
-                // 2. Проверяем таблицу requests
-                result.innerHTML += '📊 Проверяем requests...<br>';
-                const { data: requests, error: reqError } = await supabase
-                    .from('requests')
-                    .select('*')
-                    .limit(1);
-                
-                if (reqError) {
-                    result.innerHTML += '❌ Ошибка requests: ' + reqError.message + '<br>';
-                } else {
-                    result.innerHTML += '✅ Таблица requests доступна<br>';
-                }
-                
-                // 3. Создаем тестовую запись
-                result.innerHTML += '📝 Создаем тестовую запись...<br>';
-                const { data, error } = await supabase
-                    .from('requests')
-                    .insert([
-                        {
-                            type: 'idea',
-                            description: 'Тест подключения',
-                            location: 'Тест',
-                            author: 'Тестер',
-                            status: 'new',
-                            date: new Date().toISOString()
-                        }
-                    ]);
-                
-                if (error) {
-                    result.innerHTML += '❌ Ошибка создания: ' + error.message + '<br>';
-                } else {
-                    result.innerHTML += '✅ Тестовая запись создана!<br>';
-                }
-                
-                result.innerHTML += '<br>✅ ТЕСТ ЗАВЕРШЕН!';
-                
-            } catch (e) {
-                result.innerHTML += '❌ КРИТИЧЕСКАЯ ОШИБКА: ' + e.message;
-            }
-        }
-        
-        runTest();
+        // Пишем в консоль
+        console.log('Тест в консоли');
     </script>
 </body>
 </html>
