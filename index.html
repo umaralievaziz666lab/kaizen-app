@@ -1,38 +1,214 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Тест с рабочими ключами</title>
+    <title>Kaizen App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <h1>Тест с новыми ключами</h1>
-    <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc;"></div>
+<body class="bg-gray-100">
 
-    <script>
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = '1. Старт...<br>';
+<!-- ЭКРАН РЕГИСТРАЦИИ -->
+<div id="registerScreen" class="min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
+        <h1 class="text-2xl font-bold text-center mb-6">🚀 Kaizen App</h1>
         
-        // МОИ НОВЫЕ КЛЮЧИ (точно рабочие)
-        const SUPABASE_URL = 'https://zqxjwexylbndfqzjglow.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxeGp3ZXh5bGJuZGZxempnbG93Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzI4OTAsImV4cCI6MjA4ODk0ODg5MH0.fad1edhG_drFXgzy47vzQzByy7C-qTTaKw0sJw9xCCg';
+        <form id="registerForm">
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">ФИО</label>
+                <input type="text" id="name" required class="w-full p-2 border rounded-lg" placeholder="Иванов Иван">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Табельный номер</label>
+                <input type="text" id="empId" required class="w-full p-2 border rounded-lg" placeholder="12345">
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-1">Участок</label>
+                <select id="department" class="w-full p-2 border rounded-lg">
+                    <option value="production">Производство</option>
+                    <option value="warehouse">Склад</option>
+                    <option value="office">Офис</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                Начать работу
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- ГЛАВНЫЙ ЭКРАН -->
+<div id="mainScreen" class="hidden min-h-screen p-4">
+    <div class="bg-white p-4 rounded-lg shadow mb-4">
+        <h2 class="text-xl font-bold" id="welcome"></h2>
+        <p class="text-gray-600" id="userInfo"></p>
+    </div>
+    
+    <!-- Кнопка создания заявки -->
+    <button onclick="showCreateRequest()" class="w-full bg-green-500 text-white py-3 rounded-lg mb-4 text-lg font-bold">
+        + Новая заявка
+    </button>
+    
+    <!-- Список заявок -->
+    <div class="bg-white p-4 rounded-lg shadow">
+        <h3 class="font-bold mb-3">Последние заявки</h3>
+        <div id="requestsList" class="space-y-2"></div>
+    </div>
+    
+    <button onclick="logout()" class="mt-4 w-full bg-red-500 text-white py-2 rounded-lg">
+        Выйти
+    </button>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО СОЗДАНИЯ ЗАЯВКИ -->
+<div id="requestModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-2xl w-full max-w-md">
+        <h3 class="text-xl font-bold mb-4">Новая заявка</h3>
         
-        resultDiv.innerHTML += '2. Ключи загружены<br>';
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Тип</label>
+            <select id="requestType" class="w-full p-2 border rounded-lg">
+                <option value="idea">💡 Идея</option>
+                <option value="risk">⚠️ Риск</option>
+            </select>
+        </div>
         
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        resultDiv.innerHTML += '3. Клиент создан<br>';
+        <div class="mb-4">
+            <label class="block text-sm font-medium mb-1">Описание</label>
+            <textarea id="requestDesc" rows="3" class="w-full p-2 border rounded-lg" placeholder="Опишите вашу идею или риск..."></textarea>
+        </div>
         
-        // Пробуем самый простой запрос
-        supabase
+        <div class="flex gap-2">
+            <button onclick="createRequest()" class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+                Создать
+            </button>
+            <button onclick="hideCreateRequest()" class="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400">
+                Отмена
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Supabase подключение
+    const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
+    
+    const database = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    let currentUser = null;
+
+    // Проверяем сохраненного пользователя
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showMainScreen();
+        loadRequests();
+    }
+
+    // Регистрация
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        currentUser = {
+            id: document.getElementById('empId').value,
+            name: document.getElementById('name').value,
+            department: document.getElementById('department').value
+        };
+        
+        // Сохраняем в Supabase
+        await database
             .from('users')
-            .select('*')
-            .then(response => {
-                resultDiv.innerHTML += '4. ЗАПРОС УСПЕШЕН!<br>';
-                resultDiv.innerHTML += '5. Статус: ' + response.status + '<br>';
-                resultDiv.innerHTML += '6. Данные: ' + JSON.stringify(response.data);
-            })
-            .catch(error => {
-                resultDiv.innerHTML += '4. ОШИБКА: ' + error.message;
+            .upsert({
+                id: currentUser.id,
+                name: currentUser.name,
+                department: currentUser.department
             });
-    </script>
+        
+        // Сохраняем локально
+        localStorage.setItem('user', JSON.stringify(currentUser));
+        
+        // Показываем главный экран
+        showMainScreen();
+        loadRequests();
+    });
+
+    function showMainScreen() {
+        document.getElementById('registerScreen').classList.add('hidden');
+        document.getElementById('mainScreen').classList.remove('hidden');
+        document.getElementById('welcome').textContent = `Привет, ${currentUser.name}!`;
+        document.getElementById('userInfo').textContent = `Табельный: ${currentUser.id} | Участок: ${currentUser.department}`;
+    }
+
+    // Загрузка заявок
+    async function loadRequests() {
+        const { data, error } = await database
+            .from('requests')
+            .select('*')
+            .order('date', { ascending: false })
+            .limit(10);
+        
+        const listDiv = document.getElementById('requestsList');
+        
+        if (error || !data || data.length === 0) {
+            listDiv.innerHTML = '<p class="text-gray-500 text-center">Пока нет заявок</p>';
+            return;
+        }
+        
+        listDiv.innerHTML = data.map(req => `
+            <div class="border p-3 rounded-lg">
+                <div class="font-bold">${req.type === 'idea' ? '💡' : '⚠️'} ${req.description}</div>
+                <div class="text-sm text-gray-500">${new Date(req.date).toLocaleString()}</div>
+            </div>
+        `).join('');
+    }
+
+    // Создание заявки
+    async function createRequest() {
+        const type = document.getElementById('requestType').value;
+        const desc = document.getElementById('requestDesc').value;
+        
+        if (!desc) {
+            alert('Введите описание');
+            return;
+        }
+        
+        const { error } = await database
+            .from('requests')
+            .insert([
+                {
+                    type: type,
+                    description: desc,
+                    location: currentUser.department,
+                    author: currentUser.name,
+                    author_id: currentUser.id,
+                    date: new Date().toISOString()
+                }
+            ]);
+        
+        if (error) {
+            alert('Ошибка: ' + error.message);
+        } else {
+            hideCreateRequest();
+            loadRequests();
+        }
+    }
+
+    function showCreateRequest() {
+        document.getElementById('requestModal').classList.remove('hidden');
+    }
+
+    function hideCreateRequest() {
+        document.getElementById('requestModal').classList.add('hidden');
+        document.getElementById('requestDesc').value = '';
+    }
+
+    function logout() {
+        localStorage.removeItem('user');
+        location.reload();
+    }
+</script>
+
 </body>
 </html>
