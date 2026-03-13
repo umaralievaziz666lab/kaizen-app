@@ -8,13 +8,21 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { background: #fafafa; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+        body { 
+            background: #fafafa; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            padding-top: env(safe-area-inset-top, 40px);
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
         .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .primary-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .avatar-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
         .post-card { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 16px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; }
         .post-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .bottom-nav { box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .bottom-nav { 
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            padding-bottom: env(safe-area-inset-bottom, 10px);
+        }
         .nav-btn.active { color: #667eea; }
         .add-btn-main { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); display: flex; align-items: center; justify-content: center; }
         .media-container { max-height: 250px; overflow: hidden; background-color: #f0f0f0; margin-bottom: 10px; cursor: pointer; }
@@ -28,9 +36,6 @@
         .remove-media-btn { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; z-index: 2; border: 2px solid white; }
         .leaderboard-item { transition: all 0.2s ease; }
         .leaderboard-item:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .medal-gold { background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%); color: #8B4513; }
-        .medal-silver { background: linear-gradient(135deg, #C0C0C0 0%, #A0A0A0 100%); color: #696969; }
-        .medal-bronze { background: linear-gradient(135deg, #CD7F32 0%, #8B4513 100%); color: #5D4037; }
         .current-user-highlight { border: 2px solid #667eea; background-color: #f0f4ff; }
         .notification-item { transition: all 0.2s ease; cursor: pointer; }
         .notification-item:hover { background-color: #f8fafc; }
@@ -39,18 +44,14 @@
         @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
         .profile-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .risk-fields { transition: all 0.3s ease; overflow: hidden; }
-        .stage-progress { display: flex; align-items: center; margin: 20px 0; position: relative; }
-        .stage-progress::before { content: ''; position: absolute; top: 50%; left: 20px; right: 20px; height: 2px; background: #e5e7eb; transform: translateY(-50%); z-index: 1; }
-        .stage-item { flex: 1; text-align: center; position: relative; z-index: 2; }
-        .stage-circle { width: 40px; height: 40px; border-radius: 50%; background: white; border: 2px solid #e5e7eb; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-weight: bold; font-size: 14px; transition: all 0.3s ease; }
-        .stage-active { border-color: #667eea; background: #667eea; color: white; }
-        .stage-completed { border-color: #10b981; background: #10b981; color: white; }
-        .stage-label { font-size: 11px; color: #6b7280; text-align: center; line-height: 1.2; }
-        .detail-modal { max-height: 85vh; overflow-y: auto; }
-        .liked { color: #ef4444; fill: #ef4444; }
+        .content-top { padding-top: max(env(safe-area-inset-top, 20px), 20px); }
+        .bottom-safe { padding-bottom: env(safe-area-inset-bottom, 10px); }
+        .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
+        .btn-loading:after { content: ''; position: absolute; width: 16px; height: 16px; top: 50%; left: 50%; margin-left: -8px; margin-top: -8px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spinner 0.6s linear infinite; }
+        @keyframes spinner { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-[#fafafa] min-h-full pb-20">
+<body class="bg-[#fafafa] min-h-full">
 
 <div id="offlineIndicator" class="hidden offline-indicator bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">🔴 Оффлайн</div>
 
@@ -72,7 +73,7 @@
     </div>
 </div>
 
-<div id="mainApp" class="hidden max-w-lg mx-auto bg-[#fafafa] min-h-screen relative shadow-2xl">
+<div id="mainApp" class="hidden max-w-lg mx-auto bg-[#fafafa] min-h-screen relative shadow-2xl content-top">
    
     <header class="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 py-3 flex items-center justify-between">
         <div class="flex items-center space-x-2"><h1 class="text-xl font-bold gradient-text">Kaizen App</h1></div>
@@ -169,13 +170,6 @@
         </div>
     </div>
 
-    <div id="otherUserProfile" class="hidden bg-[#fafafa] min-h-screen pb-24">
-        <div class="bg-white px-4 py-2 flex justify-between items-center sticky top-0 z-10"><button onclick="showSection('profile')" class="flex items-center text-gray-600"><svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>Назад</button><h2 class="text-lg font-bold">Профиль</h2><div class="w-10"></div></div>
-        <div class="bg-white p-6 border-b border-gray-200 mb-4"><div class="flex flex-col items-center text-center gap-2 mb-6"><div class="relative mb-4"><div id="otherUserAvatar" class="profile-avatar mx-auto"></div></div><h2 class="text-2xl font-bold text-gray-900 leading-tight" id="otherUserName">Имя Фамилия</h2><p class="text-gray-500 text-base" id="otherUserDepartment">Отдел</p><p class="text-gray-500 text-sm font-semibold" id="otherUserIdDisplay">Табельный номер: 000</p></div><div class="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-4"><div class="flex justify-between items-end mb-2"><div><span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Уровень</span><div class="text-2xl font-bold text-gray-900" id="otherUserLevel">1</div></div><div class="text-right"><span class="text-2xl font-bold text-purple-600" id="otherUserPoints">0</span><span class="text-xs font-bold text-purple-400 uppercase">баллов</span></div></div><div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"><div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full" id="otherUserLevelProgress" style="width: 0%"></div></div><div class="mt-1 text-xs text-gray-400 text-right">до следующего уровня: <span id="otherUserPointsToNext">100</span></div></div></div>
-        <div class="bg-white p-4 mb-4 border-y border-gray-200"><h3 class="font-bold text-gray-900 mb-4 flex items-center"><span class="flex items-center">📊 Статистика</span></h3><div class="grid grid-cols-3 gap-2"><div class="bg-gray-50 p-3 rounded-lg text-center"><div class="text-lg font-bold text-gray-800" id="otherUserStatAccepted">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">Принято</div></div><div class="bg-gray-50 p-3 rounded-lg text-center"><div class="text-lg font-bold text-blue-600" id="otherUserStatWork">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">В работе</div></div><div class="bg-gray-50 p-3 rounded-lg text-center"><div class="text-lg font-bold text-purple-600" id="otherUserStatCompleted">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">Выполнено</div></div></div></div>
-        <div class="bg-white p-4 mb-4 border-y border-gray-200"><h3 class="font-bold text-gray-900 mb-4 flex items-center"><span class="flex items-center">🎖️ Достижения</span></h3><div id="otherUserAchievementsContent"><div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center" id="otherUserAchievementsList"><div class="text-center text-gray-500 py-4">Загрузка достижений...</div></div></div></div>
-    </div>
-
     <div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
         <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50"><h3 class="font-bold text-gray-800">Новая запись</h3><button onclick="toggleCreateModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>
@@ -190,7 +184,7 @@
                     <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Участок</label><select id="reqLocation" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"><option value="Цех 1">Цех 1</option><option value="Цех 2">Цех 2</option><option value="Склад">Склад</option><option value="Офис">Офис</option></select></div>
                     <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Описание</label><textarea id="reqDesc" rows="4" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Опишите суть идеи или риска..."></textarea></div>
                     <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Фото / Видео (до 5 файлов)</label><input type="file" id="reqMediaFile" accept="image/*,video/*" multiple class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500" onchange="previewMultipleMedia(event)"><div class="text-xs text-gray-500 mt-1">Можно выбрать несколько файлов (удерживайте Ctrl)</div><div id="mediaPreviews" class="media-previews mt-2"></div><div id="mediaPreviewInfo" class="mt-2 text-xs text-gray-500"></div></div>
-                    <button type="submit" class="w-full primary-gradient text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95">Опубликовать</button>
+                    <button type="submit" id="submitPostBtn" class="w-full primary-gradient text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95">Опубликовать</button>
                 </form>
             </div>
         </div>
@@ -203,7 +197,7 @@
         <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
             <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0"><h3 class="font-bold text-gray-800">Комментарии (<span id="commentCount">0</span>)</h3><button onclick="toggleCommentsModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>
             <div id="commentsList" class="flex-grow p-4 space-y-4 overflow-y-auto"><div class="text-center text-gray-500 py-10" id="commentsEmpty">Пока нет комментариев.</div></div>
-            <div class="p-4 border-t border-gray-100 flex-shrink-0"><form id="commentForm" class="flex gap-2"><input type="hidden" id="currentPostId"><textarea id="commentText" rows="1" class="flex-grow p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm resize-none" placeholder="Ваш комментарий..."></textarea><button type="submit" class="primary-gradient text-white font-bold py-2.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-sm">Отправить</button></form></div>
+            <div class="p-4 border-t border-gray-100 flex-shrink-0"><form id="commentForm" class="flex gap-2"><input type="hidden" id="currentPostId"><textarea id="commentText" rows="1" class="flex-grow p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm resize-none" placeholder="Ваш комментарий..."></textarea><button type="submit" id="submitCommentBtn" class="primary-gradient text-white font-bold py-2.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-sm">Отправить</button></form></div>
         </div>
     </div>
 
@@ -217,7 +211,7 @@
         </div>
     </div>
    
-    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 max-w-lg mx-auto z-40 pb-safe">
+    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 max-w-lg mx-auto z-40 bottom-safe">
         <div class="grid grid-cols-5 h-16 relative">
             <button onclick="showSection('feed')" id="navFeed" class="nav-btn active flex flex-col items-center justify-center text-gray-900 relative"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg><span class="text-[10px] font-medium">Лента</span><span id="feedBadge" class="notification-badge hidden"></span></button>
             <button onclick="showSection('notifications')" id="navNotifications" class="nav-btn flex flex-col items-center justify-center text-gray-400 hover:text-gray-900 relative"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg><span class="text-[10px] font-medium">Уведом.</span><span id="notificationsBadge" class="notification-badge hidden"></span></button>
@@ -229,22 +223,35 @@
 </div>
 
 <script>
-    // === НАСТРОЙКИ SUPABASE ===
     const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
     
-    // Используем уникальное имя для клиента
     const kaizenSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
     let requests = [];
+    let isSubmitting = false;
     let currentFeedTab = 'all';
     let currentFilterType = 'all';
     let currentSortBy = 'date';
     let selectedMediaFiles = [];
-    let isOnline = navigator.onLine;
-    let notifications = [];
-    let likedPosts = {};
+
+    const shopItems = [
+        { id: 1, icon: '☕', title: 'Кофе брейк', points: 50, color: 'bg-orange-50 text-orange-600' },
+        { id: 2, icon: '👕', title: 'Фирменная футболка', points: 150, color: 'bg-blue-50 text-blue-600' },
+        { id: 3, icon: '🎟️', title: 'Билет в кино', points: 200, color: 'bg-pink-50 text-pink-600' },
+        { id: 4, icon: '🍕', title: 'Пицца в офис', points: 300, color: 'bg-yellow-50 text-yellow-600' },
+        { id: 5, icon: '🎧', title: 'Наушники', points: 1000, color: 'bg-purple-50 text-purple-600' },
+        { id: 6, icon: '🏝️', title: 'Выходной', points: 2000, color: 'bg-green-50 text-green-600' }
+    ];
+
+    const achievements = [
+        { id: 'first_post', icon: '🚀', title: 'Первый старт', desc: 'Создать первую заявку', target: 1, points: 10, targetType: 'posts' },
+        { id: 'idea_gen', icon: '💡', title: 'Идейный', desc: 'Предложить 5 идей', target: 5, points: 50, targetType: 'ideas' },
+        { id: 'safety_guard', icon: '🛡️', title: 'Страж', desc: 'Найти 3 риска', target: 3, points: 30, targetType: 'risks' },
+        { id: 'influencer', icon: '🔥', title: 'Влиятельный', desc: 'Получить 10 лайков', target: 10, points: 20, targetType: 'likes' },
+        { id: 'legend', icon: '👑', title: 'Легенда', desc: 'Набрать 500 баллов', target: 500, points: 100, targetType: 'points' }
+    ];
 
     function getPaddedId(id) { return '#' + String(id).padStart(5, '0'); }
     function formatDate(iso) {
@@ -253,14 +260,24 @@
     }
 
     async function loadRequests() {
-        const { data, error } = await kaizenSupabase
-            .from('requests')
-            .select('*')
-            .order('date', { ascending: false });
-        
-        if (error) { console.error('Ошибка загрузки заявок:', error); return; }
-        requests = data.map(r => ({ ...r, media: r.media || [], comments: r.comments || [] }));
-        renderFeed();
+        try {
+            const { data, error } = await kaizenSupabase
+                .from('requests')
+                .select('*')
+                .order('date', { ascending: false });
+            
+            if (error) throw error;
+            requests = data || [];
+            renderFeed();
+            updateAdminStats();
+        } catch (error) {
+            console.error('Ошибка загрузки заявок:', error);
+        }
+    }
+
+    async function loadUser(empId) {
+        const { data } = await kaizenSupabase.from('users').select('*').eq('id', empId).single();
+        return data;
     }
 
     async function saveUser(user) {
@@ -280,7 +297,7 @@
     }
 
     async function saveRequest(request) {
-        await kaizenSupabase.from('requests').upsert({
+        const { error } = await kaizenSupabase.from('requests').upsert({
             id: request.id,
             type: request.type,
             description: request.desc,
@@ -295,14 +312,16 @@
             assigned_to: request.assignedTo,
             risk_event_type: request.riskEventType,
             risk_urgency: request.riskUrgency,
-            anonymous: request.anonymous || false,
-            stages: request.stages,
-            completed: request.completed || false
+            anonymous: request.anonymous || false
         });
+        if (error) console.error('Ошибка сохранения:', error);
     }
 
     document.getElementById('registrationForm').addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        const btn = document.getElementById('registerBtn');
+        btn.classList.add('btn-loading');
         
         currentUser = {
             name: document.getElementById('regFullName').value,
@@ -321,24 +340,78 @@
         await saveUser(currentUser);
         localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
         
+        btn.classList.remove('btn-loading');
+        
         document.getElementById('registrationScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
+        
         await loadRequests();
         renderFeed();
         updateProfileUI();
+        renderShop();
+        renderAchievements();
+        renderLeaderboard();
+        createNotification('welcome', 'Добро пожаловать!', 'Вы успешно зарегистрировались в системе');
     });
 
-    async function init() {
-        await loadRequests();
-        const savedUser = localStorage.getItem('kaizenUser');
-        if (savedUser) {
-            currentUser = JSON.parse(savedUser);
-            document.getElementById('registrationScreen').classList.add('hidden');
-            document.getElementById('mainApp').classList.remove('hidden');
-            renderFeed();
-            updateProfileUI();
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (isSubmitting) return;
+        
+        isSubmitting = true;
+        const btn = document.getElementById('submitPostBtn');
+        btn.classList.add('btn-loading');
+        
+        let mediaDataURLs = [];
+        if (selectedMediaFiles.length > 0) {
+            mediaDataURLs = await Promise.all(selectedMediaFiles.map(f => {
+                return new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(f);
+                });
+            }));
         }
-    }
+
+        const type = document.querySelector('input[name="type"]:checked').value;
+        const tempId = Date.now();
+        
+        const newPost = {
+            id: tempId,
+            type,
+            author: currentUser.name,
+            authorId: currentUser.empId,
+            date: new Date().toISOString(),
+            location: document.getElementById('reqLocation').value,
+            desc: document.getElementById('reqDesc').value,
+            media: mediaDataURLs,
+            likes: 0,
+            status: 'new',
+            comments: [],
+            assignedTo: null
+        };
+
+        // Сразу добавляем в список
+        requests.unshift(newPost);
+        renderFeed();
+        toggleCreateModal();
+        e.target.reset();
+        document.getElementById('mediaPreviews').innerHTML = '';
+        selectedMediaFiles = [];
+
+        // Отправляем в фоне
+        saveRequest(newPost).then(() => {
+            currentUser.points += 5;
+            saveUser(currentUser);
+            updateProfileUI();
+            checkAchievements();
+            createNotification('new_request', 'Заявка создана', `Ваша ${type === 'idea' ? 'идея' : 'заявка о риске'} успешно отправлена`);
+            loadRequests(); // Обновляем для получения реального ID
+        });
+
+        isSubmitting = false;
+        btn.classList.remove('btn-loading');
+    });
 
     function renderFeed() {
         const feed = document.getElementById('requestsFeed');
@@ -361,13 +434,13 @@
                 <div class="p-3 flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">${post.author?.split(' ').map(n => n[0]).join('') || '?'}</div>
-                        <div><div class="font-bold text-sm">${post.author}</div><div class="text-xs text-gray-500">${post.location} • ${formatDate(post.date)}</div></div>
+                        <div><div class="font-bold text-sm">${post.author}</div><div class="text-xs text-gray-500">${post.location || '—'} • ${formatDate(post.date)}</div></div>
                     </div>
                     <div class="px-2 py-1 rounded-full text-[10px] font-bold ${post.type === 'risk' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}">${post.type === 'risk' ? '⚠️ Риск' : '💡 Идея'}</div>
                 </div>
                 <div class="px-3 pb-2">
                     <div class="text-xs text-purple-600 mb-2">${getPaddedId(post.id)}</div>
-                    <p class="text-sm">${post.description}</p>
+                    <p class="text-sm">${post.description || post.desc}</p>
                 </div>
                 <div class="px-3 py-2 border-t border-gray-100 flex items-center gap-4" onclick="event.stopPropagation()">
                     <button onclick="likePost(${post.id})" class="flex items-center gap-1 text-gray-500"><span class="text-sm">❤️ ${post.likes || 0}</span></button>
@@ -377,130 +450,130 @@
         `).join('');
     }
 
-    document.getElementById('createForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        let mediaDataURLs = [];
-        if (selectedMediaFiles.length > 0) {
-            mediaDataURLs = await Promise.all(selectedMediaFiles.map(f => {
-                return new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(f);
-                });
-            }));
-        }
-
-        const type = document.querySelector('input[name="type"]:checked').value;
-        const newId = (requests.length > 0 ? Math.max(...requests.map(r => r.id)) : 0) + 1;
-        
-        const newPost = {
-            id: newId,
-            type,
-            author: currentUser.name,
-            authorId: currentUser.empId,
-            date: new Date().toISOString(),
-            location: document.getElementById('reqLocation').value,
-            description: document.getElementById('reqDesc').value,
-            media: mediaDataURLs,
-            likes: 0,
-            status: 'new',
-            comments: [],
-            assignedTo: null
-        };
-
-        await saveRequest(newPost);
-        requests.unshift(newPost);
-        currentUser.points += 5;
-        await saveUser(currentUser);
-        
-        renderFeed();
-        toggleCreateModal();
-        e.target.reset();
-        document.getElementById('mediaPreviews').innerHTML = '';
-        selectedMediaFiles = [];
-    });
-
     function updateProfileUI() {
         if (!currentUser) return;
-        document.getElementById('profileName').textContent = currentUser.name;
-        document.getElementById('profilePoints').textContent = currentUser.points;
-        document.getElementById('profileLevel').textContent = Math.floor(currentUser.points / 100) + 1;
-    }
-
-    function toggleCreateModal() { document.getElementById('createModal').classList.toggle('hidden'); }
-    function toggleDetailModal() { document.getElementById('detailModal').classList.toggle('hidden'); }
-    function toggleCommentsModal() { document.getElementById('commentsModal').classList.toggle('hidden'); }
-    function toggleGalleryModal() { document.getElementById('galleryModal').classList.toggle('hidden'); }
-    function toggleTrainingModal() { document.getElementById('trainingModal').classList.toggle('hidden'); }
-    function toggleFilterMenu() { document.getElementById('filterMenu').classList.toggle('hidden'); }
-    
-    function handleSearchAction() {
-        const search = document.getElementById('searchByIdInput').value.trim();
-        if (search === '') toggleFilterMenu();
-        else renderFeed();
-    }
-    
-    function applyFilter() {
-        currentFilterType = document.getElementById('filterType').value;
-        currentSortBy = document.getElementById('sortBy').value;
-        document.getElementById('searchByIdInput').value = '';
-        renderFeed();
-    }
-
-    function switchFeedTab(tab) {
-        currentFeedTab = tab;
-        document.querySelectorAll('#feedTabs button').forEach(btn => btn.className = 'flex-1 py-3 text-sm font-medium text-gray-500');
-        document.getElementById(tab + 'FeedTab').className = 'flex-1 py-3 text-sm font-semibold text-gray-900 border-b-2 border-gray-900';
-        renderFeed();
-    }
-
-    function showSection(section) {
-        const sections = ['userProfile', 'userPanel', 'adminPanel', 'messagesSection', 'newsSection', 'notificationsSection', 'otherUserProfile', 'notificationArchive'];
-        sections.forEach(id => document.getElementById(id)?.classList.add('hidden'));
         
-        let sectionId = section === 'profile' ? 'userProfile' : 
-                       section === 'feed' ? 'userPanel' :
-                       section === 'notifications' ? 'notificationsSection' : 
-                       section === 'news' ? 'newsSection' : null;
-        if (sectionId) document.getElementById(sectionId)?.classList.remove('hidden');
+        const deptMap = { production: 'Производство', warehouse: 'Склад', office: 'Офис' };
+        document.getElementById('profileName').textContent = currentUser.name;
+        document.getElementById('profileDepartment').textContent = deptMap[currentUser.dept] || currentUser.dept;
+        document.getElementById('profileIdDisplay').textContent = `Табельный номер: ${currentUser.empId}`;
+        document.getElementById('profilePhoneDisplay').textContent = `Телефон: ${currentUser.phone}`;
+        document.getElementById('profilePoints').textContent = currentUser.points;
+        
+        const level = Math.floor(currentUser.points / 100) + 1;
+        document.getElementById('profileLevel').textContent = level;
+        document.getElementById('levelProgress').style.width = `${currentUser.points % 100}%`;
+        document.getElementById('pointsToNext').textContent = (level * 100) - currentUser.points;
+
+        const myReqs = requests.filter(r => r.author === currentUser.name);
+        document.getElementById('statAccepted').textContent = myReqs.filter(r => r.status === 'new').length;
+        document.getElementById('statWork').textContent = myReqs.filter(r => r.status === 'work').length;
+        document.getElementById('statCompleted').textContent = myReqs.filter(r => r.status === 'approved').length;
     }
 
-    function toggleRiskFields() {
-        const isRisk = document.querySelector('input[name="type"][value="risk"]').checked;
-        document.getElementById('riskFields').classList.toggle('hidden', !isRisk);
+    function renderShop() {
+        const shopList = document.getElementById('shopList');
+        if (!shopList || !currentUser) return;
+        
+        shopList.innerHTML = shopItems.map(item => {
+            const canBuy = currentUser.points >= item.points;
+            return `
+                <div class="bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 shadow-sm">
+                    <div class="w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-xl">${item.icon}</div>
+                    <div class="flex-1">
+                        <div class="text-xs font-bold text-gray-900">${item.title}</div>
+                        <div class="text-xs font-semibold ${canBuy ? 'text-green-600' : 'text-purple-600'}">${item.points} б.</div>
+                    </div>
+                    <button onclick="buyItem(${item.id})" ${!canBuy ? 'disabled' : ''} class="text-xs bg-blue-500 text-white px-2 py-1 rounded ${!canBuy ? 'opacity-50' : ''}">Купить</button>
+                </div>
+            `;
+        }).join('');
     }
 
-    function previewMultipleMedia(event) {
-        selectedMediaFiles = Array.from(event.target.files).slice(0, 5);
-        const previews = document.getElementById('mediaPreviews');
-        previews.innerHTML = '';
-        selectedMediaFiles.forEach((file, i) => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                previews.innerHTML += `<div class="media-preview-item"><img src="${e.target.result}"><div class="remove-media-btn" onclick="removeMediaFile(${i})">×</div></div>`;
-            };
-            reader.readAsDataURL(file);
-        });
+    function renderAchievements() {
+        const achList = document.getElementById('achievementsList');
+        if (!achList || !currentUser) return;
+        
+        const myReqs = requests.filter(r => r.author === currentUser.name);
+        const ideas = myReqs.filter(r => r.type === 'idea').length;
+        const risks = myReqs.filter(r => r.type === 'risk').length;
+        const totalLikes = requests.reduce((sum, r) => sum + (r.likes || 0), 0);
+
+        achList.innerHTML = achievements.map(ach => {
+            let currentCount = 0;
+            if (ach.targetType === 'posts') currentCount = myReqs.length;
+            else if (ach.targetType === 'ideas') currentCount = ideas;
+            else if (ach.targetType === 'risks') currentCount = risks;
+            else if (ach.targetType === 'likes') currentCount = totalLikes;
+            else if (ach.targetType === 'points') currentCount = currentUser.points;
+
+            const isDone = currentCount >= ach.target;
+            const progressPercent = Math.min(100, (currentCount / ach.target) * 100);
+
+            return `
+                <div class="flex flex-col items-center p-2 rounded-lg border ${isDone ? 'bg-yellow-100 border-yellow-300' : 'bg-gray-50 border-gray-200'}">
+                    <div class="text-3xl mb-1">${ach.icon}</div>
+                    <div class="text-sm font-bold text-center">${ach.title}</div>
+                    <div class="text-[9px] text-gray-500 text-center h-8">${ach.desc}</div>
+                    <div class="w-full mt-2">
+                        <div class="flex justify-between text-[10px] font-bold mb-1">
+                            <span>Прогресс:</span>
+                            <span>${currentCount}/${ach.target}</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-1.5">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
-    function removeMediaFile(index) {
-        selectedMediaFiles.splice(index, 1);
-        const previews = document.getElementById('mediaPreviews');
-        previews.innerHTML = '';
-        selectedMediaFiles.forEach((file, i) => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                previews.innerHTML += `<div class="media-preview-item"><img src="${e.target.result}"><div class="remove-media-btn" onclick="removeMediaFile(${i})">×</div></div>`;
-            };
-            reader.readAsDataURL(file);
-        });
+    async function renderLeaderboard() {
+        const { data: users } = await kaizenSupabase.from('users').select('*').order('points', { ascending: false }).limit(10);
+        const list = document.getElementById('leaderboardList');
+        if (!list) return;
+        
+        list.innerHTML = (users || []).map((user, index) => `
+            <div class="leaderboard-item bg-white p-3 rounded-lg border border-gray-100 flex items-center justify-between mb-2 ${currentUser?.name === user.name ? 'current-user-highlight' : ''}">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">${user.name?.split(' ').map(n => n[0]).join('') || '?'}</div>
+                    <div><div class="font-bold text-sm">${user.name}</div><div class="text-xs text-gray-500">${user.department || '—'}</div></div>
+                </div>
+                <div class="text-right">
+                    <div class="text-lg font-bold text-purple-600">${user.points || 0}</div>
+                    <div class="text-xs text-gray-500">#${index + 1}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function createNotification(type, title, message) {
+        console.log('Уведомление:', title, message);
+        // Здесь будет логика уведомлений
+    }
+
+    function checkAchievements() {
+        renderAchievements();
+    }
+
+    function buyItem(id) {
+        const item = shopItems.find(i => i.id === id);
+        if (currentUser.points >= item.points) {
+            if (confirm(`Купить "${item.title}" за ${item.points} баллов?`)) {
+                currentUser.points -= item.points;
+                saveUser(currentUser);
+                updateProfileUI();
+                renderShop();
+                alert('Покупка успешна!');
+            }
+        }
     }
 
     function showDetailModal(id) {
         const post = requests.find(r => r.id === id);
         if (!post) return;
-        document.getElementById('detailContent').innerHTML = `<p class="text-gray-700">${post.description}</p>`;
+        document.getElementById('detailContent').innerHTML = `<p class="text-gray-700">${post.description || post.desc}</p>`;
         document.getElementById('detailModal').classList.remove('hidden');
     }
 
@@ -539,6 +612,136 @@
         renderFeed();
     }
 
+    function toggleCreateModal() { document.getElementById('createModal').classList.toggle('hidden'); }
+    function toggleDetailModal() { document.getElementById('detailModal').classList.toggle('hidden'); }
+    function toggleCommentsModal() { document.getElementById('commentsModal').classList.toggle('hidden'); }
+    function toggleGalleryModal() { document.getElementById('galleryModal').classList.toggle('hidden'); }
+    function toggleTrainingModal() { document.getElementById('trainingModal').classList.toggle('hidden'); }
+    function toggleFilterMenu() { document.getElementById('filterMenu').classList.toggle('hidden'); }
+    function toggleSettingsDropdown(e) { e?.stopPropagation(); document.getElementById('settingsDropdown').classList.toggle('hidden'); }
+    function toggleSection(section) {
+        const content = document.getElementById(section + 'Content');
+        const toggle = document.getElementById(section + 'Toggle');
+        if (content.style.maxHeight === '0px' || !content.style.maxHeight) {
+            content.style.maxHeight = content.scrollHeight + 'px';
+            toggle?.classList.add('rotate-180');
+        } else {
+            content.style.maxHeight = '0px';
+            toggle?.classList.remove('rotate-180');
+        }
+    }
+
+    function handleSearchAction() {
+        const search = document.getElementById('searchByIdInput').value.trim();
+        if (search === '') toggleFilterMenu();
+        else renderFeed();
+    }
+    
+    function applyFilter() {
+        currentFilterType = document.getElementById('filterType').value;
+        currentSortBy = document.getElementById('sortBy').value;
+        document.getElementById('searchByIdInput').value = '';
+        renderFeed();
+    }
+
+    function switchFeedTab(tab) {
+        currentFeedTab = tab;
+        document.querySelectorAll('#feedTabs button').forEach(btn => btn.className = 'flex-1 py-3 text-sm font-medium text-gray-500');
+        document.getElementById(tab + 'FeedTab').className = 'flex-1 py-3 text-sm font-semibold text-gray-900 border-b-2 border-gray-900';
+        renderFeed();
+    }
+
+    function showSection(section) {
+        const sections = ['userProfile', 'userPanel', 'adminPanel', 'messagesSection', 'newsSection', 'notificationsSection', 'otherUserProfile', 'notificationArchive'];
+        sections.forEach(id => document.getElementById(id)?.classList.add('hidden'));
+        
+        let sectionId = section === 'profile' ? 'userProfile' : 
+                       section === 'feed' ? 'userPanel' :
+                       section === 'notifications' ? 'notificationsSection' : 
+                       section === 'news' ? 'newsSection' : null;
+        if (sectionId) document.getElementById(sectionId)?.classList.remove('hidden');
+        
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.remove('active', 'text-gray-900');
+            b.classList.add('text-gray-400');
+        });
+        const navBtn = document.getElementById('nav' + section.charAt(0).toUpperCase() + section.slice(1));
+        if (navBtn) {
+            navBtn.classList.add('active', 'text-gray-900');
+            navBtn.classList.remove('text-gray-400');
+        }
+    }
+
+    function toggleRiskFields() {
+        const isRisk = document.querySelector('input[name="type"][value="risk"]').checked;
+        document.getElementById('riskFields').classList.toggle('hidden', !isRisk);
+    }
+
+    function previewMultipleMedia(event) {
+        selectedMediaFiles = Array.from(event.target.files).slice(0, 5);
+        const previews = document.getElementById('mediaPreviews');
+        previews.innerHTML = '';
+        selectedMediaFiles.forEach((file, i) => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                previews.innerHTML += `<div class="media-preview-item"><img src="${e.target.result}"><div class="remove-media-btn" onclick="removeMediaFile(${i})">×</div></div>`;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function removeMediaFile(index) {
+        selectedMediaFiles.splice(index, 1);
+        const previews = document.getElementById('mediaPreviews');
+        previews.innerHTML = '';
+        selectedMediaFiles.forEach((file, i) => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                previews.innerHTML += `<div class="media-preview-item"><img src="${e.target.result}"><div class="remove-media-btn" onclick="removeMediaFile(${i})">×</div></div>`;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = e => {
+            currentUser.profilePic = e.target.result;
+            saveUser(currentUser);
+            updateProfileUI();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function showTrainingModal() { document.getElementById('trainingModal').classList.remove('hidden'); }
+    function startTraining() {
+        document.getElementById('videoOverlay').classList.add('hidden');
+        setTimeout(() => {
+            document.getElementById('videoLesson').classList.add('hidden');
+            document.getElementById('trainingTest').classList.remove('hidden');
+        }, 5000);
+    }
+
+    function checkTest() {
+        const q1 = document.querySelector('input[name="q1"]:checked');
+        const q2 = document.querySelector('input[name="q2"]:checked');
+        if (q1?.value === 'idea' && q2?.value === 'profile') {
+            if (!currentUser.isTrained) {
+                currentUser.isTrained = true;
+                currentUser.points += 20;
+                saveUser(currentUser);
+                updateProfileUI();
+            }
+            toggleTrainingModal();
+            alert('✅ Тест пройден!');
+        } else {
+            alert('❌ Неправильные ответы');
+        }
+    }
+
     function logout() {
         if (confirm('Выйти из аккаунта?')) {
             localStorage.removeItem('kaizenUser');
@@ -546,6 +749,34 @@
         }
     }
 
+    function updateAdminStats() {
+        document.getElementById('totalRequests').textContent = requests.length;
+        document.getElementById('inProgressRequests').textContent = requests.filter(r => r.status === 'work').length;
+    }
+
+    async function init() {
+        await loadRequests();
+        const savedUser = localStorage.getItem('kaizenUser');
+        if (savedUser) {
+            currentUser = JSON.parse(savedUser);
+            const dbUser = await loadUser(currentUser.empId);
+            if (dbUser) {
+                currentUser = { ...currentUser, ...dbUser };
+                localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+            }
+            document.getElementById('registrationScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            renderFeed();
+            updateProfileUI();
+            renderShop();
+            renderAchievements();
+            renderLeaderboard();
+        }
+    }
+
+    document.getElementById('commentForm').addEventListener('submit', addComment);
+    document.getElementById('trainingTestForm').addEventListener('submit', (e) => { e.preventDefault(); checkTest(); });
+    
     init();
 </script>
 </body>
