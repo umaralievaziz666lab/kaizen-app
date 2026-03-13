@@ -1,43 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Тест Supabase</title>
+    <title>Тест создания записей</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Тест Supabase</h1>
+    <h1>Тест создания записей</h1>
     <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc;"></div>
 
     <script>
-        // Пишем что-то сразу для проверки
-        document.getElementById('result').innerHTML = '1. Скрипт запущен<br>';
-        
-        // Ваши новые ключи
         const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
         
-        document.getElementById('result').innerHTML += '2. Ключи загружены<br>';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const result = document.getElementById('result');
         
-        try {
-            // Создаем клиент
-            const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-            document.getElementById('result').innerHTML += '3. Клиент создан<br>';
+        async function runTest() {
+            result.innerHTML = '🔄 Начинаем тест...<br>';
             
-            // Пробуем простой запрос
-            supabase
+            // 1. Создаем пользователя
+            result.innerHTML += '📝 Создаем пользователя...<br>';
+            const testId = 'user_' + Date.now();
+            
+            const { data: userData, error: userError } = await supabase
                 .from('users')
-                .select('count', { count: 'exact', head: true })
-                .then(response => {
-                    document.getElementById('result').innerHTML += '4. Ответ получен<br>';
-                    document.getElementById('result').innerHTML += '5. Результат: ' + JSON.stringify(response);
-                })
-                .catch(error => {
-                    document.getElementById('result').innerHTML += '4. Ошибка: ' + error.message;
-                });
-                
-        } catch (error) {
-            document.getElementById('result').innerHTML += '3. Ошибка создания клиента: ' + error.message;
+                .insert([
+                    {
+                        id: testId,
+                        name: 'Тестовый Пользователь',
+                        points: 0,
+                        role: 'user',
+                        phone: '+79991234567',
+                        department: 'Тест'
+                    }
+                ])
+                .select();
+            
+            if (userError) {
+                result.innerHTML += '❌ Ошибка создания пользователя: ' + userError.message + '<br>';
+                return;
+            }
+            
+            result.innerHTML += '✅ Пользователь создан! ID: ' + testId + '<br>';
+            
+            // 2. Создаем заявку
+            result.innerHTML += '📝 Создаем заявку...<br>';
+            
+            const { data: reqData, error: reqError } = await supabase
+                .from('requests')
+                .insert([
+                    {
+                        type: 'idea',
+                        description: 'Тестовая заявка',
+                        location: 'Тестовый участок',
+                        author: 'Тестовый Пользователь',
+                        author_id: testId,
+                        status: 'new',
+                        date: new Date().toISOString()
+                    }
+                ])
+                .select();
+            
+            if (reqError) {
+                result.innerHTML += '❌ Ошибка создания заявки: ' + reqError.message + '<br>';
+                return;
+            }
+            
+            result.innerHTML += '✅ Заявка создана!<br>';
+            result.innerHTML += '✅ ТЕСТ ПРОЙДЕН! Все работает!';
         }
+        
+        runTest();
     </script>
 </body>
 </html>
