@@ -8,7 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js" crossorigin="anonymous"></script>
     <style>
+        img.emoji { height: 1.2em; width: 1.2em; vertical-align: -0.15em; display: inline; }
         body { 
             background: #fafafa !important; 
             color: #111111 !important;
@@ -58,11 +60,15 @@
         @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
         .profile-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .risk-fields { transition: all 0.3s ease; overflow: hidden; }
-        .content-top { padding-top: max(env(safe-area-inset-top, 20px), 20px); }
+        .content-top { padding-top: env(safe-area-inset-top, 0px); }
         .bottom-safe { padding-bottom: env(safe-area-inset-bottom, 10px); }
+        /* Header sits right under status bar / notch */
+        #mainApp > header { padding-top: calc(env(safe-area-inset-top, 0px) + 8px); padding-bottom: 8px; }
         .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
         .btn-loading:after { content: ''; position: absolute; width: 16px; height: 16px; top: 50%; left: 50%; margin-left: -8px; margin-top: -8px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spinner 0.6s linear infinite; }
         @keyframes spinner { to { transform: rotate(360deg); } }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        #requestsFeed { padding: 8px; }
     </style>
 </head>
 <body class="bg-[#fafafa] min-h-full">
@@ -91,7 +97,7 @@
     </div>
 </div>
 
-<div id="mainApp" class="hidden max-w-lg mx-auto bg-[#fafafa] min-h-screen relative shadow-2xl content-top">
+<div id="mainApp" class="hidden max-w-lg mx-auto bg-[#fafafa] min-h-screen relative shadow-2xl">
    
     <header class="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 py-2 flex items-center justify-center">
         <h1 class="text-lg font-bold tracking-widest gradient-text uppercase">AKKERMANN PULSE</h1>
@@ -495,36 +501,94 @@
         if (!feed) return;
         
         let data = [...requests];
-        if (currentFeedTab === 'my' && currentUser) data = data.filter(r => r.author === currentUser.name);
+        const search = document.getElementById('searchByIdInput')?.value.trim();
+        if (search) data = data.filter(r => String(r.id).includes(search) || getPaddedId(r.id).includes(search));
+        if (currentFeedTab === 'my' && currentUser) data = data.filter(r => r.author_id === currentUser.empId || r.author === currentUser.name);
         else if (currentFeedTab === 'assigned' && currentUser) data = data.filter(r => r.assigned_to === currentUser.name);
         if (currentFilterType !== 'all') data = data.filter(r => r.type === currentFilterType);
-        if (currentSortBy === 'oldest') data.sort((a, b) => new Date(a.date) - new Date(b.date));
-        else if (currentSortBy === 'likes') data.sort((a, b) => b.likes - a.likes);
+        if (currentSortBy === 'oldest') data.sort((a, b) => new Date(a.date||a.created_at) - new Date(b.date||b.created_at));
+        else if (currentSortBy === 'likes') data.sort((a, b) => (b.likes||0) - (a.likes||0));
 
         if (data.length === 0) {
-            feed.innerHTML = '<div class="text-center py-20"><div class="text-6xl mb-4">📋</div><h3 class="text-lg font-bold">Пока пусто</h3></div>';
+            feed.innerHTML = '<div class="text-center py-20"><div class="text-5xl mb-4">📋</div><h3 class="text-lg font-bold text-gray-700">Пока пусто</h3><p class="text-sm text-gray-400 mt-1">Станьте первым!</p></div>';
             return;
         }
 
-        feed.innerHTML = data.map(post => `
-            <div class="post-card" onclick="showDetailModal(${post.id})">
-                <div class="p-3 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">${post.author?.split(' ').map(n => n[0]).join('') || '?'}</div>
-                        <div><div class="font-bold text-sm">${post.author}</div><div class="text-xs text-gray-500">${post.location || '—'} • ${formatDate(post.date)}</div></div>
+        const statusMap = { new: { label: 'Новая', cls: 'bg-gray-100 text-gray-600' }, work: { label: 'В работе', cls: 'bg-blue-100 text-blue-700' }, approved: { label: 'Принята', cls: 'bg-green-100 text-green-700' }, rejected: { label: 'Отклонена', cls: 'bg-red-100 text-red-700' }, completed: { label: 'Выполнена', cls: 'bg-purple-100 text-purple-700' } };
+
+        feed.innerHTML = data.map(post => {
+            const initials = (post.author || '?').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
+            const media = Array.isArray(post.media) ? post.media : (post.media ? JSON.parse(post.media) : []);
+            const comments = Array.isArray(post.comments) ? post.comments : (post.comments ? JSON.parse(post.comments) : []);
+            const isMyPost = post.author_id === currentUser?.empId || post.author === currentUser?.name;
+            const st = statusMap[post.status] || statusMap.new;
+
+            // Media block
+            let mediaHtml = '';
+            if (media.length === 1) {
+                const m = media[0];
+                const isVideo = m.startsWith('data:video') || m.includes('.mp4') || m.includes('.mov');
+                mediaHtml = isVideo
+                    ? `<video src="${m}" class="w-full max-h-72 object-cover bg-black" controls playsinline onclick="event.stopPropagation()"></video>`
+                    : `<img src="${m}" class="w-full max-h-72 object-cover cursor-pointer" onclick="event.stopPropagation(); openGallery('${post.id}', 0)" loading="lazy">`;
+            } else if (media.length > 1) {
+                mediaHtml = `<div class="grid grid-cols-2 gap-0.5 bg-gray-200">${media.slice(0,4).map((m,i) => {
+                    const isVideo = m.startsWith('data:video');
+                    const overlay = (i === 3 && media.length > 4) ? `<div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-bold text-xl">+${media.length - 4}</div>` : '';
+                    return `<div class="relative aspect-square overflow-hidden">${isVideo ? `<video src="${m}" class="w-full h-full object-cover"></video>` : `<img src="${m}" class="w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); openGallery(${post.id}, ${i})" loading="lazy">`}${overlay}</div>`;
+                }).join('')}</div>`;
+            }
+
+            return `
+            <div class="bg-white border-b border-gray-100 mb-0" style="margin-bottom:8px; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+                <!-- Header -->
+                <div class="px-3 pt-3 pb-2 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">${initials}</div>
+                        <div>
+                            <div class="font-bold text-sm text-gray-900 leading-tight">${post.author || 'Аноним'}</div>
+                            <div class="text-[11px] text-gray-400 leading-tight">📍 ${post.location || '—'} &nbsp;·&nbsp; ${formatDate(post.date||post.created_at)}</div>
+                        </div>
                     </div>
-                    <div class="px-2 py-1 rounded-full text-[10px] font-bold ${post.type === 'risk' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}">${post.type === 'risk' ? '⚠️ Риск' : '💡 Идея'}</div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full ${post.type === 'risk' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}">${post.type === 'risk' ? '⚠️ Риск' : '💡 Идея'}</span>
+                        <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${st.cls}">${st.label}</span>
+                    </div>
                 </div>
-                <div class="px-3 pb-2">
-                    <div class="text-xs text-purple-600 mb-2">${getPaddedId(post.id)}</div>
-                    <p class="text-sm">${post.description || post.desc}</p>
+                <!-- Media -->
+                ${mediaHtml ? `<div class="overflow-hidden" onclick="showDetailModal(${post.id})">${mediaHtml}</div>` : ''}
+                <!-- Description -->
+                <div class="px-3 pt-2 pb-1 cursor-pointer" onclick="showDetailModal(${post.id})">
+                    <span class="text-[11px] font-mono text-purple-500">${getPaddedId(post.id)}</span>
+                    <p class="text-sm text-gray-800 mt-0.5 leading-relaxed line-clamp-3">${post.description || post.desc || ''}</p>
                 </div>
-                <div class="px-3 py-2 border-t border-gray-100 flex items-center gap-4" onclick="event.stopPropagation()">
-                    <button onclick="likePost(${post.id})" class="flex items-center gap-1 text-gray-500"><span class="text-sm">❤️ ${post.likes || 0}</span></button>
-                    <button onclick="showCommentsModal(${post.id})" class="flex items-center gap-1 text-gray-500"><span class="text-sm">💬 ${post.comments?.length || 0}</span></button>
+                <!-- Actions -->
+                <div class="px-3 py-2 flex items-center gap-5 border-t border-gray-50" onclick="event.stopPropagation()">
+                    <button onclick="likePost(${post.id})" class="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition active:scale-95">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
+                        <span class="text-sm font-medium">${post.likes || 0}</span>
+                    </button>
+                    <button onclick="showCommentsModal(${post.id})" class="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition active:scale-95">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+                        <span class="text-sm font-medium">${comments.length}</span>
+                    </button>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
+        parseTwemoji();
+    }
+
+    function openGallery(postId, index) {
+        const post = requests.find(r => r.id == postId);
+        if (!post) return;
+        const media = Array.isArray(post.media) ? post.media : (post.media ? JSON.parse(post.media) : []);
+        const m = media[index];
+        if (!m) return;
+        const isVideo = m.startsWith('data:video');
+        document.getElementById('galleryContent').innerHTML = isVideo
+            ? `<video src="${m}" controls autoplay class="max-w-full max-h-screen object-contain"></video>`
+            : `<img src="${m}" class="max-w-full max-h-screen object-contain">`;
+        document.getElementById('galleryModal').classList.remove('hidden');
     }
 
     function updateProfileUI() {
@@ -695,17 +759,18 @@
             list.innerHTML = items.map(n => {
                 const date = new Date(n.date);
                 const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-                const typeIcons = { welcome: '👋', new_request: '📋', status_update: '🔄', info: 'ℹ️', achievement: '🎖️' };
+                const typeIcons = { welcome: '👋', new_request: '📋', status_update: '🔄', info: 'ℹ️', achievement: '🏅', comment: '💬' };
+                const clickAction = n.post_id ? `onNotificationClick(${n.id}, ${n.post_id})` : `markNotificationRead(${n.id})`;
                 return `
-                    <div class="notification-item p-3 rounded-xl border ${n.read ? 'bg-white border-gray-100' : 'notification-unread border-blue-100'}" onclick="markNotificationRead(${n.id})">
+                    <div class="notification-item p-3 rounded-xl border ${n.read ? 'bg-white border-gray-100' : 'notification-unread border-blue-100'}" onclick="${clickAction}">
                         <div class="flex items-start gap-3">
                             <span class="text-xl flex-shrink-0">${typeIcons[n.type] || 'ℹ️'}</span>
                             <div class="flex-1 min-w-0">
                                 <div class="font-bold text-sm text-gray-900">${n.title}</div>
-                                <p class="text-xs text-gray-500 mt-0.5">${n.message}</p>
+                                <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">${n.message}</p>
                                 <div class="text-[10px] text-gray-400 mt-1">${dateStr}</div>
                             </div>
-                            ${!n.read ? '<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1"></span>' : ''}
+                            ${!n.read ? '<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5"></span>' : ''}
                         </div>
                     </div>
                 `;
@@ -726,6 +791,17 @@
             .update({ read: true })
             .eq('user_id', currentUser.empId);
         loadNotifications();
+    }
+
+    async function onNotificationClick(notifId, postId) {
+        await markNotificationRead(notifId);
+        // Если пост ещё не загружен — подгружаем
+        if (!requests.find(r => r.id == postId)) {
+            const { data } = await kaizenSupabase.from('requests').select('*').eq('id', postId).single();
+            if (data) requests.unshift(data);
+        }
+        showSection('feed');
+        setTimeout(() => showCommentsModal(postId), 150);
     }
 
     function showNotificationArchive() {
@@ -796,12 +872,33 @@
         
         const post = requests.find(r => r.id == id);
         if (!post) return;
+
+        const btn = document.getElementById('submitCommentBtn');
+        btn.classList.add('btn-loading');
         
-        post.comments = post.comments || [];
+        post.comments = Array.isArray(post.comments) ? post.comments : [];
         post.comments.push({ author: currentUser.name, text, date: new Date().toISOString() });
-        await saveRequest(post);
+
+        await kaizenSupabase.from('requests').update({ comments: post.comments }).eq('id', id);
+
+        btn.classList.remove('btn-loading');
         showCommentsModal(id);
         document.getElementById('commentText').value = '';
+        renderFeed(); // обновляем счётчик комментов в ленте
+
+        // Уведомляем автора поста (если это не сам автор)
+        const postAuthorId = post.author_id;
+        if (postAuthorId && postAuthorId !== currentUser.empId) {
+            await kaizenSupabase.from('notifications').insert({
+                user_id: postAuthorId,
+                title: '💬 Новый комментарий',
+                message: `${currentUser.name} прокомментировал вашу заявку ${getPaddedId(post.id)}: «${text.substring(0, 60)}${text.length > 60 ? '...' : ''}»`,
+                type: 'comment',
+                post_id: post.id,
+                read: false,
+                date: new Date().toISOString()
+            });
+        }
     }
 
     async function likePost(id) {
@@ -1112,6 +1209,10 @@
         }
     }
 
+    function parseTwemoji() {
+        if (window.twemoji) twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
+    }
+
     function launchApp() {
         document.getElementById('registrationScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
@@ -1122,6 +1223,7 @@
         renderLeaderboard();
         loadNews();
         loadNotifications();
+        parseTwemoji();
         // Show admin button in news section if admin
         if (currentUser?.role === 'admin') {
             document.getElementById('addNewsBtn')?.classList.remove('hidden');
