@@ -5,40 +5,76 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <h1>Тест Supabase</h1>
-    <div id="status" style="color: blue;">Загрузка...</div>
-    <div id="result" style="margin-top: 20px;"></div>
+    <h1>Тест подключения к Supabase</h1>
+    <div id="result" style="margin: 20px; padding: 20px; border: 1px solid #ccc;"></div>
 
     <script>
-        // Просто объявляем переменные
-        const SUPABASE_URL = 'https://jwjskwicrtoknrsucnxn.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp3anNrd2ljcnRva25yc3VjbnhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDM3NDcsImV4cCI6MjA4ODg3OTc0N30.N9U4OwtbCzzYo3TwBV1IIVMS4lRNCvhUCRFgcga_WUc';
+        // НОВЫЕ КЛЮЧИ
+        const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
         
-        // Создаем клиент
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
-        // Пишем в консоль
-        console.log('Клиент создан:', supabase);
-        
-        // Меняем текст на странице
-        document.getElementById('status').innerHTML = '✅ Клиент создан, пробуем подключиться...';
-        
-        // Пробуем самый простой запрос
-        supabase
-            .from('users')
-            .select('count', { count: 'exact', head: true })
-            .then(response => {
-                console.log('Ответ:', response);
-                if (response.error) {
-                    document.getElementById('result').innerHTML = '❌ Ошибка: ' + response.error.message;
+        async function runTest() {
+            const result = document.getElementById('result');
+            result.innerHTML = '🔄 Проверяем подключение...<br>';
+            
+            try {
+                // 1. Проверяем таблицу users
+                result.innerHTML += '📊 Проверяем users...<br>';
+                const { data: users, error: usersError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .limit(1);
+                
+                if (usersError) {
+                    result.innerHTML += '❌ Ошибка users: ' + usersError.message + '<br>';
                 } else {
-                    document.getElementById('result').innerHTML = '✅ Подключение работает!';
+                    result.innerHTML += '✅ Таблица users доступна<br>';
                 }
-            })
-            .catch(error => {
-                console.error('Ошибка:', error);
-                document.getElementById('result').innerHTML = '❌ Ошибка: ' + error.message;
-            });
+                
+                // 2. Проверяем таблицу requests
+                result.innerHTML += '📊 Проверяем requests...<br>';
+                const { data: requests, error: reqError } = await supabase
+                    .from('requests')
+                    .select('*')
+                    .limit(1);
+                
+                if (reqError) {
+                    result.innerHTML += '❌ Ошибка requests: ' + reqError.message + '<br>';
+                } else {
+                    result.innerHTML += '✅ Таблица requests доступна<br>';
+                }
+                
+                // 3. Создаем тестовую запись
+                result.innerHTML += '📝 Создаем тестовую запись...<br>';
+                const { data, error } = await supabase
+                    .from('requests')
+                    .insert([
+                        {
+                            type: 'idea',
+                            description: 'Тест подключения',
+                            location: 'Тест',
+                            author: 'Тестер',
+                            status: 'new',
+                            date: new Date().toISOString()
+                        }
+                    ]);
+                
+                if (error) {
+                    result.innerHTML += '❌ Ошибка создания: ' + error.message + '<br>';
+                } else {
+                    result.innerHTML += '✅ Тестовая запись создана!<br>';
+                }
+                
+                result.innerHTML += '<br>✅ ТЕСТ ЗАВЕРШЕН!';
+                
+            } catch (e) {
+                result.innerHTML += '❌ КРИТИЧЕСКАЯ ОШИБКА: ' + e.message;
+            }
+        }
+        
+        runTest();
     </script>
 </body>
 </html>
