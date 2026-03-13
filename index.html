@@ -297,22 +297,11 @@
     let currentSortBy = 'date';
     let selectedMediaFiles = [];
 
-    const shopItems = [
-        { id: 1, icon: '☕', title: 'Кофе брейк', points: 50, color: 'bg-orange-50 text-orange-600' },
-        { id: 2, icon: '👕', title: 'Фирменная футболка', points: 150, color: 'bg-blue-50 text-blue-600' },
-        { id: 3, icon: '🎟️', title: 'Билет в кино', points: 200, color: 'bg-pink-50 text-pink-600' },
-        { id: 4, icon: '🍕', title: 'Пицца в офис', points: 300, color: 'bg-yellow-50 text-yellow-600' },
-        { id: 5, icon: '🎧', title: 'Наушники', points: 1000, color: 'bg-purple-50 text-purple-600' },
-        { id: 6, icon: '🏝️', title: 'Выходной', points: 2000, color: 'bg-green-50 text-green-600' }
-    ];
+    // Shop items загружаются из БД (таблица shop_items)
+    let shopItems = [];
 
-    const achievements = [
-        { id: 'first_post', icon: '🚀', title: 'Первый старт', desc: 'Создать первую заявку', target: 1, points: 10, targetType: 'posts' },
-        { id: 'idea_gen', icon: '💡', title: 'Идейный', desc: 'Предложить 5 идей', target: 5, points: 50, targetType: 'ideas' },
-        { id: 'safety_guard', icon: '🛡️', title: 'Страж', desc: 'Найти 3 риска', target: 3, points: 30, targetType: 'risks' },
-        { id: 'influencer', icon: '🔥', title: 'Влиятельный', desc: 'Получить 10 лайков', target: 10, points: 20, targetType: 'likes' },
-        { id: 'legend', icon: '👑', title: 'Легенда', desc: 'Набрать 500 баллов', target: 500, points: 100, targetType: 'points' }
-    ];
+    // Achievements загружаются из БД (таблица achievements)
+    let achievements = [];
 
     function getPaddedId(id) { return '#' + String(id).padStart(5, '0'); }
     function formatDate(iso) {
@@ -338,7 +327,21 @@
 
     async function loadUser(empId) {
         const { data } = await kaizenSupabase.from('users').select('*').eq('id', empId).single();
-        return data;
+        if (!data) return null;
+        return {
+            name: data.name,
+            empId: data.id,
+            phone: data.phone || '',
+            email: data.email || '',
+            dept: data.department || '',
+            points: data.points || 0,
+            role: data.role || 'user',
+            profilePic: data.profile_pic || null,
+            isTrained: data.is_trained || false,
+            completedAchievements: data.completed_achievements || [],
+            unseenAchievements: data.unseen_achievements || [],
+            tgId: data.telegram_id || null
+        };
     }
 
     async function saveUser(user) {
@@ -528,9 +531,15 @@
         document.getElementById('statCompleted').textContent = myReqs.filter(r => r.status === 'approved').length;
     }
 
-    function renderShop() {
+    async function renderShop() {
         const shopList = document.getElementById('shopList');
         if (!shopList || !currentUser) return;
+
+        // Загружаем из БД если ещё не загружено
+        if (shopItems.length === 0) {
+            const { data } = await kaizenSupabase.from('shop_items').select('*').order('points');
+            if (data) shopItems.push(...data);
+        }
         
         shopList.innerHTML = shopItems.map(item => {
             const canBuy = currentUser.points >= item.points;
@@ -541,37 +550,46 @@
                         <div class="text-xs font-bold text-gray-900">${item.title}</div>
                         <div class="text-xs font-semibold ${canBuy ? 'text-green-600' : 'text-purple-600'}">${item.points} б.</div>
                     </div>
-                    <button onclick="buyItem(${item.id})" ${!canBuy ? 'disabled' : ''} class="text-xs bg-blue-500 text-white px-2 py-1 rounded ${!canBuy ? 'opacity-50' : ''}">Купить</button>
+                    <button onclick="buyItem(${item.id})" ${!canBuy ? 'disabled' : ''} class="text-xs bg-blue-500 text-white px-2 py-1 rounded ${!canBuy ? 'opacity-50' : 'active:scale-95 transition'}">Купить</button>
                 </div>
             `;
         }).join('');
     }
 
-    function renderAchievements() {
+    async function renderAchievements() {
         const achList = document.getElementById('achievementsList');
         if (!achList || !currentUser) return;
+
+        // Загружаем из БД если ещё не загружено
+        if (achievements.length === 0) {
+            const { data } = await kaizenSupabase.from('achievements').select('*');
+            if (data) achievements.push(...data);
+        }
         
-        const myReqs = requests.filter(r => r.author === currentUser.name);
+        const myReqs = requests.filter(r => r.author_id === currentUser.empId || r.author === currentUser.name);
         const ideas = myReqs.filter(r => r.type === 'idea').length;
         const risks = myReqs.filter(r => r.type === 'risk').length;
-        const totalLikes = requests.reduce((sum, r) => sum + (r.likes || 0), 0);
+        const totalLikes = myReqs.reduce((sum, r) => sum + (r.likes || 0), 0);
 
         achList.innerHTML = achievements.map(ach => {
             let currentCount = 0;
-            if (ach.targetType === 'posts') currentCount = myReqs.length;
-            else if (ach.targetType === 'ideas') currentCount = ideas;
-            else if (ach.targetType === 'risks') currentCount = risks;
-            else if (ach.targetType === 'likes') currentCount = totalLikes;
-            else if (ach.targetType === 'points') currentCount = currentUser.points;
+            const targetType = ach.target_type || ach.targetType;
+            if (targetType === 'posts') currentCount = myReqs.length;
+            else if (targetType === 'ideas') currentCount = ideas;
+            else if (targetType === 'risks') currentCount = risks;
+            else if (targetType === 'likes') currentCount = totalLikes;
+            else if (targetType === 'points') currentCount = currentUser.points;
+            else if (targetType === 'manual') currentCount = currentUser.isTrained ? 1 : 0;
 
             const isDone = currentCount >= ach.target;
             const progressPercent = Math.min(100, (currentCount / ach.target) * 100);
+            const desc = ach.description || ach.desc;
 
             return `
                 <div class="flex flex-col items-center p-2 rounded-lg border ${isDone ? 'bg-yellow-100 border-yellow-300' : 'bg-gray-50 border-gray-200'}">
                     <div class="text-3xl mb-1">${ach.icon}</div>
                     <div class="text-sm font-bold text-center">${ach.title}</div>
-                    <div class="text-[9px] text-gray-500 text-center h-8">${ach.desc}</div>
+                    <div class="text-[9px] text-gray-500 text-center h-8">${desc}</div>
                     <div class="w-full mt-2">
                         <div class="flex justify-between text-[10px] font-bold mb-1">
                             <span>Прогресс:</span>
@@ -605,26 +623,121 @@
         `).join('');
     }
 
-    function createNotification(type, title, message) {
-        console.log('Уведомление:', title, message);
-        // Здесь будет логика уведомлений
+    async function createNotification(type, title, message, postId = null) {
+        if (!currentUser) return;
+        try {
+            await kaizenSupabase.from('notifications').insert({
+                user_id: currentUser.empId,
+                title,
+                message,
+                type,
+                post_id: postId,
+                read: false,
+                date: new Date().toISOString()
+            });
+            loadNotifications();
+        } catch(e) {
+            console.error('Ошибка уведомления:', e);
+        }
+    }
+
+    async function loadNotifications() {
+        if (!currentUser) return;
+        try {
+            const { data } = await kaizenSupabase
+                .from('notifications')
+                .select('*')
+                .eq('user_id', currentUser.empId)
+                .order('date', { ascending: false })
+                .limit(30);
+
+            const list = document.getElementById('notificationsList');
+            const empty = document.getElementById('emptyNotifications');
+            const markBtn = document.getElementById('markAllReadButton');
+            if (!list) return;
+
+            const items = data || [];
+            const unread = items.filter(n => !n.read);
+
+            // Обновляем бейдж
+            const badge = document.getElementById('notificationsBadge');
+            if (badge) {
+                badge.textContent = unread.length;
+                badge.classList.toggle('hidden', unread.length === 0);
+            }
+
+            if (items.length === 0) {
+                list.innerHTML = '';
+                empty?.classList.remove('hidden');
+                markBtn?.classList.add('hidden');
+                return;
+            }
+            empty?.classList.add('hidden');
+            markBtn?.classList.toggle('hidden', unread.length === 0);
+
+            list.innerHTML = items.map(n => {
+                const date = new Date(n.date);
+                const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
+                const typeIcons = { welcome: '👋', new_request: '📋', status_update: '🔄', info: 'ℹ️', achievement: '🎖️' };
+                return `
+                    <div class="notification-item p-3 rounded-xl border ${n.read ? 'bg-white border-gray-100' : 'notification-unread border-blue-100'}" onclick="markNotificationRead(${n.id})">
+                        <div class="flex items-start gap-3">
+                            <span class="text-xl flex-shrink-0">${typeIcons[n.type] || 'ℹ️'}</span>
+                            <div class="flex-1 min-w-0">
+                                <div class="font-bold text-sm text-gray-900">${n.title}</div>
+                                <p class="text-xs text-gray-500 mt-0.5">${n.message}</p>
+                                <div class="text-[10px] text-gray-400 mt-1">${dateStr}</div>
+                            </div>
+                            ${!n.read ? '<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1"></span>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch(e) {
+            console.error('Ошибка загрузки уведомлений:', e);
+        }
+    }
+
+    async function markNotificationRead(id) {
+        await kaizenSupabase.from('notifications').update({ read: true }).eq('id', id);
+        loadNotifications();
+    }
+
+    async function markAllNotificationsAsRead() {
+        if (!currentUser) return;
+        await kaizenSupabase.from('notifications')
+            .update({ read: true })
+            .eq('user_id', currentUser.empId);
+        loadNotifications();
+    }
+
+    function showNotificationArchive() {
+        showSection('notificationArchive');
     }
 
     function checkAchievements() {
         renderAchievements();
     }
 
-    function buyItem(id) {
+    async function buyItem(id) {
         const item = shopItems.find(i => i.id === id);
-        if (currentUser.points >= item.points) {
-            if (confirm(`Купить "${item.title}" за ${item.points} баллов?`)) {
-                currentUser.points -= item.points;
-                saveUser(currentUser);
-                updateProfileUI();
-                renderShop();
-                alert('Покупка успешна!');
-            }
-        }
+        if (!item || currentUser.points < item.points) return;
+        if (!confirm(`Купить "${item.title}" за ${item.points} баллов?`)) return;
+
+        currentUser.points -= item.points;
+        await saveUser(currentUser);
+        storage.set('kaizenUser', JSON.stringify(currentUser));
+
+        // Сохраняем покупку в БД
+        await kaizenSupabase.from('purchases').insert({
+            user_id: currentUser.empId,
+            item_id: item.id,
+            date: new Date().toISOString()
+        });
+
+        updateProfileUI();
+        renderShop();
+        createNotification('info', 'Покупка успешна!', `Вы приобрели: ${item.title}`);
     }
 
     function showDetailModal(id) {
@@ -662,10 +775,31 @@
     }
 
     async function likePost(id) {
+        if (!currentUser) return;
+        // Проверяем, не лайкал ли уже
+        const { data: existing } = await kaizenSupabase
+            .from('likes')
+            .select('id')
+            .eq('user_id', currentUser.empId)
+            .eq('post_id', id)
+            .single();
+
+        if (existing) {
+            // Снимаем лайк
+            await kaizenSupabase.from('likes').delete()
+                .eq('user_id', currentUser.empId).eq('post_id', id);
+        } else {
+            // Ставим лайк
+            await kaizenSupabase.from('likes').insert({ user_id: currentUser.empId, post_id: id });
+        }
+        // Пересчитываем количество лайков
+        const { count } = await kaizenSupabase
+            .from('likes').select('*', { count: 'exact', head: true }).eq('post_id', id);
         const post = requests.find(r => r.id === id);
-        if (!post) return;
-        post.likes = (post.likes || 0) + 1;
-        await saveRequest(post);
+        if (post) {
+            post.likes = count || 0;
+            await kaizenSupabase.from('requests').update({ likes: post.likes }).eq('id', id);
+        }
         renderFeed();
     }
 
@@ -714,12 +848,14 @@
         
         let sectionId = section === 'profile' ? 'userProfile' : 
                        section === 'feed' ? 'userPanel' :
-                       section === 'notifications' ? 'notificationsSection' : 
+                       section === 'notifications' ? 'notificationsSection' :
+                       section === 'notificationArchive' ? 'notificationArchive' :
                        section === 'news' ? 'newsSection' : null;
         if (sectionId) document.getElementById(sectionId)?.classList.remove('hidden');
         
-        // Load news lazily
+        // Load data lazily
         if (section === 'news') loadNews();
+        if (section === 'notifications') loadNotifications();
 
         // Telegram back button: show when not on feed
         if (tg) {
@@ -826,7 +962,7 @@
             const { data, error } = await kaizenSupabase
                 .from('news')
                 .select('*')
-                .order('created_at', { ascending: false })
+                .order('date', { ascending: false })
                 .limit(20);
 
             const feed = document.getElementById('newsFeed');
@@ -837,35 +973,29 @@
                 return;
             }
 
-            const categoryConfig = {
-                announcement: { icon: '📢', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-                achievement:  { icon: '🏆', color: 'bg-yellow-50 border-yellow-200 text-yellow-700' },
-                safety:       { icon: '🛡️', color: 'bg-red-50 border-red-200 text-red-700' },
-                general:      { icon: '📌', color: 'bg-gray-50 border-gray-200 text-gray-600' }
-            };
-
             feed.innerHTML = data.map(item => {
-                const cfg = categoryConfig[item.category] || categoryConfig.general;
-                const date = new Date(item.created_at);
+                const date = new Date(item.date || item.created_at);
                 const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
+                const colorClass = item.color || 'bg-blue-100 text-blue-800';
+                const icon = item.icon || '📰';
                 return `
                     <div class="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
                         <div class="p-4">
-                            <div class="flex items-start justify-between gap-2 mb-2">
-                                <h3 class="font-bold text-gray-900 text-base leading-tight flex-1">${item.title}</h3>
-                                <span class="flex-shrink-0 text-xs font-semibold px-2 py-1 rounded-full border ${cfg.color}">${cfg.icon}</span>
+                            <div class="flex items-start gap-3 mb-2">
+                                <span class="flex-shrink-0 w-10 h-10 rounded-xl ${colorClass} flex items-center justify-center text-xl">${icon}</span>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-bold text-gray-900 text-sm leading-tight">${item.title}</h3>
+                                    <div class="text-xs text-gray-400 mt-0.5">${item.source || 'Администрация'} • ${dateStr}</div>
+                                </div>
                             </div>
-                            <p class="text-sm text-gray-600 leading-relaxed">${item.body}</p>
-                            <div class="mt-3 text-xs text-gray-400 flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                                ${dateStr} • ${item.author || 'Администрация'}
-                            </div>
+                            <p class="text-sm text-gray-600 leading-relaxed">${item.content}</p>
                         </div>
                     </div>
                 `;
             }).join('');
         } catch(err) {
             console.error('Ошибка загрузки новостей:', err);
+            document.getElementById('newsFeed').innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-sm">Ошибка загрузки</p></div>`;
         }
     }
 
@@ -879,12 +1009,17 @@
         const btn = document.getElementById('submitNewsBtn');
         btn.classList.add('btn-loading');
 
+        const categoryIcons = { announcement: '📢', achievement: '🏆', safety: '🛡️', general: '📌' };
+        const categoryColors = { announcement: 'bg-blue-100 text-blue-800', achievement: 'bg-yellow-100 text-yellow-800', safety: 'bg-yellow-100 text-yellow-800', general: 'bg-blue-100 text-blue-800' };
+        const cat = document.getElementById('newsCategoryInput').value;
+
         const { error } = await kaizenSupabase.from('news').insert({
             title: document.getElementById('newsTitleInput').value,
-            body: document.getElementById('newsBodyInput').value,
-            category: document.getElementById('newsCategoryInput').value,
-            author: currentUser.name,
-            created_at: new Date().toISOString()
+            content: document.getElementById('newsBodyInput').value,
+            source: currentUser.name,
+            icon: categoryIcons[cat] || '📰',
+            color: categoryColors[cat] || 'bg-blue-100 text-blue-800',
+            date: new Date().toISOString()
         });
 
         btn.classList.remove('btn-loading');
@@ -956,6 +1091,7 @@
         renderAchievements();
         renderLeaderboard();
         loadNews();
+        loadNotifications();
         // Show admin button in news section if admin
         if (currentUser?.role === 'admin') {
             document.getElementById('addNewsBtn')?.classList.remove('hidden');
