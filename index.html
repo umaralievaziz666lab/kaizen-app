@@ -72,6 +72,63 @@
         @keyframes spinner { to { transform: rotate(360deg); } }
         .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
         #requestsFeed { padding: 8px; }
+
+        /* ── DARK MODE ─────────────────────────────────── */
+        :root {
+            --bg: #fafafa; --bg2: #ffffff; --bg3: #f3f4f6;
+            --border: #e5e7eb; --border2: #d1d5db;
+            --text1: #111827; --text2: #374151; --text3: #6b7280; --text4: #9ca3af;
+            --accent: #667eea; --accent2: #764ba2;
+            --card-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .dark {
+            --bg: #0f0f13; --bg2: #1a1a22; --bg3: #252530;
+            --border: #2e2e3a; --border2: #3a3a48;
+            --text1: #f0f0f5; --text2: #c8c8d8; --text3: #8888a0; --text4: #555568;
+            --card-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+        body { background: var(--bg) !important; color: var(--text1) !important; }
+        .dark body, .dark #mainApp { background: var(--bg) !important; }
+        .dark .bg-white, .dark .bg-\[#fafafa\] { background: var(--bg2) !important; }
+        .dark .bg-gray-50, .dark .bg-gray-100 { background: var(--bg3) !important; }
+        .dark .border-gray-100, .dark .border-gray-200 { border-color: var(--border) !important; }
+        .dark .text-gray-900 { color: var(--text1) !important; }
+        .dark .text-gray-800 { color: var(--text2) !important; }
+        .dark .text-gray-700 { color: var(--text2) !important; }
+        .dark .text-gray-600 { color: var(--text3) !important; }
+        .dark .text-gray-500 { color: var(--text3) !important; }
+        .dark .text-gray-400 { color: var(--text4) !important; }
+        .dark input, .dark select, .dark textarea { background: var(--bg3) !important; border-color: var(--border) !important; color: var(--text1) !important; }
+        .dark .post-card { background: var(--bg2) !important; border-color: var(--border) !important; }
+        .dark header { background: var(--bg2) !important; border-color: var(--border) !important; }
+        .dark .bottom-nav { background: var(--bg2) !important; border-color: var(--border) !important; }
+        .dark #searchBar { background: var(--bg2) !important; border-color: var(--border) !important; }
+        .dark .bg-emerald-50 { background: rgba(16,185,129,0.15) !important; }
+        .dark .bg-red-50 { background: rgba(239,68,68,0.15) !important; }
+        .dark .bg-blue-50 { background: rgba(59,130,246,0.15) !important; }
+        .dark .bg-purple-50 { background: rgba(147,51,234,0.15) !important; }
+        .dark .bg-yellow-50 { background: rgba(234,179,8,0.12) !important; }
+        .dark .bg-orange-50 { background: rgba(249,115,22,0.12) !important; }
+        .dark .bg-gray-200 { background: var(--border2) !important; }
+        .dark .notification-unread { background: rgba(59,130,246,0.12) !important; }
+        .dark .current-user-highlight { background: rgba(102,126,234,0.15) !important; border-color: var(--accent) !important; }
+
+        /* ── LEVEL BADGE ───────────────────────────────── */
+        .level-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+        .level-1 { background: linear-gradient(135deg,#e8e8e8,#c8c8c8); color: #555; }
+        .level-2 { background: linear-gradient(135deg,#bbf7d0,#6ee7b7); color: #065f46; }
+        .level-3 { background: linear-gradient(135deg,#bfdbfe,#93c5fd); color: #1e40af; }
+        .level-4 { background: linear-gradient(135deg,#ddd6fe,#a78bfa); color: #4c1d95; }
+        .level-5 { background: linear-gradient(135deg,#fef08a,#fbbf24); color: #78350f; }
+        .level-6 { background: linear-gradient(135deg,#fecaca,#f87171); color: #7f1d1d; }
+        .level-7 { background: linear-gradient(135deg,#f9a8d4,#ec4899); color: #500724; }
+        .level-8 { background: linear-gradient(135deg,#fde68a,#f59e0b,#ef4444); color: #1c1c1c; }
+
+        /* ── DAILY TASK ────────────────────────────────── */
+        .daily-task-card { border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--border); background: var(--bg2); transition: all .2s; }
+        .daily-task-done { opacity: .55; }
+        .task-progress { height: 5px; border-radius: 999px; background: var(--border); overflow: hidden; margin-top: 4px; }
+        .task-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#667eea,#764ba2); transition: width .5s; }
     </style>
 </head>
 <body class="bg-[#fafafa] min-h-full">
@@ -125,16 +182,28 @@
         <div id="feedTabs" class="hidden"></div>
 
         <div class="p-3 bg-white border-b border-gray-100 sticky z-30" id="searchBar" style="top: 0px">
-            <div class="flex items-center gap-2 mb-3">
-                <input type="text" id="searchByIdInput" placeholder="Поиск по ID" class="text-sm p-2.5 border border-gray-200 rounded-xl bg-gray-50 flex-grow" onkeyup="if(event.key === 'Enter') handleSearchAction()">
-                <button onclick="handleSearchAction()" class="primary-gradient text-white font-bold py-2.5 px-3 rounded-xl shadow-md flex-shrink-0 text-sm transform active:scale-95"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg></button>
+            <div class="flex items-center gap-2 mb-2">
+                <div class="flex-grow relative">
+                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="searchByIdInput" placeholder="Поиск по ID или тексту…" class="text-sm pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 w-full" oninput="renderFeed()" onkeyup="if(event.key==='Enter') renderFeed()">
+                </div>
+                <button onclick="toggleFilterMenu()" id="filterToggleBtn" class="flex-shrink-0 w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition active:scale-95">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M7 8h10M11 12h2M9 16h6"/></svg>
+                </button>
             </div>
-            <div id="filterMenu" class="hidden space-y-3">
+            <!-- Location chips -->
+            <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide" id="locationChips">
+                <button onclick="setLocationFilter('all')" data-loc="all" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-purple-400 bg-purple-50 text-purple-700 active-chip">Все</button>
+                <button onclick="setLocationFilter('Цех 1')" data-loc="Цех 1" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Цех 1</button>
+                <button onclick="setLocationFilter('Цех 2')" data-loc="Цех 2" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Цех 2</button>
+                <button onclick="setLocationFilter('Склад')" data-loc="Склад" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Склад</button>
+                <button onclick="setLocationFilter('Офис')" data-loc="Офис" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Офис</button>
+            </div>
+            <div id="filterMenu" class="hidden space-y-2 mt-2 pt-2 border-t border-gray-100">
                 <div class="flex items-center gap-2">
-                    <select id="filterType" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-grow"><option value="all">Все заявки</option><option value="idea">💡 Идеи</option><option value="risk">⚠️ Риски</option></select>
+                    <select id="filterType" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-grow"><option value="all">Все типы</option><option value="idea">💡 Идеи</option><option value="risk">⚠️ Риски</option></select>
                     <select id="sortBy" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-shrink-0"><option value="date">Сначала новые</option><option value="oldest">Сначала старые</option><option value="likes">По популярности</option></select>
                 </div>
-                <button onclick="toggleFilterMenu()" class="w-full text-sm text-gray-500 hover:text-gray-700 py-1.5 border border-gray-200 rounded-xl bg-gray-50">Скрыть фильтры</button>
             </div>
         </div>
         
@@ -186,11 +255,15 @@
     <div id="notificationArchive" class="hidden min-h-screen bg-[#fafafa] pb-24"><div class="p-4 pt-6"><div class="flex justify-between items-center mb-4"><button onclick="showSection('notifications')" class="flex items-center text-gray-600"><svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>Назад</button><h2 class="text-xl font-bold text-gray-900">Архив уведомлений</h2><div class="w-10"></div></div><div id="archiveNotificationsList" class="space-y-3"></div><div id="emptyArchive" class="text-center py-10 hidden"><div class="text-5xl mb-4 opacity-30">📂</div><h3 class="text-lg font-bold text-gray-900 mb-2">Архив пуст</h3><p class="text-gray-500">Здесь будут появляться прочитанные уведомления</p></div></div></div>
 
     <div id="userProfile" class="hidden bg-[#fafafa] min-h-screen pb-24">
-        <div class="bg-white px-4 py-2 flex justify-end gap-2 sticky top-[53px] z-10">
+        <div class="bg-white px-4 py-2 flex justify-between items-center sticky top-[53px] z-10">
             <input type="file" id="avatarUploadInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
-            <div class="relative">
-                <button onclick="toggleSettingsDropdown(event)" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button>
-                <div id="settingsDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl py-1 ring-1 ring-black ring-opacity-5 z-20"><a href="#" onclick="document.getElementById('avatarUploadInput').click(); toggleSettingsDropdown(); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Изменить фото профиля</a></div>
+            <!-- Dark mode toggle -->
+            <button onclick="toggleDarkMode()" id="darkModeBtn" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition text-lg">🌙</button>
+            <div class="flex gap-2">
+                <div class="relative">
+                    <button onclick="toggleSettingsDropdown(event)" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button>
+                    <div id="settingsDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl py-1 ring-1 ring-black ring-opacity-5 z-20"><a href="#" onclick="document.getElementById('avatarUploadInput').click(); toggleSettingsDropdown(); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Изменить фото профиля</a></div>
+                </div>
             </div>
         </div>
 
@@ -211,8 +284,17 @@
             </div>
 
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-4">
-                <div class="flex justify-between items-end mb-2"><div><span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Уровень</span><div class="text-2xl font-bold text-gray-900" id="profileLevel">1</div></div><div class="text-right"><span class="text-2xl font-bold text-purple-600" id="profilePoints">0</span><span class="text-xs font-bold text-purple-400 uppercase">баллов</span></div></div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"><div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full" id="levelProgress" style="width: 0%"></div></div>
+                <div class="flex justify-between items-end mb-2">
+                    <div>
+                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Уровень</span>
+                        <div class="flex items-center gap-2 mt-0.5">
+                            <div class="text-2xl font-bold text-gray-900" id="profileLevel">1</div>
+                            <span id="levelBadge" class="level-badge level-1">Новичок</span>
+                        </div>
+                    </div>
+                    <div class="text-right"><span class="text-2xl font-bold text-purple-600" id="profilePoints">0</span><span class="text-xs font-bold text-purple-400 uppercase ml-1">баллов</span></div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"><div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full transition-all duration-700" id="levelProgress" style="width: 0%"></div></div>
                 <div class="mt-1 text-xs text-gray-400 text-right">до следующего уровня: <span id="pointsToNext">100</span></div>
             </div>
         </div>
@@ -221,6 +303,18 @@
             <div class="bg-white p-3 rounded-lg text-center border-2 border-green-400 shadow-sm"><div class="text-lg font-bold text-gray-800" id="statAccepted">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">Принято</div></div>
             <div class="bg-white p-3 rounded-lg text-center border-2 border-blue-400 shadow-sm"><div class="text-lg font-bold text-blue-600" id="statWork">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">В работе</div></div>
             <div class="bg-white p-3 rounded-lg text-center border-2 border-purple-400 shadow-sm"><div class="text-lg font-bold text-purple-600" id="statCompleted">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">Выполнено</div></div>
+        </div>
+
+        <!-- Daily tasks -->
+        <div class="bg-white p-4 mb-4 border-y border-gray-200">
+            <h3 onclick="toggleSection('dailyTasks')" class="font-bold text-gray-900 mb-0 flex items-center justify-between cursor-pointer">
+                <span class="flex items-center gap-2">⚡ Ежедневные задания <span id="dailyResetBadge" class="text-xs text-gray-400 font-normal"></span></span>
+                <svg id="dailyTasksToggle" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </h3>
+            <div id="dailyTasksContent" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease-out;">
+                <div class="mt-3 space-y-2" id="dailyTasksList"></div>
+                <div class="mt-3 text-center text-xs text-gray-400" id="dailyStreakInfo"></div>
+            </div>
         </div>
 
         <div class="bg-white p-4 mb-4 border-y border-gray-200">
@@ -346,15 +440,111 @@
     let currentFeedTab = 'all';
     let currentFilterType = 'all';
     let currentSortBy = 'date';
+    let currentLocationFilter = 'all';
     let selectedMediaFiles = [];
+    let isDarkMode = storage.get('darkMode') === '1';
 
     // Shop items загружаются из БД (таблица shop_items)
     let shopItems = [];
-
     // Achievements загружаются из БД (таблица achievements)
     let achievements = [];
 
-    function getPaddedId(id) { return '#' + String(id).padStart(5, '0'); }
+    // ── Level system ────────────────────────────────────────────────────────
+    const LEVELS = [
+        { min:0,   max:99,   name:'Новичок',      badge:'level-1', emoji:'🌱' },
+        { min:100, max:249,  name:'Активист',     badge:'level-2', emoji:'🌿' },
+        { min:250, max:499,  name:'Участник',     badge:'level-3', emoji:'⭐' },
+        { min:500, max:999,  name:'Эксперт',      badge:'level-4', emoji:'💎' },
+        { min:1000,max:1999, name:'Чемпион',      badge:'level-5', emoji:'🏆' },
+        { min:2000,max:3999, name:'Мастер',       badge:'level-6', emoji:'🔥' },
+        { min:4000,max:7999, name:'Легенда',      badge:'level-7', emoji:'👑' },
+        { min:8000,max:Infinity, name:'Кайзен-Боец', badge:'level-8', emoji:'🚀' },
+    ];
+
+    function getLevelInfo(points) {
+        const lvl = LEVELS.findIndex((l, i) => points >= l.min && points <= l.max);
+        const idx = lvl >= 0 ? lvl : LEVELS.length - 1;
+        const info = LEVELS[idx];
+        const next = LEVELS[idx + 1];
+        const progress = next ? Math.round(((points - info.min) / (next.min - info.min)) * 100) : 100;
+        return { num: idx + 1, ...info, next, progress, pointsToNext: next ? next.min - points : 0 };
+    }
+
+    // ── Daily tasks ─────────────────────────────────────────────────────────
+    const DAILY_TASKS_DEF = [
+        { id:'post_idea',  emoji:'💡', label:'Отправь 1 идею',       reward:5,  type:'idea',  target:1 },
+        { id:'post_risk',  emoji:'⚠️', label:'Зафиксируй 1 риск',    reward:5,  type:'risk',  target:1 },
+        { id:'like_post',  emoji:'❤️', label:'Поставь 3 лайка',       reward:3,  type:'like',  target:3 },
+        { id:'comment',    emoji:'💬', label:'Оставь 1 комментарий',  reward:4,  type:'comment',target:1 },
+    ];
+
+    function getTodayKey() { return new Date().toISOString().slice(0,10); }
+
+    function getDailyProgress() {
+        const key = 'daily_' + getTodayKey() + '_' + (currentUser?.empId || '');
+        try { return JSON.parse(storage.get(key) || '{}'); } catch { return {}; }
+    }
+
+    function setDailyProgress(data) {
+        const key = 'daily_' + getTodayKey() + '_' + (currentUser?.empId || '');
+        storage.set(key, JSON.stringify(data));
+    }
+
+    async function incrementDailyTask(type) {
+        const progress = getDailyProgress();
+        const task = DAILY_TASKS_DEF.find(t => t.type === type);
+        if (!task) return;
+        const prev = progress[task.id] || 0;
+        if (prev >= task.target) return; // уже выполнено
+        progress[task.id] = prev + 1;
+        setDailyProgress(progress);
+        if (progress[task.id] >= task.target) {
+            // Выдаём баллы
+            currentUser.points += task.reward;
+            await saveUser(currentUser);
+            storage.set('kaizenUser', JSON.stringify(currentUser));
+            updateProfileUI();
+            await createNotification('info', `⚡ Задание выполнено!`, `«${task.label}» +${task.reward} баллов`);
+        }
+        renderDailyTasks();
+    }
+
+    function renderDailyTasks() {
+        const list = document.getElementById('dailyTasksList');
+        if (!list) return;
+        const progress = getDailyProgress();
+        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
+        const msLeft = tomorrow - Date.now();
+        const hLeft = Math.floor(msLeft/3600000);
+        const mLeft = Math.floor((msLeft%3600000)/60000);
+        const badge = document.getElementById('dailyResetBadge');
+        if (badge) badge.textContent = `· сброс через ${hLeft}ч ${mLeft}м`;
+
+        list.innerHTML = DAILY_TASKS_DEF.map(t => {
+            const cur = Math.min(progress[t.id] || 0, t.target);
+            const done = cur >= t.target;
+            return `
+            <div class="daily-task-card ${done ? 'daily-task-done' : ''}">
+                <span class="text-2xl flex-shrink-0">${t.emoji}</span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-semibold text-gray-800">${t.label}</span>
+                        <span class="text-xs font-bold text-purple-600 flex-shrink-0 ml-2">${done ? '✅' : `+${t.reward}б`}</span>
+                    </div>
+                    <div class="task-progress mt-1"><div class="task-progress-fill" style="width:${(cur/t.target)*100}%"></div></div>
+                    <div class="text-[10px] text-gray-400 mt-0.5">${cur} / ${t.target}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        // streak
+        const streakInfo = document.getElementById('dailyStreakInfo');
+        if (streakInfo) {
+            const streak = parseInt(storage.get('streak_' + (currentUser?.empId||'')) || '0');
+            if (streak > 1) streakInfo.textContent = `🔥 Серия: ${streak} дней подряд!`;
+        }
+        parseTwemoji();
+    }
     function formatDate(iso) {
         const d = new Date(iso);
         return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}г.`;
@@ -526,6 +716,7 @@
         storage.set('kaizenUser', JSON.stringify(currentUser));
         updateProfileUI();
         checkAchievements();
+        incrementDailyTask(type === 'idea' ? 'idea' : 'risk');
         createNotification('new_request', 'Заявка создана', `Ваша ${type === 'idea' ? 'идея' : 'заявка о риске'} успешно отправлена`);
     });
 
@@ -534,8 +725,14 @@
         if (!feed) return;
         
         let data = [...requests];
-        const search = document.getElementById('searchByIdInput')?.value.trim();
-        if (search) data = data.filter(r => String(r.id).includes(search) || getPaddedId(r.id).includes(search));
+        const search = document.getElementById('searchByIdInput')?.value.trim().toLowerCase();
+        if (search) data = data.filter(r =>
+            String(r.id).includes(search) ||
+            getPaddedId(r.id).toLowerCase().includes(search) ||
+            (r.description || r.desc || '').toLowerCase().includes(search) ||
+            (r.author || '').toLowerCase().includes(search)
+        );
+        if (currentLocationFilter && currentLocationFilter !== 'all') data = data.filter(r => r.location === currentLocationFilter);
         if (currentFeedTab === 'my' && currentUser) data = data.filter(r => r.author_id === currentUser.empId || r.author === currentUser.name);
         else if (currentFeedTab === 'assigned' && currentUser) data = data.filter(r => r.assigned_to === currentUser.name);
         if (currentFilterType !== 'all') data = data.filter(r => r.type === currentFilterType);
@@ -633,11 +830,13 @@
         document.getElementById('profileIdDisplay').textContent = `Табельный номер: ${currentUser.empId}`;
         document.getElementById('profilePhoneDisplay').textContent = `Телефон: ${currentUser.phone}`;
         document.getElementById('profilePoints').textContent = currentUser.points;
-        
-        const level = Math.floor(currentUser.points / 100) + 1;
-        document.getElementById('profileLevel').textContent = level;
-        document.getElementById('levelProgress').style.width = `${currentUser.points % 100}%`;
-        document.getElementById('pointsToNext').textContent = (level * 100) - currentUser.points;
+
+        const lvl = getLevelInfo(currentUser.points);
+        document.getElementById('profileLevel').textContent = lvl.num;
+        document.getElementById('levelProgress').style.width = `${lvl.progress}%`;
+        document.getElementById('pointsToNext').textContent = lvl.pointsToNext || '—';
+        const badge = document.getElementById('levelBadge');
+        if (badge) { badge.textContent = `${lvl.emoji} ${lvl.name}`; badge.className = `level-badge ${lvl.badge}`; }
 
         const myReqs = requests.filter(r => r.author === currentUser.name);
         document.getElementById('statAccepted').textContent = myReqs.filter(r => r.status === 'new').length;
@@ -955,20 +1154,18 @@
         btn.classList.remove('btn-loading');
         showCommentsModal(id);
         document.getElementById('commentText').value = '';
-        renderFeed(); // обновляем счётчик комментов в ленте
+        renderFeed();
+        incrementDailyTask('comment');
 
         // Уведомляем автора поста (если это не сам автор)
         const postAuthorId = post.author_id;
         if (postAuthorId && postAuthorId !== currentUser.empId) {
-            await kaizenSupabase.from('notifications').insert({
-                user_id: postAuthorId,
-                title: '💬 Новый комментарий',
-                message: `${currentUser.name} прокомментировал вашу заявку ${getPaddedId(post.id)}: «${text.substring(0, 60)}${text.length > 60 ? '...' : ''}»`,
-                type: 'comment',
-                post_id: post.id,
-                read: false,
-                date: new Date().toISOString()
-            });
+            await notifyUserWithPush(
+                postAuthorId,
+                '💬 Новый комментарий',
+                `${currentUser.name} прокомментировал вашу заявку ${getPaddedId(post.id)}: «${text.substring(0, 60)}${text.length > 60 ? '...' : ''}»`,
+                post.id
+            );
         }
     }
 
@@ -983,12 +1180,11 @@
             .single();
 
         if (existing) {
-            // Снимаем лайк
             await kaizenSupabase.from('likes').delete()
                 .eq('user_id', currentUser.empId).eq('post_id', id);
         } else {
-            // Ставим лайк
             await kaizenSupabase.from('likes').insert({ user_id: currentUser.empId, post_id: id });
+            incrementDailyTask('like');
         }
         // Пересчитываем количество лайков
         const { count } = await kaizenSupabase
@@ -1011,25 +1207,30 @@
     function toggleSection(section) {
         const content = document.getElementById(section + 'Content');
         const toggle = document.getElementById(section + 'Toggle');
+        if (!content) return;
         if (content.style.maxHeight === '0px' || !content.style.maxHeight) {
-            content.style.maxHeight = content.scrollHeight + 'px';
+            content.style.maxHeight = content.scrollHeight + 2000 + 'px';
             toggle?.classList.add('rotate-180');
+            if (section === 'dailyTasks') renderDailyTasks();
         } else {
             content.style.maxHeight = '0px';
             toggle?.classList.remove('rotate-180');
         }
     }
 
-    function handleSearchAction() {
-        const search = document.getElementById('searchByIdInput').value.trim();
-        if (search === '') toggleFilterMenu();
-        else renderFeed();
+    function toggleFilterMenu() {
+        const menu = document.getElementById('filterMenu');
+        menu.classList.toggle('hidden');
+        const btn = document.getElementById('filterToggleBtn');
+        btn?.classList.toggle('bg-purple-50', !menu.classList.contains('hidden'));
+        btn?.classList.toggle('border-purple-300', !menu.classList.contains('hidden'));
     }
-    
+
+    function handleSearchAction() { renderFeed(); }
+
     function applyFilter() {
         currentFilterType = document.getElementById('filterType').value;
         currentSortBy = document.getElementById('sortBy').value;
-        document.getElementById('searchByIdInput').value = '';
         renderFeed();
     }
 
@@ -1307,6 +1508,61 @@
         }
     }
 
+    // ── Dark mode ────────────────────────────────────────────────────────────
+    function applyDarkMode(dark) {
+        document.documentElement.classList.toggle('dark', dark);
+        const btn = document.getElementById('darkModeBtn');
+        if (btn) btn.textContent = dark ? '☀️' : '🌙';
+    }
+
+    function toggleDarkMode() {
+        isDarkMode = !isDarkMode;
+        storage.set('darkMode', isDarkMode ? '1' : '0');
+        applyDarkMode(isDarkMode);
+    }
+
+    // ── Location chip filter ────────────────────────────────────────────────
+    function setLocationFilter(loc) {
+        currentLocationFilter = loc;
+        document.querySelectorAll('.location-chip').forEach(btn => {
+            const isActive = btn.dataset.loc === loc;
+            btn.className = `location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition ${
+                isActive
+                    ? 'border-purple-400 bg-purple-50 text-purple-700'
+                    : 'border-gray-200 bg-gray-50 text-gray-600'
+            }`;
+        });
+        renderFeed();
+    }
+
+    // ── Push notification via Telegram Bot API ───────────────────────────────
+    const TG_BOT_TOKEN = '8768160449:AAG1gBLhbA9yJ7V3t_9O0vb1S1deonnoFto'; // вставь токен своего бота
+    async function sendTelegramPush(tgId, message) {
+        if (!TG_BOT_TOKEN || !tgId) return;
+        try {
+            await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: tgId, text: message, parse_mode: 'HTML' })
+            });
+        } catch(e) { console.warn('Push failed:', e); }
+    }
+
+    async function notifyUserWithPush(userId, title, message, postId = null) {
+        // Сохраняем в БД
+        await kaizenSupabase.from('notifications').insert({
+            user_id: userId, title, message,
+            type: postId ? 'comment' : 'info',
+            post_id: postId, read: false,
+            date: new Date().toISOString()
+        });
+        // Пытаемся отправить Telegram push
+        const { data: userData } = await kaizenSupabase.from('users').select('telegram_id').eq('id', userId).single();
+        if (userData?.telegram_id) {
+            await sendTelegramPush(userData.telegram_id, `🔔 <b>${title}</b>\n${message}`);
+        }
+    }
+
     function launchApp() {
         document.getElementById('registrationScreen').classList.add('hidden');
         document.getElementById('mainApp').classList.remove('hidden');
@@ -1319,6 +1575,8 @@
         loadNotifications();
         parseTwemoji();
         setTimeout(fixStickyPositions, 50);
+        applyDarkMode(isDarkMode);
+        renderDailyTasks();
         // Show admin button in news section if admin
         if (currentUser?.role === 'admin') {
             document.getElementById('addNewsBtn')?.classList.remove('hidden');
