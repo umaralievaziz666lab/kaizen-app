@@ -51,12 +51,22 @@
         <p class="text-gray-600" id="userInfo"></p>
     </div>
     
-    <div class="bg-white rounded-xl shadow-lg p-4">
-        <h3 class="font-bold mb-2">Вы успешно вошли!</h3>
-        <button onclick="logout()" class="w-full bg-red-500 text-white py-2 rounded-lg">
-            Выйти
+    <div class="bg-white rounded-xl shadow-lg p-4 mb-4">
+        <h3 class="font-bold mb-2">Создать тестовую заявку</h3>
+        <button onclick="testCreateRequest()" class="w-full bg-blue-500 text-white py-2 rounded-lg mb-2">
+            Создать заявку в Supabase
         </button>
+        <div id="requestResult" class="text-sm mt-2"></div>
     </div>
+    
+    <div class="bg-white rounded-xl shadow-lg p-4">
+        <h3 class="font-bold mb-2">Последние заявки</h3>
+        <div id="requestsList" class="space-y-2"></div>
+    </div>
+    
+    <button onclick="logout()" class="mt-4 w-full bg-red-500 text-white py-2 rounded-lg">
+        Выйти
+    </button>
 </div>
 
 <script>
@@ -67,58 +77,178 @@
     // СОЗДАЕМ КЛИЕНТ
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     
+    console.log('✅ Supabase клиент создан');
+
     let currentUser = null;
 
-    // ПРОСТАЯ РЕГИСТРАЦИЯ
-    document.getElementById('registrationForm').addEventListener('submit', function(e) {
+    // === РЕГИСТРАЦИЯ ===
+    document.getElementById('registrationForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
-        const name = document.getElementById('regFullName').value;
-        const empId = document.getElementById('regEmployeeId').value;
-        const phone = document.getElementById('regPhone').value;
-        const dept = document.getElementById('regDepartment').value;
+        const btn = document.getElementById('registerBtn');
+        btn.disabled = true;
+        btn.textContent = 'Регистрация...';
         
-        // СОЗДАЕМ ПОЛЬЗОВАТЕЛЯ
-        currentUser = {
-            name: name,
-            empId: empId,
-            phone: phone,
-            dept: dept
-        };
-        
-        // СОХРАНЯЕМ В LOCALSTORAGE
-        localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
-        
-        // ПРЯМО СЕЙЧАС ПЕРЕКЛЮЧАЕМ ЭКРАНЫ
-        document.getElementById('registrationScreen').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
-        
-        // ОБНОВЛЯЕМ ПРИВЕТСТВИЕ
-        document.getElementById('welcomeMessage').textContent = `Привет, ${name}!`;
-        document.getElementById('userInfo').textContent = `Табельный: ${empId} | Участок: ${dept}`;
-        
-        console.log('✅ Переключились на главный экран');
+        try {
+            const name = document.getElementById('regFullName').value;
+            const empId = document.getElementById('regEmployeeId').value;
+            const phone = document.getElementById('regPhone').value;
+            const dept = document.getElementById('regDepartment').value;
+            
+            console.log('Регистрируем:', { name, empId });
+            
+            // СОЗДАЕМ ПОЛЬЗОВАТЕЛЯ
+            currentUser = {
+                empId: empId,
+                name: name,
+                phone: phone,
+                dept: dept
+            };
+            
+            // 1. СОХРАНЯЕМ В LOCALSTORAGE
+            localStorage.setItem('kaizenUser', JSON.stringify(currentUser));
+            console.log('✅ Сохранили в localStorage');
+            
+            // 2. СОХРАНЯЕМ В SUPABASE (как в тестовом коде)
+            try {
+                const { error } = await supabase
+                    .from('users')
+                    .upsert({
+                        id: empId,
+                        name: name,
+                        points: 0,
+                        role: 'user',
+                        phone: phone,
+                        department: dept
+                    });
+                
+                if (error) {
+                    console.warn('Ошибка Supabase:', error);
+                } else {
+                    console.log('✅ Сохранили в Supabase');
+                }
+            } catch (e) {
+                console.warn('Ошибка соединения:', e);
+            }
+            
+            // 3. СРАЗУ ПЕРЕКЛЮЧАЕМ ЭКРАНЫ (как в тестовом коде)
+            document.getElementById('registrationScreen').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            // 4. ОБНОВЛЯЕМ ПРИВЕТСТВИЕ
+            document.getElementById('welcomeMessage').textContent = `Привет, ${name}!`;
+            document.getElementById('userInfo').textContent = `Табельный: ${empId} | Участок: ${dept}`;
+            
+            // 5. ЗАГРУЖАЕМ ЗАЯВКИ
+            loadRequests();
+            
+            console.log('✅ Главное меню открыто');
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Ошибка при регистрации');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Начать работу';
+        }
     });
 
-    // ПРОВЕРКА ПРИ ЗАГРУЗКЕ
-    window.addEventListener('load', function() {
+    // === ПРОВЕРКА ПРИ ЗАГРУЗКЕ ===
+    window.addEventListener('load', async function() {
+        console.log('Загрузка страницы...');
+        
+        // Проверяем сохраненного пользователя
         const savedUser = localStorage.getItem('kaizenUser');
         
         if (savedUser) {
             currentUser = JSON.parse(savedUser);
+            console.log('Найден пользователь:', currentUser);
             
-            // СРАЗУ ПОКАЗЫВАЕМ ГЛАВНОЕ ПРИЛОЖЕНИЕ
+            // СРАЗУ ПЕРЕКЛЮЧАЕМ ЭКРАНЫ
             document.getElementById('registrationScreen').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
             
             document.getElementById('welcomeMessage').textContent = `С возвращением, ${currentUser.name}!`;
             document.getElementById('userInfo').textContent = `Табельный: ${currentUser.empId} | Участок: ${currentUser.dept}`;
             
-            console.log('✅ Автоматический вход');
+            // Загружаем заявки
+            loadRequests();
+        } else {
+            console.log('Показываем регистрацию');
+            document.getElementById('registrationScreen').classList.remove('hidden');
         }
     });
 
-    // ВЫХОД
+    // === ЗАГРУЗКА ЗАЯВОК (как в тестовом коде) ===
+    async function loadRequests() {
+        try {
+            const { data, error } = await supabase
+                .from('requests')
+                .select('*')
+                .order('date', { ascending: false })
+                .limit(5);
+            
+            if (error) {
+                console.error('Ошибка загрузки:', error);
+                return;
+            }
+            
+            const list = document.getElementById('requestsList');
+            if (data && data.length > 0) {
+                list.innerHTML = data.map(req => `
+                    <div class="border p-2 rounded">
+                        <div class="font-semibold">${req.type === 'idea' ? '💡' : '⚠️'} ${req.description}</div>
+                        <div class="text-xs text-gray-500">Автор: ${req.author} • ${new Date(req.date).toLocaleString()}</div>
+                    </div>
+                `).join('');
+            } else {
+                list.innerHTML = '<p class="text-gray-500">Пока нет заявок</p>';
+            }
+        } catch (e) {
+            console.error('Ошибка:', e);
+        }
+    }
+
+    // === СОЗДАНИЕ ЗАЯВКИ (как в тестовом коде) ===
+    async function testCreateRequest() {
+        if (!currentUser) {
+            alert('Сначала зарегистрируйтесь');
+            return;
+        }
+        
+        const resultDiv = document.getElementById('requestResult');
+        resultDiv.innerHTML = 'Отправка...';
+        
+        try {
+            const { data, error } = await supabase
+                .from('requests')
+                .insert([
+                    {
+                        type: 'idea',
+                        description: 'Тестовая заявка от ' + currentUser.name,
+                        location: currentUser.dept,
+                        author: currentUser.name,
+                        author_id: currentUser.empId,
+                        status: 'new',
+                        date: new Date().toISOString()
+                    }
+                ]);
+            
+            if (error) {
+                console.error('Ошибка:', error);
+                resultDiv.innerHTML = '❌ Ошибка: ' + error.message;
+            } else {
+                console.log('✅ Заявка создана');
+                resultDiv.innerHTML = '✅ Заявка создана!';
+                loadRequests();
+            }
+        } catch (e) {
+            console.error('Ошибка:', e);
+            resultDiv.innerHTML = '❌ Ошибка: ' + e.message;
+        }
+    }
+
+    // === ВЫХОД ===
     function logout() {
         localStorage.removeItem('kaizenUser');
         location.reload();
