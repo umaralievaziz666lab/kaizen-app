@@ -104,9 +104,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Ari
 
 /* ── COLLAPSIBLE ─────────────────────────── */
 .collapse-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:14px 16px;background:var(--bg2);border-bottom:1px solid var(--bd)}
-.collapse-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
-.collapse-body.open{max-height:2000px}
-.collapse-arrow{transition:transform .3s}
+.collapse-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.collapse-body.open{max-height:4000px;overflow:visible}
+.collapse-arrow{transition:transform .3s;flex-shrink:0}
 .collapse-header.open .collapse-arrow{transform:rotate(180deg)}
 
 /* ── MODALS ──────────────────────────────── */
@@ -219,26 +219,33 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
 
   <!-- SEARCH BAR (feed only) -->
   <div id="searchBar">
-    <div class="search-wrap">
-      <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-      <input id="searchInput" placeholder="Поиск по ID, тексту, автору…" oninput="renderFeed()">
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="search-wrap" style="flex:1">
+        <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <input id="searchInput" placeholder="Поиск по ID, тексту, автору…" oninput="renderFeed()">
+      </div>
+      <button onclick="toggleExtraFilter()" id="filterBtn" style="flex-shrink:0;padding:8px 12px;border-radius:12px;border:1.5px solid var(--bd);background:var(--bg3);color:var(--t2);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:4px">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 4h18M7 8h10M11 12h2M9 16h6"/></svg>
+        Фильтр
+      </button>
     </div>
-    <div id="filterRow">
-      <button class="chip active" data-loc="all" onclick="setLoc(this,'all')">Все</button>
-      <button class="chip" data-loc="Производство" onclick="setLoc(this,'Производство')">Производство</button>
-      <button class="chip" data-loc="Цех 1" onclick="setLoc(this,'Цех 1')">Цех 1</button>
-      <button class="chip" data-loc="Цех 2" onclick="setLoc(this,'Цех 2')">Цех 2</button>
-      <button class="chip" data-loc="Склад" onclick="setLoc(this,'Склад')">Склад</button>
-      <button class="chip" data-loc="Офис" onclick="setLoc(this,'Офис')">Офис</button>
-      <button class="chip" data-loc="__filter" onclick="toggleExtraFilter()" id="filterBtn">⚙️ Фильтр</button>
-    </div>
-    <div id="extraFilter">
-      <select class="inp" id="selType" onchange="renderFeed()" style="flex:1;padding:6px 10px;font-size:12px">
-        <option value="all">Все типы</option><option value="idea">💡 Идеи</option><option value="risk">⚠️ Риски</option>
-      </select>
-      <select class="inp" id="selSort" onchange="renderFeed()" style="flex:1;padding:6px 10px;font-size:12px">
-        <option value="new">Сначала новые</option><option value="old">Сначала старые</option><option value="likes">По лайкам</option>
-      </select>
+    <div id="extraFilter" style="display:none;margin-top:8px;flex-direction:column;gap:6px">
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+        <button class="chip active" data-loc="all" onclick="setLoc(this,'all')">Все участки</button>
+        <button class="chip" data-loc="Производство" onclick="setLoc(this,'Производство')">Производство</button>
+        <button class="chip" data-loc="Цех 1" onclick="setLoc(this,'Цех 1')">Цех 1</button>
+        <button class="chip" data-loc="Цех 2" onclick="setLoc(this,'Цех 2')">Цех 2</button>
+        <button class="chip" data-loc="Склад" onclick="setLoc(this,'Склад')">Склад</button>
+        <button class="chip" data-loc="Офис" onclick="setLoc(this,'Офис')">Офис</button>
+      </div>
+      <div style="display:flex;gap:6px">
+        <select class="inp" id="selType" onchange="renderFeed()" style="flex:1;padding:7px 10px;font-size:12px">
+          <option value="all">Все типы</option><option value="idea">💡 Идеи</option><option value="risk">⚠️ Риски</option>
+        </select>
+        <select class="inp" id="selSort" onchange="renderFeed()" style="flex:1;padding:7px 10px;font-size:12px">
+          <option value="new">Новые</option><option value="old">Старые</option><option value="likes">По лайкам</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -249,8 +256,8 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
     </div>
   </div>
 
-  <div id="secNotif" class="section" style="padding:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-top:8px">
+  <div id="secNotif" class="section" style="padding:16px;padding-top:calc(env(safe-area-inset-top,0px) + 64px)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-size:17px;font-weight:700;color:var(--t1)">Уведомления</div>
       <button onclick="markAllRead()" style="font-size:12px;color:var(--acc);background:none;border:none;cursor:pointer">Прочитать все</button>
     </div>
@@ -261,8 +268,8 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
     </div>
   </div>
 
-  <div id="secNews" class="section" style="padding:16px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-top:8px">
+  <div id="secNews" class="section" style="padding:16px;padding-top:calc(env(safe-area-inset-top,0px) + 64px)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div style="font-size:17px;font-weight:700;color:var(--t1)">Новости</div>
       <button id="addNewsBtn" onclick="openModal('newsModal')" style="display:none;font-size:12px;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer">+ Добавить</button>
     </div>
@@ -270,27 +277,33 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
   </div>
 
   <div id="secProfile" class="section">
-    <!-- profile toolbar -->
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--bd)">
-      <button onclick="toggleDark()" id="darkBtn" style="background:none;border:none;font-size:22px;cursor:pointer">🌙</button>
-      <button onclick="logout()" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer">
-        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-        Выйти
-      </button>
-    </div>
-    <!-- avatar & info -->
-    <div style="background:var(--bg2);padding:24px 16px;text-align:center;border-bottom:1px solid var(--bd)">
-      <div style="position:relative;display:inline-block;margin-bottom:12px;cursor:pointer" onclick="document.getElementById('avatarInput').click()">
-        <div id="profilePic" style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:3px solid var(--bd);margin:0 auto">
-          <div id="profileInitials" class="grad" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700"></div>
+    <!-- avatar & info — с отступом под кнопки Telegram -->
+    <div style="background:var(--bg2);padding-top:calc(env(safe-area-inset-top,0px) + 58px);padding-bottom:20px;padding-left:16px;padding-right:16px;border-bottom:1px solid var(--bd)">
+      <div style="display:flex;align-items:flex-start;gap:14px">
+        <!-- Avatar large -->
+        <div style="position:relative;flex-shrink:0;cursor:pointer" onclick="document.getElementById('avatarInput').click()">
+          <div id="profilePic" style="width:110px;height:110px;border-radius:50%;overflow:hidden;border:3px solid var(--bd)">
+            <div id="profileInitials" class="grad" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:36px;font-weight:700"></div>
+          </div>
+          <div style="position:absolute;bottom:4px;right:4px;width:28px;height:28px;border-radius:50%;background:var(--bg2);border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:14px">📷</div>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
         </div>
-        <div style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;border-radius:50%;background:var(--bg2);border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:13px">📷</div>
-        <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
+        <!-- Info + actions -->
+        <div style="flex:1;min-width:0;padding-top:4px">
+          <div style="font-size:18px;font-weight:700;color:var(--t1);line-height:1.2" id="pName">—</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:3px" id="pDept">—</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:1px" id="pEmp">—</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:1px" id="pPhone">—</div>
+          <!-- Dark & Logout buttons -->
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button onclick="toggleDark()" id="darkBtn" style="display:flex;align-items:center;gap:5px;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:600;color:var(--t2);cursor:pointer">🌙 <span id="darkLabel">Тёмная</span></button>
+            <button onclick="logout()" style="display:flex;align-items:center;gap:5px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:6px 10px;font-size:12px;font-weight:600;color:#ef4444;cursor:pointer">
+              <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
+              Выйти
+            </button>
+          </div>
+        </div>
       </div>
-      <div style="font-size:20px;font-weight:700;color:var(--t1)" id="pName">—</div>
-      <div style="font-size:13px;color:var(--t3);margin-top:2px" id="pDept">—</div>
-      <div style="font-size:12px;color:var(--t3);margin-top:1px" id="pEmp">—</div>
-      <div style="font-size:12px;color:var(--t3);margin-top:1px" id="pPhone">—</div>
     </div>
     <!-- level block -->
     <div style="background:var(--bg2);margin:8px;border-radius:16px;padding:14px 16px;border:1px solid var(--bd)">
@@ -520,12 +533,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
 </div><!-- /app -->
 
 <!-- GALLERY -->
-<div id="gallery" onclick="closeGallery()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;align-items:center;justify-content:center">
-  <div class="img-wrap" id="galleryWrap" onclick="event.stopPropagation()">
-    <button class="gclose" onclick="closeGallery()">&times;</button>
-    <div id="galleryContent"></div>
-  </div>
-</div>
+<div id="gallery" onclick="closeGallery()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;align-items:center;justify-content:center"></div>
 
 <script>
 // ── SUPABASE ─────────────────────────────────────────────────────────────
@@ -638,8 +646,12 @@ const DEPT_MAP = {production:'Производство', warehouse:'Склад',
 // ── DARK MODE ─────────────────────────────────────────────────────────────
 function applyDark(d) {
   document.documentElement.classList.toggle('dark', d);
+  const lbl = document.getElementById('darkLabel');
+  if (lbl) lbl.textContent = d ? 'Светлая' : 'Тёмная';
   const btn = document.getElementById('darkBtn');
-  if (btn) btn.textContent = d ? '☀️' : '🌙';
+  if (btn) {
+    btn.style.cssText = `display:flex;align-items:center;gap:5px;border:1px solid var(--bd);border-radius:10px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;${d ? 'background:rgba(102,126,234,.15);color:var(--acc);border-color:var(--acc)' : 'background:var(--bg3);color:var(--t2)'}`;
+  }
 }
 function toggleDark() {
   isDark = !isDark;
@@ -675,12 +687,18 @@ function renderLevelsModal() {
 // ── GALLERY ───────────────────────────────────────────────────────────────
 function openGallery(src) {
   const isVid = src.startsWith('data:video') || src.includes('.mp4') || src.includes('.mov');
-  document.getElementById('galleryContent').innerHTML = isVid
-    ? `<video src="${src}" controls autoplay style="max-width:100%;max-height:calc(100vh - 80px);border-radius:10px"></video>`
-    : `<img src="${src}" style="max-width:100%;max-height:calc(100vh - 80px);border-radius:10px;object-fit:contain">`;
-  document.getElementById('gallery').classList.add('open');
+  const g = document.getElementById('gallery');
+  g.innerHTML = `
+    <div onclick="event.stopPropagation()" style="position:relative;display:inline-block;max-width:calc(100vw - 20px)">
+      ${isVid
+        ? `<video src="${src}" controls autoplay style="max-width:100%;max-height:calc(100vh - 60px);border-radius:14px;display:block"></video>`
+        : `<img src="${src}" style="max-width:100%;max-height:calc(100vh - 60px);border-radius:14px;display:block;object-fit:contain">`
+      }
+      <button onclick="closeGallery()" style="position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.65);border:none;color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);line-height:1">&times;</button>
+    </div>`;
+  g.style.display = 'flex';
 }
-function closeGallery() { document.getElementById('gallery').classList.remove('open'); }
+function closeGallery() { document.getElementById('gallery').style.display = 'none'; }
 
 // ── SECTIONS ──────────────────────────────────────────────────────────────
 function showSec(s) {
@@ -726,7 +744,15 @@ function setLoc(btn, loc) {
 }
 function toggleExtraFilter() {
   const el = document.getElementById('extraFilter');
-  el.classList.toggle('open');
+  const btn = document.getElementById('filterBtn');
+  const isOpen = el.style.display === 'flex';
+  el.style.display = isOpen ? 'none' : 'flex';
+  el.style.flexDirection = 'column';
+  if (btn) {
+    btn.style.borderColor = isOpen ? 'var(--bd)' : 'var(--acc)';
+    btn.style.color = isOpen ? 'var(--t2)' : 'var(--acc)';
+    btn.style.background = isOpen ? 'var(--bg3)' : 'rgba(102,126,234,.1)';
+  }
 }
 
 // ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────
@@ -1183,27 +1209,45 @@ async function buyItem(id) {
 // ── PROFILE UI ────────────────────────────────────────────────────────────
 function updateProfileUI() {
   if (!user) return;
+
+  // Recalculate points from real posts if they seem off
+  const myPosts = posts.filter(p => p.author_id === user.empId || p.author === user.name);
+  if (user.points === 0 && myPosts.length > 0) {
+    let calc = myPosts.length * 5; // 5 per post
+    myPosts.forEach(p => {
+      const comms = (() => { try { return Array.isArray(p.comments) ? p.comments : JSON.parse(p.comments||'[]'); } catch { return []; } })();
+      comms.forEach(c => { if (c.author === user.name) calc += 4; }); // 4 per comment written
+    });
+    user.points = calc;
+    SB.from('users').update({ points: user.points }).eq('id', user.empId);
+    store.set('u', JSON.stringify(user));
+  }
+
   document.getElementById('pName').textContent = user.name || '—';
   document.getElementById('pDept').textContent = DEPT_MAP[user.dept] || user.dept || '—';
   document.getElementById('pEmp').textContent = user.empId ? `Табельный: ${user.empId}` : '';
   document.getElementById('pPhone').textContent = user.phone ? `Телефон: ${user.phone}` : '';
+
   const lv = lvlInfo(user.points);
   document.getElementById('pLevel').textContent = lv.num;
   document.getElementById('pPoints').textContent = user.points;
   document.getElementById('pToNext').textContent = lv.toNext || '—';
   document.getElementById('pBar').style.width = lv.prog + '%';
+
   const badge = document.getElementById('pLevelBadge');
-  badge.className = 'level-badge ' + lv.cls;
-  badge.textContent = lv.label;
-  document.getElementById('profileInitials').textContent = initials(user.name);
+  if (badge) { badge.className = 'level-badge ' + lv.cls; badge.textContent = lv.label + ' ›'; }
+
+  const initEl = document.getElementById('profileInitials');
+  if (initEl) initEl.textContent = initials(user.name);
+
   if (user.profilePic) {
     const pic = document.getElementById('profilePic');
-    pic.innerHTML = `<img src="${user.profilePic}" style="width:100%;height:100%;object-fit:cover">`;
+    if (pic) pic.innerHTML = `<img src="${user.profilePic}" style="width:100%;height:100%;object-fit:cover">`;
   }
-  const myPosts = posts.filter(p => p.author_id===user.empId || p.author===user.name);
-  document.getElementById('sNew').textContent = myPosts.filter(p => p.status==='new').length;
-  document.getElementById('sWork').textContent = myPosts.filter(p => p.status==='work').length;
-  document.getElementById('sDone').textContent = myPosts.filter(p => p.status==='approved').length;
+
+  document.getElementById('sNew').textContent = myPosts.filter(p => p.status === 'new').length;
+  document.getElementById('sWork').textContent = myPosts.filter(p => p.status === 'work').length;
+  document.getElementById('sDone').textContent = myPosts.filter(p => p.status === 'approved').length;
 }
 
 async function uploadAvatar(e) {
@@ -1232,36 +1276,39 @@ function mapUser(d) {
 async function launchApp(u) {
   user = u;
   store.set('u', JSON.stringify(u));
-  // Hide splash & reg, show app
+  // Immediately hide everything and show app — no flash
   document.getElementById('splash').style.display = 'none';
   document.getElementById('reg').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   applyDark(isDark);
-  // Set sticky position for search bar
+  // Sticky search bar position
   setTimeout(() => {
     const hdr = document.getElementById('appHeader');
     const sb = document.getElementById('searchBar');
     if (hdr && sb) sb.style.top = hdr.getBoundingClientRect().height + 'px';
-  }, 50);
-  // Load data
-  await loadPosts();
+  }, 100);
+  // Load feed
+  loadPosts();
   loadNotifBadge();
-  if (u.role === 'admin') document.getElementById('addNewsBtn').style.display = '';
-  // Realtime
-  SB.channel('rt-requests')
-    .on('postgres_changes', {event:'INSERT', schema:'public', table:'requests'}, p => {
-      if (!posts.find(x => x.id === p.new.id)) { posts.unshift(p.new); renderFeed(); }
-    })
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'requests'}, p => {
-      const i = posts.findIndex(x => x.id === p.new.id);
-      if (i >= 0) { posts[i] = {...posts[i], ...p.new}; renderFeed(); }
-    })
-    .subscribe();
+  if (u.role === 'admin') { const b = document.getElementById('addNewsBtn'); if(b) b.style.display=''; }
+  // Realtime — only subscribe once
+  if (!window._rtSubscribed) {
+    window._rtSubscribed = true;
+    SB.channel('rt-requests')
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:'requests'}, p => {
+        if (!posts.find(x => x.id === p.new.id)) { posts.unshift(p.new); renderFeed(); }
+      })
+      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'requests'}, p => {
+        const i = posts.findIndex(x => x.id === p.new.id);
+        if (i >= 0) { posts[i] = {...posts[i], ...p.new}; renderFeed(); }
+      })
+      .subscribe();
+  }
   // Telegram back button
   if (tg) {
     tg.BackButton.onClick(() => {
-      const mods = ['createModal','detailModal','commentsModal','newsModal'];
-      const open = mods.find(m => document.getElementById(m).classList.contains('open'));
+      const mods = ['createModal','detailModal','commentsModal','newsModal','levelsModal'];
+      const open = mods.find(m => document.getElementById(m)?.classList.contains('open'));
       if (open) closeModal(open);
       else { showSec('feed'); tg.BackButton.hide(); }
     });
@@ -1269,31 +1316,45 @@ async function launchApp(u) {
 }
 
 async function init() {
-  // 1. Try localStorage
+  let launched = false;
+
+  // 1. Try localStorage first — fastest path
   const saved = store.get('u');
   if (saved) {
     try {
       const cached = JSON.parse(saved);
-      // Refresh from DB
-      const { data } = await SB.from('users').select('*').eq('id', cached.empId).single();
-      const u = data ? mapUser(data) : cached;
-      await launchApp(u);
-      return;
+      if (cached?.empId) {
+        // Show app immediately with cached data, refresh in background
+        await launchApp(cached);
+        launched = true;
+        // Refresh from DB silently
+        const { data } = await SB.from('users').select('*').eq('id', cached.empId).single();
+        if (data) {
+          user = mapUser(data);
+          store.set('u', JSON.stringify(user));
+          updateProfileUI();
+        }
+        return;
+      }
     } catch(e) { store.del('u'); }
   }
+
   // 2. Try Telegram ID
   const tgUser = tg?.initDataUnsafe?.user;
   if (tgUser) {
     const name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-    document.getElementById('rFio').value = name;
-    document.getElementById('tgNotice').style.display = '';
+    try {
+      document.getElementById('rFio').value = name;
+      document.getElementById('tgNotice').style.display = '';
+    } catch(e) {}
     const { data } = await SB.from('users').select('*').eq('telegram_id', String(tgUser.id)).single();
     if (data) {
       await launchApp(mapUser(data));
       return;
     }
   }
-  // 3. Show registration
+
+  // 3. Show registration — only if not launched
   document.getElementById('splash').style.display = 'none';
   document.getElementById('reg').style.display = 'flex';
 }
