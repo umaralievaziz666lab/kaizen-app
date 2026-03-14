@@ -1,1728 +1,1263 @@
 <!doctype html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kaizen • Service Desk</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js" crossorigin="anonymous"></script>
-    <style>
-        img.emoji { height: 1.2em; width: 1.2em; vertical-align: -0.15em; display: inline; }
-        body { 
-            background: #fafafa !important; 
-            color: #111111 !important;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            padding-top: env(safe-area-inset-top, 0px);
-            padding-bottom: env(safe-area-inset-bottom, 20px);
-        }
-        * { color: inherit; }
-        .text-white, .text-white * { color: #ffffff !important; }
-        .text-gray-900 { color: #111827 !important; }
-        .text-gray-800 { color: #1f2937 !important; }
-        .text-gray-700 { color: #374151 !important; }
-        .text-gray-600 { color: #4b5563 !important; }
-        .text-gray-500 { color: #6b7280 !important; }
-        .text-gray-400 { color: #9ca3af !important; }
-        .text-blue-600 { color: #2563eb !important; }
-        .text-purple-600 { color: #9333ea !important; }
-        .text-green-600 { color: #16a34a !important; }
-        .text-red-500 { color: #ef4444 !important; }
-        .gradient-text { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .primary-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .avatar-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .post-card { background: white; border: 1px solid #dbdbdb; border-radius: 8px; margin-bottom: 16px; overflow: hidden; cursor: pointer; transition: all 0.2s ease; }
-        .post-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        .bottom-nav { 
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-            padding-bottom: env(safe-area-inset-bottom, 10px);
-        }
-        .nav-btn.active { color: #667eea; }
-        .add-btn-main { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); display: flex; align-items: center; justify-content: center; }
-        .media-container { max-height: 250px; overflow: hidden; background-color: #f0f0f0; margin-bottom: 10px; cursor: pointer; }
-        .media-container img, .media-container video { width: 100%; height: auto; object-fit: cover; }
-        #galleryModal { transition: opacity 0.3s ease; }
-        #achievementsContent, #shopContent, #trainingContent, #leaderboardContent, #notificationsContent { max-height: 0px; transition: max-height 0.3s ease-out; overflow: hidden; }
-        .notification-badge { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; background-color: #ef4444; color: white; border-radius: 9999px; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 1px 4px; line-height: 1; z-index: 10; }
-        .media-previews { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-        .media-preview-item { position: relative; width: 60px; height: 60px; border-radius: 8px; overflow: hidden; border: 2px solid #e5e7eb; }
-        .media-preview-item img, .media-preview-item video { width: 100%; height: 100%; object-fit: cover; }
-        .remove-media-btn { position: absolute; top: -5px; right: -5px; width: 20px; height: 20px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; z-index: 2; border: 2px solid white; }
-        .leaderboard-item { transition: all 0.2s ease; }
-        .leaderboard-item:hover { transform: translateY(-2px); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .current-user-highlight { border: 2px solid #667eea; background-color: #f0f4ff; }
-        .notification-item { transition: all 0.2s ease; cursor: pointer; }
-        .notification-item:hover { background-color: #f8fafc; }
-        .notification-unread { background-color: #f0f9ff; border-left: 3px solid #3b82f6; }
-        .offline-indicator { position: fixed; top: 10px; right: 10px; z-index: 1000; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.7; } 50% { opacity: 1; } 100% { opacity: 0.7; } }
-        .profile-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .risk-fields { transition: all 0.3s ease; overflow: hidden; }
-        .content-top { padding-top: env(safe-area-inset-top, 0px); }
-        .bottom-safe { padding-bottom: env(safe-area-inset-bottom, 10px); }
-        /* Push header below Telegram's close/minimize buttons */
-        #mainApp > header {
-            padding-top: calc(env(safe-area-inset-top, 0px) + 52px);
-            padding-bottom: 10px;
-        }
-        .btn-loading { opacity: 0.7; pointer-events: none; position: relative; }
-        .btn-loading:after { content: ''; position: absolute; width: 16px; height: 16px; top: 50%; left: 50%; margin-left: -8px; margin-top: -8px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spinner 0.6s linear infinite; }
-        @keyframes spinner { to { transform: rotate(360deg); } }
-        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .dark .feed-card { background: var(--bg2) !important; border-color: var(--border) !important; }
-        #requestsFeed { padding: 8px; }
-
-        /* ── DARK MODE ─────────────────────────────────── */
-        :root {
-            --bg: #fafafa; --bg2: #ffffff; --bg3: #f3f4f6;
-            --border: #e5e7eb; --border2: #d1d5db;
-            --text1: #111827; --text2: #374151; --text3: #6b7280; --text4: #9ca3af;
-            --accent: #667eea; --accent2: #764ba2;
-            --card-shadow: 0 1px 4px rgba(0,0,0,0.06);
-        }
-        .dark {
-            --bg: #0f0f13; --bg2: #1a1a22; --bg3: #252530;
-            --border: #2e2e3a; --border2: #3a3a48;
-            --text1: #f0f0f5; --text2: #c8c8d8; --text3: #8888a0; --text4: #555568;
-            --card-shadow: 0 1px 4px rgba(0,0,0,0.4);
-        }
-        .dark body { background: var(--bg) !important; color: var(--text1) !important; }
-        .dark #mainApp, .dark #mainApp > * { background-color: var(--bg) !important; }
-        /* Specific white overrides */
-        .dark .bg-white { background-color: var(--bg2) !important; }
-        .dark .bg-\[#fafafa\] { background-color: var(--bg) !important; }
-        .dark .bg-gray-50 { background-color: var(--bg3) !important; }
-        .dark .bg-gray-100 { background-color: var(--bg3) !important; }
-        .dark .bg-gray-200 { background-color: var(--border2) !important; }
-        /* Feed cards */
-        .dark [style*="background: white"], .dark [style*="background:white"] { background: var(--bg2) !important; }
-        .dark .post-card, .dark [style*="border-radius:12px"] { background: var(--bg2) !important; border-color: var(--border) !important; }
-        /* Borders */
-        .dark .border-gray-100, .dark .border-gray-200 { border-color: var(--border) !important; }
-        .dark .border-t, .dark .border-b { border-color: var(--border) !important; }
-        /* Text */
-        .dark .text-gray-900, .dark .text-gray-800 { color: var(--text1) !important; }
-        .dark .text-gray-700, .dark .text-gray-600 { color: var(--text2) !important; }
-        .dark .text-gray-500 { color: var(--text3) !important; }
-        .dark .text-gray-400 { color: var(--text4) !important; }
-        /* Inputs & selects */
-        .dark input, .dark select, .dark textarea { background: var(--bg3) !important; border-color: var(--border) !important; color: var(--text1) !important; }
-        /* Header, nav, modals */
-        .dark header { background: var(--bg2) !important; border-color: var(--border) !important; }
-        .dark .bottom-nav { background: var(--bg2) !important; border-color: var(--border) !important; }
-        .dark #searchBar { background: var(--bg2) !important; border-color: var(--border) !important; }
-        .dark [id$="Modal"] > div, .dark [id$="Modal"] .bg-white { background: var(--bg2) !important; }
-        .dark [class*="Modal"] .bg-gray-50 { background: var(--bg3) !important; }
-        /* Profile */
-        .dark #userProfile { background: var(--bg) !important; }
-        .dark #userProfile .bg-white { background: var(--bg2) !important; }
-        .dark .bg-gray-50.rounded-xl { background: var(--bg3) !important; }
-        /* Notification/news sections */
-        .dark #notificationsSection, .dark #newsSection, .dark #notificationArchive { background: var(--bg) !important; }
-        .dark .notification-item { background: var(--bg2) !important; border-color: var(--border) !important; }
-        .dark .notification-unread { background: rgba(59,130,246,0.12) !important; }
-        .dark .current-user-highlight { background: rgba(102,126,234,0.15) !important; border-color: var(--accent) !important; }
-        .dark .leaderboard-item { background: var(--bg2) !important; border-color: var(--border) !important; }
-        /* Colored badges stay readable */
-        .dark .bg-emerald-50 { background: rgba(16,185,129,0.18) !important; }
-        .dark .bg-red-50 { background: rgba(239,68,68,0.18) !important; }
-        .dark .bg-blue-50 { background: rgba(59,130,246,0.18) !important; }
-        .dark .bg-blue-100 { background: rgba(59,130,246,0.22) !important; }
-        .dark .bg-purple-50 { background: rgba(147,51,234,0.18) !important; }
-        .dark .bg-yellow-50 { background: rgba(234,179,8,0.15) !important; }
-        .dark .bg-yellow-100 { background: rgba(234,179,8,0.2) !important; }
-        .dark .bg-orange-50 { background: rgba(249,115,22,0.15) !important; }
-        .dark .bg-green-50 { background: rgba(22,163,74,0.15) !important; }
-        .dark .bg-green-100 { background: rgba(22,163,74,0.2) !important; }
-        /* Daily task cards */
-        .dark .daily-task-card { background: var(--bg3) !important; border-color: var(--border) !important; }
-        /* Shop items */
-        .dark .border.border-gray-100 { border-color: var(--border) !important; }
-        /* Registration screen */
-        .dark #registrationScreen { background: var(--bg) !important; }
-        .dark #registrationScreen .bg-white { background: var(--bg2) !important; }
-        /* Splash */
-        .dark #splashScreen { background: var(--bg) !important; }
-        /* ALL modals dark */
-        .dark #createModal > div,
-        .dark #detailModal > div,
-        .dark #commentsModal > div,
-        .dark #trainingModal > div,
-        .dark #createNewsModal > div { background: var(--bg2) !important; border-color: var(--border) !important; }
-        .dark #createModal .bg-gray-50,
-        .dark #detailModal .bg-gray-50,
-        .dark #commentsModal .bg-gray-50,
-        .dark #trainingModal .bg-gray-50,
-        .dark #createNewsModal .bg-gray-50 { background: var(--bg3) !important; }
-        /* Radio type cards dark */
-        .dark #createModal label > div { background: var(--bg3) !important; border-color: var(--border) !important; }
-        /* News section cards */
-        .dark #newsSection .bg-white { background: var(--bg2) !important; }
-        .dark #newsSection .border-gray-100 { border-color: var(--border) !important; }
-        /* Settings dropdown */
-        .dark #settingsDropdown { background: var(--bg2) !important; }
-        .dark #settingsDropdown a { color: var(--text2) !important; }
-        .dark #settingsDropdown a:hover { background: var(--bg3) !important; }
-        /* Achievements */
-        .dark #achievementsList > div { background: var(--bg3) !important; border-color: var(--border) !important; }
-        /* Shop list */
-        .dark #shopList > div { background: var(--bg3) !important; border-color: var(--border) !important; }
-        /* Logout button */
-        .dark .border-red-100 { border-color: rgba(239,68,68,0.3) !important; }
-
-        /* ── LEVEL BADGE ───────────────────────────────── */
-        .level-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
-        .level-1 { background: linear-gradient(135deg,#e8e8e8,#c8c8c8); color: #555; }
-        .level-2 { background: linear-gradient(135deg,#bbf7d0,#6ee7b7); color: #065f46; }
-        .level-3 { background: linear-gradient(135deg,#bfdbfe,#93c5fd); color: #1e40af; }
-        .level-4 { background: linear-gradient(135deg,#ddd6fe,#a78bfa); color: #4c1d95; }
-        .level-5 { background: linear-gradient(135deg,#fef08a,#fbbf24); color: #78350f; }
-        .level-6 { background: linear-gradient(135deg,#fecaca,#f87171); color: #7f1d1d; }
-        .level-7 { background: linear-gradient(135deg,#f9a8d4,#ec4899); color: #500724; }
-        .level-8 { background: linear-gradient(135deg,#fde68a,#f59e0b,#ef4444); color: #1c1c1c; }
-
-        /* ── DAILY TASK ────────────────────────────────── */
-        .daily-task-card { border-radius: 16px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; border: 1.5px solid var(--border); background: var(--bg2); transition: all .2s; }
-        .daily-task-done { opacity: .55; }
-        .task-progress { height: 5px; border-radius: 999px; background: var(--border); overflow: hidden; margin-top: 4px; }
-        .task-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#667eea,#764ba2); transition: width .5s; }
-    </style>
-</head>
-<body class="bg-[#fafafa] min-h-full overflow-x-hidden">
-<!-- Prevent body scroll when modal open -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Akkermann Pulse</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/twemoji.min.js" crossorigin="anonymous"></script>
 <style>
-  body.modal-open { overflow: hidden; position: fixed; width: 100%; }
-  #mainApp { display: none; }
-  #registrationScreen { display: none; }
-  #splashScreen { display: flex; }
+img.emoji{height:1.15em;width:1.15em;vertical-align:-0.1em;display:inline}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f5f5f7;color:#111;overscroll-behavior:none}
+
+/* ── SCREENS ─────────────────────────────── */
+#splash,#reg,#app{position:fixed;inset:0;overflow:hidden}
+#reg,#app{overflow-y:auto}
+#splash{display:flex;align-items:center;justify-content:center;background:#f5f5f7;z-index:200}
+#reg{display:none;background:#f0f0f5;z-index:100;align-items:center;justify-content:center;padding:20px}
+#app{display:none;z-index:50;background:#f5f5f7}
+
+/* ── DARK MODE ───────────────────────────── */
+:root{--bg:#f5f5f7;--bg2:#fff;--bg3:#f0f0f5;--bd:#e5e7eb;--t1:#111;--t2:#374151;--t3:#6b7280;--t4:#9ca3af;--acc:#667eea;--acc2:#764ba2}
+.dark{--bg:#0f0f13;--bg2:#1a1a22;--bg3:#252530;--bd:#2e2e3a;--t1:#f0f0f5;--t2:#c0c0d0;--t3:#808098;--t4:#505065}
+.dark body{background:var(--bg)!important;color:var(--t1)!important}
+.dark #app,.dark #reg,.dark #splash{background:var(--bg)!important}
+
+/* ── GRADIENTS ───────────────────────────── */
+.grad{background:linear-gradient(135deg,#667eea,#764ba2)}
+.grad-text{background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+
+/* ── HEADER ──────────────────────────────── */
+#appHeader{
+  position:sticky;top:0;z-index:60;
+  background:var(--bg2);
+  border-bottom:1px solid var(--bd);
+  padding-top:calc(env(safe-area-inset-top,0px) + 54px);
+}
+.header-title{text-align:center;padding:8px 16px 0;font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.feed-tabs{display:flex;border-top:1px solid var(--bd)}
+.feed-tab{flex:1;padding:10px 4px;font-size:13px;font-weight:600;color:var(--t3);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer}
+.feed-tab.active{color:var(--t1);border-bottom-color:var(--t1)}
+
+/* ── SEARCH ──────────────────────────────── */
+#searchBar{position:sticky;z-index:55;background:var(--bg2);border-bottom:1px solid var(--bd);padding:8px 12px}
+#searchBar input{width:100%;padding:8px 12px 8px 36px;border:1px solid var(--bd);border-radius:12px;background:var(--bg3);color:var(--t1);font-size:13px;outline:none}
+.search-wrap{position:relative}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3)}
+#filterRow{display:flex;gap:6px;margin-top:7px;overflow-x:auto;padding-bottom:2px}
+#filterRow::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:5px 12px;border-radius:999px;border:1.5px solid var(--bd);background:var(--bg3);color:var(--t3);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.active{border-color:var(--acc);background:rgba(102,126,234,.12);color:var(--acc)}
+#extraFilter{display:none;margin-top:7px;display:none;gap:6px}
+#extraFilter.open{display:flex}
+#extraFilter select{flex:1;padding:7px 10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg3);color:var(--t1);font-size:12px;outline:none}
+
+/* ── BOTTOM NAV ──────────────────────────── */
+#nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:60;
+  background:var(--bg2);border-top:1px solid var(--bd);
+  display:grid;grid-template-columns:repeat(5,1fr);
+  height:calc(56px + env(safe-area-inset-bottom,0px));
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;color:var(--t3);cursor:pointer;gap:2px;position:relative}
+.nav-btn.active{color:var(--acc)}
+.nav-btn span{font-size:10px;font-weight:600}
+.nav-add{display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px}
+.nav-add-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:26px;line-height:1;color:#fff;display:flex;align-items:center;justify-content:center}
+.nav-badge{position:absolute;top:4px;right:8px;min-width:16px;height:16px;background:#ef4444;color:#fff;border-radius:999px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
+
+/* ── SECTIONS ────────────────────────────── */
+.section{display:none;padding-bottom:72px;min-height:100%}
+.section.active{display:block}
+
+/* ── FEED CARDS ──────────────────────────── */
+#feedList{padding:8px}
+.feed-card{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;margin-bottom:8px;overflow:hidden;transition:box-shadow .2s}
+.card-header{padding:10px 12px 8px;display:flex;align-items:center;justify-content:space-between}
+.avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;flex-shrink:0}
+.card-actions{padding:8px 12px;border-top:1px solid var(--bd);display:flex;align-items:center;gap:16px}
+.action-btn{background:none;border:none;color:var(--t3);display:flex;align-items:center;gap:5px;font-size:13px;font-weight:600;cursor:pointer;padding:0}
+.status-pill{margin-left:auto;padding:3px 10px;border-radius:999px;font-size:10px;font-weight:700}
+
+/* ── PROFILE ─────────────────────────────── */
+.profile-avatar{width:96px;height:96px;border-radius:50%;object-fit:cover;border:3px solid var(--bg2);box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.level-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.lv1{background:linear-gradient(135deg,#e8e8e8,#c8c8c8);color:#555}
+.lv2{background:linear-gradient(135deg,#bbf7d0,#6ee7b7);color:#065f46}
+.lv3{background:linear-gradient(135deg,#bfdbfe,#93c5fd);color:#1e40af}
+.lv4{background:linear-gradient(135deg,#ddd6fe,#a78bfa);color:#4c1d95}
+.lv5{background:linear-gradient(135deg,#fef08a,#fbbf24);color:#78350f}
+.lv6{background:linear-gradient(135deg,#fecaca,#f87171);color:#7f1d1d}
+.lv7{background:linear-gradient(135deg,#f9a8d4,#ec4899);color:#500724}
+.lv8{background:linear-gradient(135deg,#fde68a,#f59e0b,#ef4444);color:#111}
+
+/* ── COLLAPSIBLE ─────────────────────────── */
+.collapse-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:14px 16px;background:var(--bg2);border-bottom:1px solid var(--bd)}
+.collapse-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.collapse-body.open{max-height:2000px}
+.collapse-arrow{transition:transform .3s}
+.collapse-header.open .collapse-arrow{transform:rotate(180deg)}
+
+/* ── MODALS ──────────────────────────────── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;align-items:center;justify-content:center;padding:16px}
+.modal-bg.open{display:flex}
+.modal-box{background:var(--bg2);border-radius:20px;width:100%;max-width:440px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-head{padding:14px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);flex-shrink:0}
+.modal-body{overflow-y:auto;flex:1;padding:16px}
+.modal-close{background:none;border:none;font-size:22px;color:var(--t3);cursor:pointer;line-height:1}
+
+/* ── GALLERY ─────────────────────────────── */
+#gallery{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;align-items:center;justify-content:center}
+#gallery.open{display:flex}
+#gallery .img-wrap{position:relative;display:inline-block;max-width:calc(100vw - 32px);max-height:calc(100vh - 80px)}
+#gallery img,#gallery video{max-width:100%;max-height:calc(100vh - 80px);border-radius:10px;object-fit:contain}
+#gallery .gclose{position:absolute;top:8px;right:8px;width:34px;height:34px;border-radius:50%;background:rgba(0,0,0,.55);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+
+/* ── INPUTS ──────────────────────────────── */
+.inp{width:100%;padding:11px 14px;border:1px solid var(--bd);border-radius:12px;background:var(--bg3);color:var(--t1);font-size:14px;outline:none;font-family:inherit}
+.inp:focus{border-color:var(--acc)}
+label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.btn-main{width:100%;padding:13px;border-radius:14px;border:none;cursor:pointer;font-size:15px;font-weight:700;color:#fff;font-family:inherit}
+.btn-main:disabled{opacity:.6;pointer-events:none}
+
+/* ── LEADERBOARD ─────────────────────────── */
+.lb-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--bd);margin-bottom:6px;background:var(--bg3)}
+.lb-item.me{border-color:var(--acc);background:rgba(102,126,234,.1)}
+.lb-gold{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.4)}
+.lb-silver{background:rgba(156,163,175,.12);border-color:rgba(156,163,175,.35)}
+.lb-bronze{background:rgba(249,115,22,.12);border-color:rgba(249,115,22,.3)}
+
+/* ── DAILY TASKS ─────────────────────────── */
+.task-card{display:flex;align-items:center;gap:12px;padding:11px 13px;border-radius:14px;border:1.5px solid var(--bd);margin-bottom:7px;background:var(--bg3)}
+.task-card.done{opacity:.5}
+.task-bar{height:4px;border-radius:999px;background:var(--bd);margin-top:5px;overflow:hidden}
+.task-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#667eea,#764ba2);transition:width .5s}
+
+/* ── NOTIFICATIONS ───────────────────────── */
+.notif-item{padding:12px 14px;border-radius:12px;border:1px solid var(--bd);margin-bottom:7px;cursor:pointer;background:var(--bg2)}
+.notif-item.unread{border-left:3px solid var(--acc);background:rgba(102,126,234,.07)}
+
+/* ── NEWS ────────────────────────────────── */
+.news-card{background:var(--bg2);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:8px}
+
+/* ── SPIN ────────────────────────────────── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .7s linear infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.bounce{animation:bounce .7s ease infinite}
+.bounce2{animation:bounce .7s ease .15s infinite}
+.bounce3{animation:bounce .7s ease .3s infinite}
 </style>
+</head>
+<body>
 
-<div id="offlineIndicator" class="hidden offline-indicator bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">🔴 Оффлайн</div>
-
-<div id="splashScreen" class="min-h-screen flex items-center justify-center bg-[#fafafa]">
-    <div class="flex flex-col items-center gap-4">
-        <div class="w-20 h-20 rounded-2xl primary-gradient flex items-center justify-center text-4xl shadow-xl">🚀</div>
-        <div class="text-xl font-bold tracking-widest gradient-text uppercase">AKKERMANN PULSE</div>
-        <div class="flex gap-1.5 mt-2">
-            <div class="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style="animation-delay:0s"></div>
-            <div class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay:.15s"></div>
-            <div class="w-2 h-2 rounded-full bg-purple-600 animate-bounce" style="animation-delay:.3s"></div>
-        </div>
+<!-- SPLASH -->
+<div id="splash">
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+    <div class="grad" style="width:72px;height:72px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:36px;box-shadow:0 8px 24px rgba(102,126,234,.4)">🚀</div>
+    <div class="grad-text" style="font-size:16px;font-weight:800;letter-spacing:.15em">AKKERMANN PULSE</div>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <div class="bounce" style="width:8px;height:8px;border-radius:50%;background:#667eea"></div>
+      <div class="bounce2" style="width:8px;height:8px;border-radius:50%;background:#764ba2"></div>
+      <div class="bounce3" style="width:8px;height:8px;border-radius:50%;background:#667eea"></div>
     </div>
+  </div>
 </div>
 
-<div id="registrationScreen" class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
-        <div class="text-center mb-8">
-            <div class="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-4xl mb-4 shadow-lg text-white">🚀</div>
-            <h1 class="text-2xl font-bold text-gray-900 mb-2">Добро пожаловать!</h1>
-            <p class="text-gray-500">Система управления идеями и рисками</p>
-        </div>
-        <!-- Telegram auto-fill notice -->
-        <div id="tgAutoFillNotice" class="hidden mb-4 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-700 text-center">
-            ✅ Данные Telegram получены. Заполните табельный номер и участок.
-        </div>
-        <form id="registrationForm" class="space-y-5">
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">ФИО</label> <input type="text" id="regFullName" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50" placeholder="Иванов Иван"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">Табельный номер</label> <input type="text" id="regEmployeeId" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50" placeholder="12345"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">Телефонный номер</label> <input type="tel" id="regPhone" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50" placeholder="+7 (XXX) XXX-XX-XX"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">Электронная почта</label> <input type="email" id="regEmail" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50" placeholder="user@example.com"></div>
-            <div><label class="block text-sm font-medium text-gray-700 mb-1">Участок</label> <select id="regDepartment" required class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50"> <option value="">Выберите участок</option> <option value="production">Производство</option> <option value="warehouse">Склад</option> <option value="office">Офис</option> </select></div>
-            <button type="submit" id="registerBtn" class="w-full primary-gradient text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition duration-200 transform hover:-translate-y-0.5">Начать работу</button>
-        </form>
+<!-- REGISTRATION -->
+<div id="reg">
+  <div style="width:100%;max-width:400px;background:var(--bg2);border-radius:24px;padding:28px 24px;box-shadow:0 8px 40px rgba(0,0,0,.1)">
+    <div style="text-align:center;margin-bottom:24px">
+      <div class="grad" style="width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 12px">🚀</div>
+      <div style="font-size:20px;font-weight:800;color:var(--t1)">Добро пожаловать!</div>
+      <div style="font-size:13px;color:var(--t3);margin-top:4px">Система управления идеями и рисками</div>
     </div>
+    <div id="tgNotice" style="display:none;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 12px;font-size:12px;color:#1e40af;margin-bottom:14px;text-align:center">✅ Данные Telegram получены</div>
+    <form id="regForm" style="display:flex;flex-direction:column;gap:12px">
+      <div><label class="lbl">ФИО</label><input class="inp" id="rFio" required placeholder="Иванов Иван Иванович"></div>
+      <div><label class="lbl">Табельный номер</label><input class="inp" id="rEmp" required placeholder="12345"></div>
+      <div><label class="lbl">Телефон</label><input class="inp" id="rPhone" type="tel" placeholder="+998 XX XXX XX XX"></div>
+      <div><label class="lbl">Email</label><input class="inp" id="rEmail" type="email" placeholder="user@example.com"></div>
+      <div><label class="lbl">Участок</label>
+        <select class="inp" id="rDept" required>
+          <option value="">Выберите участок</option>
+          <option value="production">Производство</option>
+          <option value="warehouse">Склад</option>
+          <option value="office">Офис</option>
+          <option value="Цех 1">Цех 1</option>
+          <option value="Цех 2">Цех 2</option>
+        </select>
+      </div>
+      <button class="btn-main grad" type="submit" id="regBtn" style="margin-top:4px">Начать работу</button>
+    </form>
+  </div>
 </div>
 
-<div id="mainApp" class="hidden max-w-lg mx-auto bg-[#fafafa] min-h-screen relative shadow-2xl">
-   
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50 px-4 flex items-center justify-center" style="padding-top: calc(env(safe-area-inset-top, 0px) + 52px); padding-bottom: 0;">
-        <div class="w-full">
-            <h1 class="text-lg font-bold tracking-widest gradient-text uppercase text-center pb-2">AKKERMANN PULSE</h1>
-            <div id="feedTabsInHeader" class="flex border-t border-gray-100 -mx-4 px-0">
-                <button onclick="switchFeedTab('all')" id="allFeedTab" class="flex-1 py-2.5 text-sm font-semibold text-gray-900 border-b-2 border-gray-900">Общая лента</button>
-                <button onclick="switchFeedTab('my')" id="myFeedTab" class="flex-1 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700">Мои заявки</button>
-                <button onclick="switchFeedTab('assigned')" id="assignedFeedTab" class="flex-1 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700">Назначенные мне</button>
-            </div>
-        </div>
-    </header>
-
-    <div id="adminPanel" class="hidden bg-gray-50 min-h-screen pb-24">
-        <div class="p-4 grid grid-cols-2 gap-4 mb-4">
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100"><div class="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1">Всего заявок</div><div class="text-2xl font-bold text-gray-800" id="totalRequests">0</div></div>
-            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100"><div class="text-gray-500 text-xs uppercase font-bold tracking-wider mb-1">В работе</div><div class="text-2xl font-bold text-blue-600" id="inProgressRequests">0</div></div>
-        </div>
-        <div class="px-4"><h3 class="text-lg font-bold text-gray-800 mb-3">Управление заявками</h3><div id="adminRequestsList" class="space-y-3"></div></div>
+<!-- APP -->
+<div id="app">
+  <!-- HEADER -->
+  <div id="appHeader">
+    <div class="header-title grad-text">AKKERMANN PULSE</div>
+    <div class="feed-tabs" id="feedTabs">
+      <button class="feed-tab active" data-tab="all" onclick="switchTab('all')">Общая лента</button>
+      <button class="feed-tab" data-tab="my" onclick="switchTab('my')">Мои заявки</button>
+      <button class="feed-tab" data-tab="assigned" onclick="switchTab('assigned')">Назначенные</button>
     </div>
+  </div>
 
-    <main id="userPanel">
-        <div id="feedTabs" class="hidden"></div>
-
-        <div class="p-3 bg-white border-b border-gray-100 sticky z-30" id="searchBar" style="top: 0px">
-            <div class="flex items-center gap-2">
-                <div class="flex-grow relative">
-                    <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" id="searchByIdInput" placeholder="Поиск по ID, тексту, автору…" class="text-sm pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 w-full" oninput="renderFeed()">
-                </div>
-                <button onclick="toggleFilterMenu()" id="filterToggleBtn" class="flex-shrink-0 w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition active:scale-95">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M7 8h10M11 12h2M9 16h6"/></svg>
-                </button>
-            </div>
-            <div id="filterMenu" class="hidden mt-2 pt-2 border-t border-gray-100">
-                <div class="flex items-center gap-2">
-                    <select id="filterType" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-grow">
-                        <option value="all">Все типы</option>
-                        <option value="idea">💡 Идеи</option>
-                        <option value="risk">⚠️ Риски</option>
-                    </select>
-                    <select id="filterLocation" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-shrink-0">
-                        <option value="all">Все участки</option>
-                        <option value="Цех 1">Цех 1</option>
-                        <option value="Цех 2">Цех 2</option>
-                        <option value="Склад">Склад</option>
-                        <option value="Офис">Офис</option>
-                    </select>
-                    <select id="sortBy" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-shrink-0">
-                        <option value="date">Новые</option>
-                        <option value="oldest">Старые</option>
-                        <option value="likes">Топ</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-        
-        <div id="requestsFeed" class="p-0 sm:p-4 space-y-0 sm:space-y-4 pb-24 pt-2"></div>
-        <div id="emptyState" class="hidden text-center py-20 px-6"><div class="text-6xl mb-4 grayscale opacity-30">📋</div><h3 class="text-lg font-bold text-gray-900 mb-2">Пока пусто</h3><p class="text-gray-500">Станьте первым, кто опубликует идею или риск!</p></div>
-    </main>
-
-    <div id="messagesSection" class="hidden text-center py-20 px-6 min-h-screen bg-[#fafafa] pb-24"><div class="text-6xl mb-4 grayscale opacity-30">💬</div><h3 class="text-xl font-bold text-gray-900 mb-2">Сообщения</h3><p class="text-gray-500">Здесь будет чат для прямого общения с администратором.</p></div>
-    <div id="newsSection" class="hidden min-h-screen bg-[#fafafa] pb-24">
-        <div class="p-4 pt-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-900">📰 Новости</h2>
-                <button id="addNewsBtn" class="hidden primary-gradient text-white text-xs font-bold px-3 py-2 rounded-xl" onclick="toggleCreateNewsModal()">+ Добавить</button>
-            </div>
-            <div id="newsFeed" class="space-y-4">
-                <div class="text-center py-10 text-gray-400">
-                    <div class="text-5xl mb-3 opacity-30">📰</div>
-                    <p class="text-sm">Загрузка новостей...</p>
-                </div>
-            </div>
-        </div>
+  <!-- SEARCH BAR (feed only) -->
+  <div id="searchBar">
+    <div class="search-wrap">
+      <svg class="search-icon" width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <input id="searchInput" placeholder="Поиск по ID, тексту, автору…" oninput="renderFeed()">
     </div>
-
-    <!-- Create News Modal (admin only) -->
-    <div id="createNewsModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
-                <h3 class="font-bold text-gray-800">Новая новость</h3>
-                <button onclick="toggleCreateNewsModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
-            </div>
-            <div class="p-5 overflow-y-auto">
-                <form id="createNewsForm" class="space-y-4">
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Заголовок</label><input type="text" id="newsTitleInput" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Заголовок новости..."></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Текст</label><textarea id="newsBodyInput" rows="5" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Текст новости..."></textarea></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Категория</label>
-                        <select id="newsCategoryInput" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <option value="announcement">📢 Объявление</option>
-                            <option value="achievement">🏆 Достижение</option>
-                            <option value="safety">🛡️ Безопасность</option>
-                            <option value="general">📌 Общее</option>
-                        </select>
-                    </div>
-                    <button type="submit" id="submitNewsBtn" class="w-full primary-gradient text-white font-bold py-3.5 rounded-xl shadow-lg">Опубликовать</button>
-                </form>
-            </div>
-        </div>
+    <div id="filterRow">
+      <button class="chip active" data-loc="all" onclick="setLoc(this,'all')">Все</button>
+      <button class="chip" data-loc="Производство" onclick="setLoc(this,'Производство')">Производство</button>
+      <button class="chip" data-loc="Цех 1" onclick="setLoc(this,'Цех 1')">Цех 1</button>
+      <button class="chip" data-loc="Цех 2" onclick="setLoc(this,'Цех 2')">Цех 2</button>
+      <button class="chip" data-loc="Склад" onclick="setLoc(this,'Склад')">Склад</button>
+      <button class="chip" data-loc="Офис" onclick="setLoc(this,'Офис')">Офис</button>
+      <button class="chip" data-loc="__filter" onclick="toggleExtraFilter()" id="filterBtn">⚙️ Фильтр</button>
     </div>
-    <div id="notificationsSection" class="hidden min-h-screen bg-[#fafafa] pb-24"><div class="p-4 pt-6"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-900">Уведомления</h2><button onclick="showNotificationArchive()" class="text-sm text-blue-600 hover:text-blue-800">Архив</button></div><div id="notificationsList" class="space-y-3"></div><div id="emptyNotifications" class="text-center py-10 hidden"><div class="text-5xl mb-4 opacity-30">🔔</div><h3 class="text-lg font-bold text-gray-900 mb-2">Нет уведомлений</h3><p class="text-gray-500">Здесь будут появляться уведомления</p></div><div id="markAllReadButton" class="mt-6 pt-4 border-t border-gray-200 hidden"><button onclick="markAllNotificationsAsRead()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-xl transition">Просмотреть все</button></div></div></div>
-    <div id="notificationArchive" class="hidden min-h-screen bg-[#fafafa] pb-24"><div class="p-4 pt-6"><div class="flex justify-between items-center mb-4"><button onclick="showSection('notifications')" class="flex items-center text-gray-600"><svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>Назад</button><h2 class="text-xl font-bold text-gray-900">Архив уведомлений</h2><div class="w-10"></div></div><div id="archiveNotificationsList" class="space-y-3"></div><div id="emptyArchive" class="text-center py-10 hidden"><div class="text-5xl mb-4 opacity-30">📂</div><h3 class="text-lg font-bold text-gray-900 mb-2">Архив пуст</h3><p class="text-gray-500">Здесь будут появляться прочитанные уведомления</p></div></div></div>
-
-    <div id="userProfile" class="hidden bg-[#fafafa] min-h-screen pb-24">
-        <div class="bg-white px-4 py-2 flex justify-between items-center sticky top-[53px] z-10">
-            <input type="file" id="avatarUploadInput" accept="image/*" class="hidden" onchange="handleAvatarUpload(event)">
-            <!-- Dark mode toggle -->
-            <button onclick="toggleDarkMode()" id="darkModeBtn" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition text-lg">🌙</button>
-            <div class="flex gap-2">
-                <div class="relative">
-                    <button onclick="toggleSettingsDropdown(event)" class="w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 transition"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37a1.724 1.724 0 002.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg></button>
-                    <div id="settingsDropdown" class="hidden absolute right-0 mt-2 w-52 bg-white rounded-lg shadow-xl py-1 ring-1 ring-black ring-opacity-5 z-20"><a href="#" onclick="document.getElementById('avatarUploadInput').click(); toggleSettingsDropdown(); return false;" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Изменить фото профиля</a></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="bg-white p-6 border-b border-gray-200 mb-4 pt-0">
-            <div class="flex flex-col items-center text-center gap-2 mb-6">
-                <div class="relative mb-4 cursor-pointer" onclick="document.getElementById('avatarUploadInput').click()">
-                    <div id="profileAvatar" class="profile-avatar mx-auto"></div>
-                    <div class="absolute inset-0 rounded-full bg-black bg-opacity-0 hover:bg-opacity-30 transition flex items-center justify-center">
-                        <div class="opacity-0 hover:opacity-100 transition text-white text-xs font-bold bg-black bg-opacity-50 rounded-full px-2 py-1">📷</div>
-                    </div>
-                    <div class="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center shadow-sm text-sm">📷</div>
-                    <div id="trainingCheckmark" class="hidden absolute bottom-0 right-0 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center text-white shadow-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-900 leading-tight" id="profileName"></h2>
-                <p class="text-gray-500 text-base" id="profileDepartment"></p>
-                <p class="text-gray-500 text-sm font-semibold" id="profileIdDisplay"></p>
-                <p class="text-gray-500 text-sm font-semibold mt-[-4px]" id="profilePhoneDisplay"></p>
-            </div>
-
-            <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-4">
-                <div class="flex justify-between items-end mb-2">
-                    <div>
-                        <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Уровень</span>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <div class="text-2xl font-bold text-gray-900" id="profileLevel">1</div>
-                            <span id="levelBadge" class="level-badge level-1">Новичок</span>
-                        </div>
-                    </div>
-                    <div class="text-right"><span class="text-2xl font-bold text-purple-600" id="profilePoints">0</span><span class="text-xs font-bold text-purple-400 uppercase ml-1">баллов</span></div>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden"><div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2.5 rounded-full transition-all duration-700" id="levelProgress" style="width: 0%"></div></div>
-                <div class="mt-1 text-xs text-gray-400 text-right">до следующего уровня: <span id="pointsToNext">100</span></div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-3 gap-2 px-4 mb-4">
-            <div class="bg-white p-3 rounded-lg text-center border-2 border-green-400 shadow-sm"><div class="text-lg font-bold text-gray-800" id="statAccepted">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">Принято</div></div>
-            <div class="bg-white p-3 rounded-lg text-center border-2 border-blue-400 shadow-sm"><div class="text-lg font-bold text-blue-600" id="statWork">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">В работе</div></div>
-            <div class="bg-white p-3 rounded-lg text-center border-2 border-purple-400 shadow-sm"><div class="text-lg font-bold text-purple-600" id="statCompleted">0</div><div class="text-[10px] text-gray-500 uppercase font-bold">Выполнено</div></div>
-        </div>
-
-        <!-- Daily tasks -->
-        <div class="bg-white p-4 mb-4 border-y border-gray-200">
-            <h3 onclick="toggleSection('dailyTasks')" class="font-bold text-gray-900 mb-0 flex items-center justify-between cursor-pointer">
-                <span class="flex items-center gap-2">⚡ Ежедневные задания <span id="dailyResetBadge" class="text-xs text-gray-400 font-normal"></span></span>
-                <svg id="dailyTasksToggle" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-            </h3>
-            <div id="dailyTasksContent" style="max-height:0;overflow:hidden;transition:max-height 0.3s ease-out;">
-                <div class="mt-3 space-y-2" id="dailyTasksList"></div>
-                <div class="mt-3 text-center text-xs text-gray-400" id="dailyStreakInfo"></div>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 mb-4 border-y border-gray-200">
-            <h3 onclick="toggleSection('leaderboard')" class="font-bold text-gray-900 mb-4 flex items-center justify-between cursor-pointer"><span class="flex items-center">🏆 Лидерборд</span><svg id="leaderboardToggle" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></h3>
-            <div id="leaderboardContent"><div class="space-y-2" id="leaderboardList"><div class="text-center text-gray-500 py-4">Загрузка лидерборда...</div></div></div>
-        </div>
-
-        <div class="bg-white p-4 mb-4 border-y border-gray-200">
-            <h3 onclick="toggleSection('achievements')" class="font-bold text-gray-900 mb-4 flex items-center justify-between cursor-pointer relative"><span class="flex items-center">🎖️ Достижения</span><span id="achievementsBadge" class="notification-badge -top-1 right-8 hidden"></span><svg id="achievementsToggle" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></h3>
-            <div id="achievementsContent"><div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center" id="achievementsList"></div></div>
-        </div>
-
-        <div class="bg-white p-4 border-y border-gray-200">
-            <h3 onclick="toggleSection('shop')" class="font-bold text-gray-900 mb-4 flex items-center justify-between cursor-pointer"><span class="flex items-center">🎁 Магазин подарков</span><svg id="shopToggle" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></h3>
-            <div id="shopContent"><p class="text-xs text-gray-500 mb-4">Обменивайте баллы на реальные призы</p><div class="grid grid-cols-2 gap-3" id="shopList"></div></div>
-        </div>
-
-        <div class="bg-white p-4 border-t border-b border-gray-200 mt-4">
-            <h3 onclick="toggleSection('training')" class="font-bold text-gray-900 mb-4 flex items-center justify-between cursor-pointer"><span class="flex items-center">🎓 Обучение и тестирование</span><svg id="trainingToggle" class="w-4 h-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg></h3>
-            <div id="trainingContent"><div class="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-3 rounded-md mb-4" role="alert"><p class="font-bold">Пройдите обучение!</p><p class="text-sm">Завершите видеоурок и тест, чтобы получить достижение и баллы.</p></div><button onclick="showTrainingModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl transition transform active:scale-95 disabled:opacity-50" id="startTrainingButton">Начать видеоурок и тестирование</button><div id="trainingStatus" class="mt-3 text-center text-sm font-semibold text-green-600 hidden">✅ Обучение успешно завершено!</div></div>
-        </div>
-
-        <!-- Logout button -->
-        <div class="px-4 py-6">
-            <button onclick="logout()" class="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border-2 border-red-100 bg-white text-red-500 font-semibold text-sm hover:bg-red-50 active:scale-95 transition shadow-sm">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                </svg>
-                Выйти из аккаунта
-            </button>
-        </div>
+    <div id="extraFilter">
+      <select class="inp" id="selType" onchange="renderFeed()" style="flex:1;padding:6px 10px;font-size:12px">
+        <option value="all">Все типы</option><option value="idea">💡 Идеи</option><option value="risk">⚠️ Риски</option>
+      </select>
+      <select class="inp" id="selSort" onchange="renderFeed()" style="flex:1;padding:6px 10px;font-size:12px">
+        <option value="new">Сначала новые</option><option value="old">Сначала старые</option><option value="likes">По лайкам</option>
+      </select>
     </div>
+  </div>
 
-    <div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50"><h3 class="font-bold text-gray-800">Новая запись</h3><button onclick="toggleCreateModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>
-            <div class="p-5 overflow-y-auto">
-                <form id="createForm" class="space-y-4">
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-2">Тип записи</label><div class="grid grid-cols-2 gap-3"><label class="cursor-pointer"><input type="radio" name="type" value="idea" class="peer sr-only" checked onchange="toggleRiskFields()"><div class="p-3 rounded-xl border-2 border-gray-200 peer-checked:border-green-500 peer-checked:bg-green-50 text-center transition-all"><div class="text-2xl mb-1">💡</div><div class="font-bold text-sm text-gray-700">Идея</div></div></label><label class="cursor-pointer"><input type="radio" name="type" value="risk" class="peer sr-only" onchange="toggleRiskFields()"><div class="p-3 rounded-xl border-2 border-gray-200 peer-checked:border-red-500 peer-checked:bg-red-50 text-center transition-all"><div class="text-2xl mb-1">⚠️</div><div class="font-bold text-sm text-gray-700">Риск</div></div></label></div></div>
-                    <div id="riskFields" class="risk-fields hidden space-y-4">
-                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Тип события</label><select id="riskEventType" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"><option value="">Выберите тип события</option><option value="unsafe_conditions">Небезопасные условия</option><option value="unsafe_actions">Небезопасные действия</option><option value="near_miss">Near miss</option><option value="first_aid">Первая помощь</option><option value="micro_injury">Микротравмы</option></select></div>
-                        <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Уровень срочности</label><select id="riskUrgency" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"><option value="">Выберите уровень срочности</option><option value="danger_now">Опасно сейчас</option><option value="may_cause_injury">Может привести к травме</option><option value="remark_improvement">Замечание/улучшение</option></select></div>
-                        <div class="flex items-center gap-2"><input type="checkbox" id="riskAnonymous" class="w-5 h-5"><label for="riskAnonymous" class="text-sm text-gray-700">Отправить анонимно</label></div>
-                    </div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Участок</label><select id="reqLocation" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"><option value="Цех 1">Цех 1</option><option value="Цех 2">Цех 2</option><option value="Склад">Склад</option><option value="Офис">Офис</option></select></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Описание</label><textarea id="reqDesc" rows="4" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Опишите суть идеи или риска..."></textarea></div>
-                    <div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">Фото / Видео (до 5 файлов)</label><input type="file" id="reqMediaFile" accept="image/*,video/*" multiple class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500" onchange="previewMultipleMedia(event)"><div class="text-xs text-gray-500 mt-1">Можно выбрать несколько файлов (удерживайте Ctrl)</div><div id="mediaPreviews" class="media-previews mt-2"></div><div id="mediaPreviewInfo" class="mt-2 text-xs text-gray-500"></div></div>
-                    <button type="submit" id="submitPostBtn" class="w-full primary-gradient text-white font-bold py-3.5 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95">Опубликовать</button>
-                </form>
-            </div>
-        </div>
-    </div>
+  <!-- SECTIONS -->
+  <div id="secFeed" class="section active">
+    <div id="feedList"></div>
+  </div>
 
-    <div id="detailModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden max-h-[80vh] flex flex-col shadow-2xl">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0"><h3 class="font-bold text-gray-800">Детали заявки</h3><button onclick="toggleDetailModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>
-            <div id="detailContent" class="flex-grow p-5 overflow-y-auto"></div>
-        </div>
+  <div id="secNotif" class="section" style="padding:16px;padding-bottom:72px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:17px;font-weight:700;color:var(--t1)">Уведомления</div>
+      <button onclick="markAllRead()" style="font-size:12px;color:var(--acc);background:none;border:none;cursor:pointer">Прочитать все</button>
     </div>
+    <div id="notifList"></div>
+    <div id="notifEmpty" style="display:none;text-align:center;padding:40px 0;color:var(--t3)">
+      <div style="font-size:40px;margin-bottom:8px">🔔</div>
+      <div style="font-size:14px">Нет уведомлений</div>
+    </div>
+  </div>
 
-    <div id="galleryModal" class="hidden fixed inset-0 bg-black bg-opacity-95 z-[110] flex items-center justify-center" onclick="toggleGalleryModal()">
-        <div class="relative flex items-center justify-center w-full h-full p-4">
-            <div id="galleryContent" class="relative max-w-full max-h-full flex items-center justify-center">
-                <!-- Крестик вставляется JS-ом поверх фото -->
-            </div>
-        </div>
+  <div id="secNews" class="section" style="padding:16px;padding-bottom:72px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:17px;font-weight:700;color:var(--t1)">Новости</div>
+      <button id="addNewsBtn" onclick="openModal('newsModal')" style="display:none;font-size:12px;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer">+ Добавить</button>
     </div>
+    <div id="newsList"></div>
+  </div>
 
-    <div id="commentsModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-md rounded-2xl overflow-hidden max-h-[80vh] flex flex-col shadow-2xl">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0"><h3 class="font-bold text-gray-800">Комментарии (<span id="commentCount">0</span>)</h3><button onclick="toggleCommentsModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>
-            <div id="commentsList" class="flex-grow p-4 space-y-4 overflow-y-auto"><div class="text-center text-gray-500 py-10" id="commentsEmpty">Пока нет комментариев.</div></div>
-            <div class="p-4 border-t border-gray-100 flex-shrink-0"><form id="commentForm" class="flex gap-2"><input type="hidden" id="currentPostId"><textarea id="commentText" rows="1" class="flex-grow p-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500 text-sm resize-none" placeholder="Ваш комментарий..."></textarea><button type="submit" id="submitCommentBtn" class="primary-gradient text-white font-bold py-2.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-sm">Отправить</button></form></div>
-        </div>
+  <div id="secProfile" class="section" style="padding-bottom:72px">
+    <!-- profile toolbar -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--bd)">
+      <button onclick="toggleDark()" id="darkBtn" style="background:none;border:none;font-size:22px;cursor:pointer">🌙</button>
+      <button onclick="logout()" style="display:flex;align-items:center;gap:6px;background:none;border:none;color:#ef4444;font-size:13px;font-weight:600;cursor:pointer">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Выйти
+      </button>
     </div>
+    <!-- avatar & info -->
+    <div style="background:var(--bg2);padding:24px 16px;text-align:center;border-bottom:1px solid var(--bd)">
+      <div style="position:relative;display:inline-block;margin-bottom:12px;cursor:pointer" onclick="document.getElementById('avatarInput').click()">
+        <div id="profilePic" style="width:88px;height:88px;border-radius:50%;overflow:hidden;border:3px solid var(--bd);margin:0 auto">
+          <div id="profileInitials" class="grad" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:700"></div>
+        </div>
+        <div style="position:absolute;bottom:2px;right:2px;width:26px;height:26px;border-radius:50%;background:var(--bg2);border:2px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:13px">📷</div>
+        <input type="file" id="avatarInput" accept="image/*" style="display:none" onchange="uploadAvatar(event)">
+      </div>
+      <div style="font-size:20px;font-weight:700;color:var(--t1)" id="pName">—</div>
+      <div style="font-size:13px;color:var(--t3);margin-top:2px" id="pDept">—</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:1px" id="pEmp">—</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:1px" id="pPhone">—</div>
+    </div>
+    <!-- level block -->
+    <div style="background:var(--bg2);margin:8px;border-radius:16px;padding:14px 16px;border:1px solid var(--bd)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Уровень</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+            <span style="font-size:24px;font-weight:800;color:var(--t1)" id="pLevel">1</span>
+            <span class="level-badge lv1" id="pLevelBadge">🌱 Новичок</span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <span style="font-size:22px;font-weight:800;color:var(--acc)" id="pPoints">0</span>
+          <span style="font-size:11px;color:var(--t3);margin-left:2px">баллов</span>
+        </div>
+      </div>
+      <div style="height:6px;border-radius:999px;background:var(--bd);margin-top:10px;overflow:hidden">
+        <div id="pBar" class="grad" style="height:100%;border-radius:999px;width:0%;transition:width .6s"></div>
+      </div>
+      <div style="font-size:11px;color:var(--t3);text-align:right;margin-top:4px">до следующего: <span id="pToNext">100</span> б.</div>
+    </div>
+    <!-- stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 8px 8px">
+      <div style="background:var(--bg2);border:2px solid #34d399;border-radius:12px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--t1)" id="sNew">0</div>
+        <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">Принято</div>
+      </div>
+      <div style="background:var(--bg2);border:2px solid #60a5fa;border-radius:12px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:#3b82f6" id="sWork">0</div>
+        <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">В работе</div>
+      </div>
+      <div style="background:var(--bg2);border:2px solid #a78bfa;border-radius:12px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-weight:700;color:var(--acc)" id="sDone">0</div>
+        <div style="font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase">Выполнено</div>
+      </div>
+    </div>
+    <!-- daily tasks -->
+    <div class="collapse-header" onclick="toggleCollapse('daily')">
+      <span style="font-size:14px;font-weight:700;color:var(--t1)">⚡ Ежедневные задания <span id="dailyTimer" style="font-size:11px;font-weight:400;color:var(--t3)"></span></span>
+      <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+    <div class="collapse-body" id="daily-body" style="padding:0 8px">
+      <div id="dailyList" style="padding:8px 0"></div>
+    </div>
+    <!-- leaderboard -->
+    <div class="collapse-header" onclick="toggleCollapse('lb')">
+      <span style="font-size:14px;font-weight:700;color:var(--t1)">🏆 Лидерборд</span>
+      <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+    <div class="collapse-body" id="lb-body" style="padding:8px">
+      <div id="lbList"><div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">Загрузка…</div></div>
+    </div>
+    <!-- achievements -->
+    <div class="collapse-header" onclick="toggleCollapse('ach')">
+      <span style="font-size:14px;font-weight:700;color:var(--t1)">🎖️ Достижения</span>
+      <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+    <div class="collapse-body" id="ach-body" style="padding:8px">
+      <div id="achList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    </div>
+    <!-- shop -->
+    <div class="collapse-header" onclick="toggleCollapse('shop')">
+      <span style="font-size:14px;font-weight:700;color:var(--t1)">🎁 Магазин подарков</span>
+      <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+    <div class="collapse-body" id="shop-body" style="padding:8px">
+      <div id="shopList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    </div>
+  </div>
 
-    <div id="trainingModal" class="hidden fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-        <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl overflow-hidden max-h-[90vh] flex flex-col">
-            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0"><h3 class="font-bold text-gray-800">Обучение по приложению</h3><button onclick="toggleTrainingModal()" class="text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button></div>
-            <div id="trainingContentArea" class="flex-grow p-4 space-y-4 overflow-y-auto">
-                <div id="videoLesson"><h4 class="font-bold text-lg text-gray-800 mb-2">Видеоурок: Как пользоваться Kaizen App</h4><div class="bg-gray-200 h-48 flex items-center justify-center rounded-lg relative overflow-hidden"><iframe id="trainingVideoFrame" width="100%" height="100%" src="https://www.youtube.com/embed/dQw4w9WgXcQ?controls=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="absolute top-0 left-0 w-full h-full"></iframe><div id="videoOverlay" class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-bold text-xl cursor-pointer" onclick="startTraining()">Нажмите, чтобы начать</div></div></div>
-                <div id="trainingTest" class="hidden"><h4 class="font-bold text-lg text-gray-800 mb-3 mt-4">Тестирование</h4><form id="trainingTestForm" class="space-y-4"><div class="border p-3 rounded-lg bg-gray-50"><p class="font-medium mb-2">1. Какой тип заявки для предложения улучшений?</p><label class="block text-sm"><input type="radio" name="q1" value="risk" class="mr-2"> Риск</label><label class="block text-sm"><input type="radio" name="q1" value="idea" class="mr-2"> Идея</label></div><div class="border p-3 rounded-lg bg-gray-50"><p class="font-medium mb-2">2. Где увидеть уровень и баллы?</p><label class="block text-sm"><input type="radio" name="q2" value="feed" class="mr-2"> Лента</label><label class="block text-sm"><input type="radio" name="q2" value="profile" class="mr-2"> Профиль</label></div><button type="submit" class="w-full primary-gradient text-white font-bold py-2.5 rounded-xl shadow-lg hover:shadow-xl transition transform active:scale-95 text-sm">Завершить</button></form></div>
-            </div>
-        </div>
+  <!-- BOTTOM NAV -->
+  <nav id="nav">
+    <button class="nav-btn active" id="nb-feed" onclick="showSec('feed')">
+      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+      <span>Лента</span>
+    </button>
+    <button class="nav-btn" id="nb-notif" onclick="showSec('notif')">
+      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      <span>Уведом.</span>
+      <span id="notifBadge" class="nav-badge" style="display:none">0</span>
+    </button>
+    <div class="nav-add">
+      <button class="nav-add-btn grad" onclick="openModal('createModal')">+</button>
     </div>
-   
-    <nav class="bottom-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 max-w-lg mx-auto z-40 bottom-safe">
-        <div class="grid grid-cols-5 h-16 relative">
-            <button onclick="showSection('feed')" id="navFeed" class="nav-btn active flex flex-col items-center justify-center text-gray-900 relative"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path></svg><span class="text-[10px] font-medium">Лента</span><span id="feedBadge" class="notification-badge hidden"></span></button>
-            <button onclick="showSection('notifications')" id="navNotifications" class="nav-btn flex flex-col items-center justify-center text-gray-400 hover:text-gray-900 relative"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg><span class="text-[10px] font-medium">Уведом.</span><span id="notificationsBadge" class="notification-badge hidden"></span></button>
-            <div class="flex justify-center items-end relative"><button onclick="toggleCreateModal()" class="add-btn-main absolute bottom-4 w-14 h-14 rounded-full text-white text-3xl shadow-lg transform hover:scale-105 transition flex items-center justify-center">+</button></div>
-            <button onclick="showSection('news')" id="navNews" class="nav-btn flex flex-col items-center justify-center text-gray-400 hover:text-gray-900"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg><span class="text-[10px] font-medium">Новости</span></button>
-            <button onclick="showSection('profile')" id="navProfile" class="nav-btn flex flex-col items-center justify-center text-gray-400 hover:text-gray-900 relative"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span class="text-[10px] font-medium">Профиль</span><span id="profileBadge" class="notification-badge hidden"></span></button>
+    <button class="nav-btn" id="nb-news" onclick="showSec('news')">
+      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+      <span>Новости</span>
+    </button>
+    <button class="nav-btn" id="nb-profile" onclick="showSec('profile')">
+      <svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span>Профиль</span>
+    </button>
+  </nav>
+</div>
+
+<!-- CREATE MODAL -->
+<div class="modal-bg" id="createModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;color:var(--t1)">Новая запись</span>
+      <button class="modal-close" onclick="closeModal('createModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="createForm" style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <label class="lbl">Тип записи</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <label style="cursor:pointer">
+              <input type="radio" name="cType" value="idea" checked style="display:none" onchange="toggleRisk()">
+              <div id="cardIdea" style="padding:12px;border-radius:12px;border:2px solid #34d399;background:rgba(52,211,153,.08);text-align:center;transition:.2s">
+                <div style="font-size:24px;margin-bottom:4px">💡</div>
+                <div style="font-size:13px;font-weight:700;color:var(--t1)">Идея</div>
+              </div>
+            </label>
+            <label style="cursor:pointer">
+              <input type="radio" name="cType" value="risk" style="display:none" onchange="toggleRisk()">
+              <div id="cardRisk" style="padding:12px;border-radius:12px;border:2px solid var(--bd);background:var(--bg3);text-align:center;transition:.2s">
+                <div style="font-size:24px;margin-bottom:4px">⚠️</div>
+                <div style="font-size:13px;font-weight:700;color:var(--t1)">Риск</div>
+              </div>
+            </label>
+          </div>
         </div>
-    </nav>
+        <div id="riskExtra" style="display:none;flex-direction:column;gap:10px">
+          <div><label class="lbl">Тип события</label>
+            <select class="inp" id="cRiskType">
+              <option value="">Выберите тип</option>
+              <option>Небезопасные условия</option><option>Небезопасные действия</option>
+              <option>Near miss</option><option>Первая помощь</option><option>Микротравмы</option>
+            </select>
+          </div>
+          <div><label class="lbl">Уровень срочности</label>
+            <select class="inp" id="cUrgency">
+              <option value="">Выберите уровень</option>
+              <option>Опасно сейчас</option><option>Может привести к травме</option><option>Замечание/улучшение</option>
+            </select>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);cursor:pointer">
+            <input type="checkbox" id="cAnon"> Отправить анонимно
+          </label>
+        </div>
+        <div><label class="lbl">Участок</label>
+          <select class="inp" id="cLoc">
+            <option>Цех 1</option><option>Цех 2</option><option>Склад</option>
+            <option>Офис</option><option>Производство</option>
+          </select>
+        </div>
+        <div><label class="lbl">Описание</label>
+          <textarea class="inp" id="cDesc" rows="4" placeholder="Опишите суть идеи или риска…" style="resize:none"></textarea>
+        </div>
+        <div><label class="lbl">Фото / Видео (до 5)</label>
+          <input type="file" id="cMedia" accept="image/*,video/*" multiple class="inp" style="padding:8px" onchange="previewMedia(event)">
+          <div id="mediaPrev" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px"></div>
+        </div>
+        <button class="btn-main grad" type="submit" id="submitBtn">Опубликовать</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-bg" id="detailModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;color:var(--t1)">Детали заявки</span>
+      <button class="modal-close" onclick="closeModal('detailModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- COMMENTS MODAL -->
+<div class="modal-bg" id="commentsModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;color:var(--t1)">Комментарии (<span id="commentCount">0</span>)</span>
+      <button class="modal-close" onclick="closeModal('commentsModal')">&times;</button>
+    </div>
+    <div id="commentsList" style="flex:1;overflow-y:auto;padding:12px;min-height:80px"></div>
+    <div style="padding:10px 12px;border-top:1px solid var(--bd);flex-shrink:0">
+      <form id="commentForm" style="display:flex;gap:8px">
+        <input type="hidden" id="commentPostId">
+        <input class="inp" id="commentText" placeholder="Ваш комментарий…" style="flex:1;padding:9px 12px">
+        <button class="btn-main grad" type="submit" style="width:auto;padding:9px 16px;font-size:13px">↑</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ADD NEWS MODAL -->
+<div class="modal-bg" id="newsModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;color:var(--t1)">Новая новость</span>
+      <button class="modal-close" onclick="closeModal('newsModal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="newsForm" style="display:flex;flex-direction:column;gap:12px">
+        <div><label class="lbl">Заголовок</label><input class="inp" id="nTitle" required placeholder="Заголовок новости"></div>
+        <div><label class="lbl">Текст</label><textarea class="inp" id="nContent" rows="5" required placeholder="Текст новости…" style="resize:none"></textarea></div>
+        <div><label class="lbl">Категория</label>
+          <select class="inp" id="nCat">
+            <option value="announcement">📢 Объявление</option>
+            <option value="achievement">🏆 Достижение</option>
+            <option value="safety">🛡️ Безопасность</option>
+            <option value="general">📌 Общее</option>
+          </select>
+        </div>
+        <button class="btn-main grad" type="submit">Опубликовать</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- GALLERY -->
+<div id="gallery" onclick="closeGallery()">
+  <div class="img-wrap" id="galleryWrap" onclick="event.stopPropagation()">
+    <button class="gclose" onclick="closeGallery()">&times;</button>
+    <div id="galleryContent"></div>
+  </div>
 </div>
 
 <script>
-    // ─── Telegram WebApp Init ───────────────────────────────────────────────
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-        tg.ready();
-        tg.expand();
-        // Apply Telegram color scheme
-        document.documentElement.style.setProperty('--tg-bg', tg.themeParams?.bg_color || '#fafafa');
-    }
+// ── SUPABASE ─────────────────────────────────────────────────────────────
+const SB = window.supabase.createClient(
+  'https://slshulewvdanriwvmitu.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc'
+);
+const BOT = '8768160449:AAG1gBLhbA9yJ7V3t_9O0vb1S1deonnoFto';
+const tg = window.Telegram?.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
 
-    // ─── Supabase ───────────────────────────────────────────────────────────
-    const SUPABASE_URL = 'https://slshulewvdanriwvmitu.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc';
-    const kaizenSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ── STORAGE ──────────────────────────────────────────────────────────────
+const store = {
+  get: k => { try { return localStorage.getItem(k); } catch { return sessionStorage.getItem(k); } },
+  set: (k,v) => { try { localStorage.setItem(k,v); } catch { sessionStorage.setItem(k,v); } },
+  del: k => { try { localStorage.removeItem(k); } catch { sessionStorage.removeItem(k); } }
+};
 
-    // ─── Storage helpers (localStorage с fallback) ──────────────────────────
-    const storage = {
-        get(key) { try { return localStorage.getItem(key); } catch { return sessionStorage.getItem(key); } },
-        set(key, val) { try { localStorage.setItem(key, val); } catch { sessionStorage.setItem(key, val); } },
-        remove(key) { try { localStorage.removeItem(key); } catch { sessionStorage.removeItem(key); } }
-    };
+// ── STATE ────────────────────────────────────────────────────────────────
+let user = null;        // current user object
+let posts = [];         // all requests
+let achData = [];       // achievements from DB
+let shopData = [];      // shop items from DB
+let currentTab = 'all';
+let locFilter = 'all';
+let isDark = store.get('dark') === '1';
 
-    // ─── State ──────────────────────────────────────────────────────────────
-    let currentUser = null;
-    let requests = [];
-    let isSubmitting = false;
-    let currentFeedTab = 'all';
-    let currentFilterType = 'all';
-    let currentSortBy = 'date';
-    let currentLocationFilter = 'all';
-    let selectedMediaFiles = [];
-    let isDarkMode = storage.get('darkMode') === '1';
+// ── LEVELS ───────────────────────────────────────────────────────────────
+const LEVELS = [
+  {min:0,   max:99,   cls:'lv1', label:'🌱 Новичок'},
+  {min:100, max:249,  cls:'lv2', label:'🌿 Активист'},
+  {min:250, max:499,  cls:'lv3', label:'⭐ Участник'},
+  {min:500, max:999,  cls:'lv4', label:'💎 Эксперт'},
+  {min:1000,max:1999, cls:'lv5', label:'🏆 Чемпион'},
+  {min:2000,max:3999, cls:'lv6', label:'🔥 Мастер'},
+  {min:4000,max:7999, cls:'lv7', label:'👑 Легенда'},
+  {min:8000,max:Infinity,cls:'lv8',label:'🚀 Кайзен-Боец'},
+];
+function lvlInfo(pts) {
+  const i = LEVELS.findIndex(l => pts >= l.min && pts <= l.max);
+  const idx = i < 0 ? LEVELS.length-1 : i;
+  const l = LEVELS[idx], next = LEVELS[idx+1];
+  const prog = next ? Math.round((pts - l.min) / (next.min - l.min) * 100) : 100;
+  return { num: idx+1, cls: l.cls, label: l.label, prog, toNext: next ? next.min - pts : 0 };
+}
 
-    // Shop items загружаются из БД (таблица shop_items)
-    let shopItems = [];
-    // Achievements загружаются из БД (таблица achievements)
-    let achievements = [];
+// ── DAILY TASKS ──────────────────────────────────────────────────────────
+const TASKS = [
+  {id:'idea',  icon:'💡', txt:'Отправь 1 идею',      pts:5, goal:1},
+  {id:'risk',  icon:'⚠️', txt:'Зафиксируй 1 риск',   pts:5, goal:1},
+  {id:'like',  icon:'❤️', txt:'Поставь 3 лайка',      pts:3, goal:3},
+  {id:'comm',  icon:'💬', txt:'Оставь 1 комментарий', pts:4, goal:1},
+];
+const todayKey = () => new Date().toISOString().slice(0,10);
+const getDailyProg = () => { try { return JSON.parse(store.get('dp_'+todayKey()+'_'+(user?.empId||'')) || '{}'); } catch { return {}; } };
+const setDailyProg = d => store.set('dp_'+todayKey()+'_'+(user?.empId||''), JSON.stringify(d));
 
-    // ── Level system ────────────────────────────────────────────────────────
-    const LEVELS = [
-        { min:0,   max:99,   name:'Новичок',      badge:'level-1', emoji:'🌱' },
-        { min:100, max:249,  name:'Активист',     badge:'level-2', emoji:'🌿' },
-        { min:250, max:499,  name:'Участник',     badge:'level-3', emoji:'⭐' },
-        { min:500, max:999,  name:'Эксперт',      badge:'level-4', emoji:'💎' },
-        { min:1000,max:1999, name:'Чемпион',      badge:'level-5', emoji:'🏆' },
-        { min:2000,max:3999, name:'Мастер',       badge:'level-6', emoji:'🔥' },
-        { min:4000,max:7999, name:'Легенда',      badge:'level-7', emoji:'👑' },
-        { min:8000,max:Infinity, name:'Кайзен-Боец', badge:'level-8', emoji:'🚀' },
-    ];
+async function bumpTask(type) {
+  if (!user) return;
+  const prog = getDailyProg();
+  const t = TASKS.find(x => x.id === type);
+  if (!t) return;
+  const was = prog[t.id] || 0;
+  if (was >= t.goal) return;
+  prog[t.id] = was + 1;
+  setDailyProg(prog);
+  if (prog[t.id] >= t.goal) {
+    user.points += t.pts;
+    await SB.from('users').update({points: user.points}).eq('id', user.empId);
+    store.set('u', JSON.stringify(user));
+    updateProfileUI();
+    await pushNotif(user.empId, '⚡ Задание выполнено!', `«${t.txt}» +${t.pts} баллов`);
+  }
+  renderDaily();
+}
 
-    function getLevelInfo(points) {
-        const lvl = LEVELS.findIndex((l, i) => points >= l.min && points <= l.max);
-        const idx = lvl >= 0 ? lvl : LEVELS.length - 1;
-        const info = LEVELS[idx];
-        const next = LEVELS[idx + 1];
-        const progress = next ? Math.round(((points - info.min) / (next.min - info.min)) * 100) : 100;
-        return { num: idx + 1, ...info, next, progress, pointsToNext: next ? next.min - points : 0 };
-    }
+function renderDaily() {
+  const prog = getDailyProg();
+  const tom = new Date(); tom.setDate(tom.getDate()+1); tom.setHours(0,0,0,0);
+  const h = Math.floor((tom - Date.now())/3600000);
+  const m = Math.floor(((tom-Date.now())%3600000)/60000);
+  const el = document.getElementById('dailyTimer');
+  if (el) el.textContent = `· сброс через ${h}ч ${m}м`;
+  const list = document.getElementById('dailyList');
+  if (!list) return;
+  list.innerHTML = TASKS.map(t => {
+    const cur = Math.min(prog[t.id]||0, t.goal);
+    const done = cur >= t.goal;
+    return `<div class="task-card ${done?'done':''}">
+      <span style="font-size:22px">${t.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:13px;font-weight:600;color:var(--t1)">${t.txt}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--acc)">${done?'✅':'+'+t.pts+'б'}</span>
+        </div>
+        <div class="task-bar"><div class="task-fill" style="width:${cur/t.goal*100}%"></div></div>
+        <div style="font-size:10px;color:var(--t3);margin-top:3px">${cur} / ${t.goal}</div>
+      </div>
+    </div>`;
+  }).join('');
+  twemoji.parse(list, {folder:'svg',ext:'.svg'});
+}
 
-    // ── Daily tasks ─────────────────────────────────────────────────────────
-    const DAILY_TASKS_DEF = [
-        { id:'post_idea',  emoji:'💡', label:'Отправь 1 идею',       reward:5,  type:'idea',  target:1 },
-        { id:'post_risk',  emoji:'⚠️', label:'Зафиксируй 1 риск',    reward:5,  type:'risk',  target:1 },
-        { id:'like_post',  emoji:'❤️', label:'Поставь 3 лайка',       reward:3,  type:'like',  target:3 },
-        { id:'comment',    emoji:'💬', label:'Оставь 1 комментарий',  reward:4,  type:'comment',target:1 },
-    ];
+// ── HELPERS ──────────────────────────────────────────────────────────────
+const pad = id => '#' + String(id).padStart(5,'0');
+const fmtDate = iso => { const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; };
+const initials = name => (name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+const DEPT_MAP = {production:'Производство', warehouse:'Склад', office:'Офис'};
 
-    function getTodayKey() { return new Date().toISOString().slice(0,10); }
+// ── DARK MODE ─────────────────────────────────────────────────────────────
+function applyDark(d) {
+  document.documentElement.classList.toggle('dark', d);
+  const btn = document.getElementById('darkBtn');
+  if (btn) btn.textContent = d ? '☀️' : '🌙';
+}
+function toggleDark() {
+  isDark = !isDark;
+  store.set('dark', isDark?'1':'0');
+  applyDark(isDark);
+}
 
-    function getDailyProgress() {
-        const key = 'daily_' + getTodayKey() + '_' + (currentUser?.empId || '');
-        try { return JSON.parse(storage.get(key) || '{}'); } catch { return {}; }
-    }
+// ── MODALS ────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
-    function setDailyProgress(data) {
-        const key = 'daily_' + getTodayKey() + '_' + (currentUser?.empId || '');
-        storage.set(key, JSON.stringify(data));
-    }
+// ── GALLERY ───────────────────────────────────────────────────────────────
+function openGallery(src) {
+  const isVid = src.startsWith('data:video') || src.includes('.mp4') || src.includes('.mov');
+  document.getElementById('galleryContent').innerHTML = isVid
+    ? `<video src="${src}" controls autoplay style="max-width:100%;max-height:calc(100vh - 80px);border-radius:10px"></video>`
+    : `<img src="${src}" style="max-width:100%;max-height:calc(100vh - 80px);border-radius:10px;object-fit:contain">`;
+  document.getElementById('gallery').classList.add('open');
+}
+function closeGallery() { document.getElementById('gallery').classList.remove('open'); }
 
-    async function incrementDailyTask(type) {
-        const progress = getDailyProgress();
-        const task = DAILY_TASKS_DEF.find(t => t.type === type);
-        if (!task) return;
-        const prev = progress[task.id] || 0;
-        if (prev >= task.target) return; // уже выполнено
-        progress[task.id] = prev + 1;
-        setDailyProgress(progress);
-        if (progress[task.id] >= task.target) {
-            // Выдаём баллы
-            currentUser.points += task.reward;
-            await saveUser(currentUser);
-            storage.set('kaizenUser', JSON.stringify(currentUser));
-            updateProfileUI();
-            await createNotification('info', `⚡ Задание выполнено!`, `«${task.label}» +${task.reward} баллов`);
-        }
-        renderDailyTasks();
-    }
+// ── SECTIONS ──────────────────────────────────────────────────────────────
+function showSec(s) {
+  document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const showHeader = s === 'feed';
+  document.getElementById('appHeader').style.display = showHeader ? '' : 'none';
+  document.getElementById('searchBar').style.display = showHeader ? '' : 'none';
+  document.getElementById('secFeed').classList.toggle('active', s==='feed');
+  document.getElementById('secNotif').classList.toggle('active', s==='notif');
+  document.getElementById('secNews').classList.toggle('active', s==='news');
+  document.getElementById('secProfile').classList.toggle('active', s==='profile');
+  const nbMap = {feed:'nb-feed', notif:'nb-notif', news:'nb-news', profile:'nb-profile'};
+  if (nbMap[s]) document.getElementById(nbMap[s]).classList.add('active');
+  if (s === 'notif') loadNotifs();
+  if (s === 'news') loadNews();
+  if (s === 'profile') { updateProfileUI(); renderLb(); renderAch(); renderShop(); renderDaily(); }
+  if (tg) { s==='feed' ? tg.BackButton.hide() : tg.BackButton.show(); }
+}
 
-    function renderDailyTasks() {
-        const list = document.getElementById('dailyTasksList');
-        if (!list) return;
-        const progress = getDailyProgress();
-        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1); tomorrow.setHours(0,0,0,0);
-        const msLeft = tomorrow - Date.now();
-        const hLeft = Math.floor(msLeft/3600000);
-        const mLeft = Math.floor((msLeft%3600000)/60000);
-        const badge = document.getElementById('dailyResetBadge');
-        if (badge) badge.textContent = `· сброс через ${hLeft}ч ${mLeft}м`;
+// ── COLLAPSE ──────────────────────────────────────────────────────────────
+function toggleCollapse(key) {
+  const body = document.getElementById(key+'-body');
+  const hdr = body.previousElementSibling;
+  const isOpen = body.classList.toggle('open');
+  hdr.classList.toggle('open', isOpen);
+}
 
-        list.innerHTML = DAILY_TASKS_DEF.map(t => {
-            const cur = Math.min(progress[t.id] || 0, t.target);
-            const done = cur >= t.target;
-            return `
-            <div class="daily-task-card ${done ? 'daily-task-done' : ''}">
-                <span class="text-2xl flex-shrink-0">${t.emoji}</span>
-                <div class="flex-1 min-w-0">
-                    <div class="flex justify-between items-center">
-                        <span class="text-sm font-semibold text-gray-800">${t.label}</span>
-                        <span class="text-xs font-bold text-purple-600 flex-shrink-0 ml-2">${done ? '✅' : `+${t.reward}б`}</span>
-                    </div>
-                    <div class="task-progress mt-1"><div class="task-progress-fill" style="width:${(cur/t.target)*100}%"></div></div>
-                    <div class="text-[10px] text-gray-400 mt-0.5">${cur} / ${t.target}</div>
-                </div>
-            </div>`;
-        }).join('');
+// ── TABS & FILTERS ────────────────────────────────────────────────────────
+function switchTab(t) {
+  currentTab = t;
+  document.querySelectorAll('.feed-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===t));
+  renderFeed();
+}
+function setLoc(btn, loc) {
+  locFilter = loc;
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderFeed();
+}
+function toggleExtraFilter() {
+  const el = document.getElementById('extraFilter');
+  el.classList.toggle('open');
+}
 
-        // streak
-        const streakInfo = document.getElementById('dailyStreakInfo');
-        if (streakInfo) {
-            const streak = parseInt(storage.get('streak_' + (currentUser?.empId||'')) || '0');
-            if (streak > 1) streakInfo.textContent = `🔥 Серия: ${streak} дней подряд!`;
-        }
-        parseTwemoji();
-    }
-    function formatDate(iso) {
-        const d = new Date(iso);
-        return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}г.`;
-    }
-
-    async function loadRequests() {
-        try {
-            const { data, error } = await kaizenSupabase
-                .from('requests')
-                .select('*')
-                .order('date', { ascending: false });
-            
-            if (error) throw error;
-            requests = data || [];
-            renderFeed();
-            updateAdminStats();
-        } catch (error) {
-            console.error('Ошибка загрузки заявок:', error);
-        }
-    }
-
-    async function loadUser(empId) {
-        const { data } = await kaizenSupabase.from('users').select('*').eq('id', empId).single();
-        if (!data) return null;
-        return {
-            name: data.name,
-            empId: data.id,
-            phone: data.phone || '',
-            email: data.email || '',
-            dept: data.department || '',
-            points: data.points || 0,
-            role: data.role || 'user',
-            profilePic: data.profile_pic || null,
-            isTrained: data.is_trained || false,
-            completedAchievements: data.completed_achievements || [],
-            unseenAchievements: data.unseen_achievements || [],
-            tgId: data.telegram_id || null
-        };
-    }
-
-    async function saveUser(user) {
-        await kaizenSupabase.from('users').upsert({
-            id: user.empId,
-            name: user.name,
-            phone: user.phone,
-            email: user.email,
-            department: user.dept,
-            points: user.points || 0,
-            role: user.role || 'user',
-            profile_pic: user.profilePic || null,
-            is_trained: user.isTrained || false,
-            completed_achievements: user.completedAchievements || [],
-            unseen_achievements: user.unseenAchievements || [],
-            telegram_id: user.tgId ? String(user.tgId) : null
-        });
-    }
-
-    async function saveRequest(request) {
-        const { error } = await kaizenSupabase.from('requests').upsert({
-            id: request.id,
-            type: request.type,
-            description: request.desc,
-            location: request.location,
-            author: request.author,
-            author_id: request.authorId || currentUser?.empId,
-            date: request.date,
-            status: request.status,
-            likes: request.likes || 0,
-            comments: request.comments || [],
-            media: request.media || [],
-            assigned_to: request.assignedTo,
-            risk_event_type: request.riskEventType,
-            risk_urgency: request.riskUrgency,
-            anonymous: request.anonymous || false
-        });
-        if (error) console.error('Ошибка сохранения:', error);
-    }
-
-    document.getElementById('registrationForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const btn = document.getElementById('registerBtn');
-        btn.classList.add('btn-loading');
-        
-        currentUser = {
-            name: document.getElementById('regFullName').value,
-            empId: document.getElementById('regEmployeeId').value,
-            phone: document.getElementById('regPhone').value || '',
-            email: document.getElementById('regEmail').value || '',
-            dept: document.getElementById('regDepartment').value,
-            points: 0,
-            completedAchievements: [],
-            unseenAchievements: [],
-            role: document.getElementById('regEmployeeId').value === '11111' ? 'admin' : 'user',
-            profilePic: null,
-            isTrained: false,
-            tgId: tg?.initDataUnsafe?.user?.id || null
-        };
-        
-        await saveUser(currentUser);
-        storage.set('kaizenUser', JSON.stringify(currentUser));
-        
-        btn.classList.remove('btn-loading');
-        
-        await loadRequests();
-        launchApp();
-        createNotification('welcome', 'Добро пожаловать!', 'Вы успешно зарегистрировались в системе');
+// ── PUSH NOTIFICATIONS ────────────────────────────────────────────────────
+async function pushNotif(userId, title, message, postId=null) {
+  try {
+    await SB.from('notifications').insert({
+      user_id: userId, title, message,
+      type: postId ? 'comment' : 'info',
+      post_id: postId, read: false,
+      date: new Date().toISOString()
     });
+    const { data: u } = await SB.from('users').select('telegram_id').eq('id', userId).single();
+    if (u?.telegram_id && BOT) {
+      fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ chat_id: u.telegram_id, text: `🔔 ${title}\n${message}`, parse_mode:'HTML' })
+      }).catch(()=>{});
+    }
+    loadNotifBadge();
+  } catch(e) {}
+}
 
-    document.getElementById('createForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (isSubmitting) return;
-        
-        isSubmitting = true;
-        const btn = document.getElementById('submitPostBtn');
-        btn.classList.add('btn-loading');
-        
-        let mediaDataURLs = [];
-        if (selectedMediaFiles.length > 0) {
-            mediaDataURLs = await Promise.all(selectedMediaFiles.map(f => {
-                return new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(f);
-                });
-            }));
-        }
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────
+async function loadNotifBadge() {
+  if (!user) return;
+  const { count } = await SB.from('notifications').select('*', {count:'exact',head:true}).eq('user_id', user.empId).eq('read', false);
+  const badge = document.getElementById('notifBadge');
+  if (badge) { badge.textContent = count||0; badge.style.display = count ? '' : 'none'; }
+}
 
-        const type = document.querySelector('input[name="type"]:checked').value;
-        const isAnon = type === 'risk' && document.getElementById('riskAnonymous')?.checked;
+async function loadNotifs() {
+  if (!user) return;
+  const { data } = await SB.from('notifications').select('*').eq('user_id', user.empId).order('date', {ascending:false}).limit(40);
+  const list = document.getElementById('notifList');
+  const empty = document.getElementById('notifEmpty');
+  if (!data || data.length === 0) { list.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+  const icons = {welcome:'👋', new_request:'📋', status_update:'🔄', info:'ℹ️', achievement:'🏅', comment:'💬'};
+  list.innerHTML = data.map(n => {
+    const d = new Date(n.date);
+    const ds = `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    const click = n.post_id ? `onNotifClick(${n.id}, ${n.post_id})` : `markRead(${n.id})`;
+    return `<div class="notif-item ${n.read?'':'unread'}" onclick="${click}">
+      <div style="display:flex;gap:10px;align-items:flex-start">
+        <span style="font-size:20px;flex-shrink:0">${icons[n.type]||'ℹ️'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:700;color:var(--t1)">${n.title}</div>
+          <div style="font-size:12px;color:var(--t3);margin-top:2px;line-height:1.4">${n.message}</div>
+          <div style="font-size:10px;color:var(--t4);margin-top:4px">${ds}</div>
+        </div>
+        ${!n.read ? '<span style="width:8px;height:8px;border-radius:50%;background:var(--acc);flex-shrink:0;margin-top:4px"></span>' : ''}
+      </div>
+    </div>`;
+  }).join('');
+  twemoji.parse(list, {folder:'svg',ext:'.svg'});
+  loadNotifBadge();
+}
 
-        // Сохраняем в Supabase — БЕЗ id, чтобы получить SERIAL
-        const { data: saved, error } = await kaizenSupabase.from('requests').insert({
-            type,
-            description: document.getElementById('reqDesc').value,
-            location: document.getElementById('reqLocation').value,
-            author: isAnon ? 'Аноним' : currentUser.name,
-            author_id: currentUser.empId,
-            date: new Date().toISOString(),
-            status: 'new',
-            likes: 0,
-            comments: [],
-            media: mediaDataURLs,
-            assigned_to: null,
-            risk_event_type: type === 'risk' ? document.getElementById('riskEventType')?.value : null,
-            risk_urgency: type === 'risk' ? document.getElementById('riskUrgency')?.value : null,
-            anonymous: isAnon
-        }).select().single();
+async function markRead(id) {
+  await SB.from('notifications').update({read:true}).eq('id', id);
+  loadNotifs();
+}
+async function markAllRead() {
+  if (!user) return;
+  await SB.from('notifications').update({read:true}).eq('user_id', user.empId);
+  loadNotifs();
+}
+async function onNotifClick(notifId, postId) {
+  await SB.from('notifications').update({read:true}).eq('id', notifId);
+  if (!posts.find(p => p.id == postId)) {
+    const { data } = await SB.from('requests').select('*').eq('id', postId).single();
+    if (data) posts.unshift(data);
+  }
+  showSec('feed');
+  setTimeout(() => showComments(postId), 200);
+}
 
-        btn.classList.remove('btn-loading');
-        isSubmitting = false;
+// ── FEED ──────────────────────────────────────────────────────────────────
+async function loadPosts() {
+  const { data } = await SB.from('requests').select('*').order('date', {ascending:false});
+  posts = data || [];
+  renderFeed();
+}
 
-        if (error) {
-            alert('Ошибка отправки: ' + error.message);
-            console.error(error);
-            return;
-        }
+function renderFeed() {
+  const list = document.getElementById('feedList');
+  if (!list) return;
+  let data = [...posts];
+  const q = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
+  if (q) data = data.filter(p =>
+    String(p.id).includes(q) || pad(p.id).toLowerCase().includes(q) ||
+    (p.description||'').toLowerCase().includes(q) || (p.author||'').toLowerCase().includes(q)
+  );
+  if (locFilter !== 'all') data = data.filter(p => p.location === locFilter);
+  if (currentTab === 'my') data = data.filter(p => p.author_id === user?.empId || p.author === user?.name);
+  else if (currentTab === 'assigned') data = data.filter(p => p.assigned_to === user?.name);
+  const type = document.getElementById('selType')?.value || 'all';
+  if (type !== 'all') data = data.filter(p => p.type === type);
+  const sort = document.getElementById('selSort')?.value || 'new';
+  if (sort === 'old') data.sort((a,b) => new Date(a.date||a.created_at) - new Date(b.date||b.created_at));
+  else if (sort === 'likes') data.sort((a,b) => (b.likes||0) - (a.likes||0));
+  if (!data.length) { list.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--t3)"><div style="font-size:40px;margin-bottom:8px">📋</div><div style="font-size:14px">Пока пусто — станьте первым!</div></div>'; return; }
+  const STATUS = {new:{l:'Новая',c:'#6b7280'},work:{l:'В работе',c:'#3b82f6'},approved:{l:'Принята',c:'#10b981'},rejected:{l:'Отклонена',c:'#ef4444'},completed:{l:'Выполнена',c:'#8b5cf6'}};
+  list.innerHTML = data.map(p => {
+    const media = Array.isArray(p.media) ? p.media : (p.media ? (() => { try { return JSON.parse(p.media); } catch { return []; } })() : []);
+    const comms = Array.isArray(p.comments) ? p.comments : (p.comments ? (() => { try { return JSON.parse(p.comments); } catch { return []; } })() : []);
+    const st = STATUS[p.status] || STATUS.new;
+    let mediaHtml = '';
+    if (media.length === 1) {
+      const isVid = media[0].startsWith('data:video');
+      mediaHtml = isVid
+        ? `<video src="${media[0]}" class="w-full" style="max-height:240px;object-fit:cover;background:#000" controls playsinline onclick="event.stopPropagation()"></video>`
+        : `<img src="${media[0]}" style="width:100%;max-height:240px;object-fit:cover;cursor:pointer" onclick="event.stopPropagation();openGallery('${media[0]}')" loading="lazy">`;
+    } else if (media.length > 1) {
+      mediaHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bd)">${media.slice(0,4).map((m,i) => {
+        const ov = (i===3 && media.length>4) ? `<div style="position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700">+${media.length-4}</div>` : '';
+        const isV = m.startsWith('data:video');
+        return `<div style="position:relative;aspect-ratio:1;overflow:hidden">${isV ? `<video src="${m}" style="width:100%;height:100%;object-fit:cover"></video>` : `<img src="${m}" style="width:100%;height:100%;object-fit:cover;cursor:pointer" onclick="event.stopPropagation();openGallery('${m}')" loading="lazy">`}${ov}</div>`;
+      }).join('')}</div>`;
+    }
+    return `<div class="feed-card">
+      <div class="card-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar grad">${initials(p.author)}</div>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:var(--t1)">${p.author||'Аноним'}</div>
+            <div style="font-size:11px;color:var(--t3)">📍 ${p.location||'—'} · ${fmtDate(p.date||p.created_at)}</div>
+          </div>
+        </div>
+        <span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;${p.type==='risk'?'background:rgba(239,68,68,.1);color:#dc2626':'background:rgba(16,185,129,.1);color:#059669'}">${p.type==='risk'?'⚠️ Риск':'💡 Идея'}</span>
+      </div>
+      ${mediaHtml ? `<div style="overflow:hidden;cursor:pointer" onclick="showDetail(${p.id})">${mediaHtml}</div>` : ''}
+      <div style="padding:8px 12px 4px;cursor:pointer" onclick="showDetail(${p.id})">
+        <div style="font-size:10px;font-weight:700;color:var(--acc);font-family:monospace">${pad(p.id)}</div>
+        <div style="font-size:13px;color:var(--t1);margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5">${p.description||p.desc||''}</div>
+      </div>
+      <div class="card-actions">
+        <button class="action-btn" onclick="likePost(${p.id})">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+          ${p.likes||0}
+        </button>
+        <button class="action-btn" onclick="showComments(${p.id})">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          ${comms.length}
+        </button>
+        <span class="status-pill" style="background:${st.c}18;color:${st.c}">${st.l}</span>
+      </div>
+    </div>`;
+  }).join('');
+  twemoji.parse(list, {folder:'svg',ext:'.svg'});
+}
 
-        // Добавляем реальную запись в локальный список
-        requests.unshift(saved);
-        renderFeed();
-        toggleCreateModal();
-        e.target.reset();
-        document.getElementById('mediaPreviews').innerHTML = '';
-        selectedMediaFiles = [];
+// ── LIKE ──────────────────────────────────────────────────────────────────
+async function likePost(id) {
+  if (!user) return;
+  const { data: ex } = await SB.from('likes').select('id').eq('user_id', user.empId).eq('post_id', id).single();
+  if (ex) { await SB.from('likes').delete().eq('user_id', user.empId).eq('post_id', id); }
+  else {
+    await SB.from('likes').insert({user_id: user.empId, post_id: id});
+    bumpTask('like');
+  }
+  const { count } = await SB.from('likes').select('*', {count:'exact',head:true}).eq('post_id', id);
+  const p = posts.find(x => x.id === id);
+  if (p) { p.likes = count||0; await SB.from('requests').update({likes: p.likes}).eq('id', id); }
+  renderFeed();
+}
 
-        currentUser.points += 5;
-        saveUser(currentUser);
-        storage.set('kaizenUser', JSON.stringify(currentUser));
-        updateProfileUI();
-        checkAchievements();
-        incrementDailyTask(type === 'idea' ? 'idea' : 'risk');
-        createNotification('new_request', 'Заявка создана', `Ваша ${type === 'idea' ? 'идея' : 'заявка о риске'} успешно отправлена`);
+// ── DETAIL ────────────────────────────────────────────────────────────────
+function showDetail(id) {
+  const p = posts.find(x => x.id == id);
+  if (!p) return;
+  const STATUS = {new:'🆕 Новая', work:'🔧 В работе', approved:'✅ Принята', rejected:'❌ Отклонена', completed:'🏁 Выполнена'};
+  document.getElementById('detailBody').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;${p.type==='risk'?'background:rgba(239,68,68,.1);color:#dc2626':'background:rgba(16,185,129,.1);color:#059669'}">${p.type==='risk'?'⚠️ Риск':'💡 Идея'}</span>
+        <span style="font-size:11px;color:var(--t3)">${STATUS[p.status]||p.status}</span>
+      </div>
+      <div style="font-size:11px;font-family:monospace;color:var(--acc)">${pad(p.id)}</div>
+      <div style="font-size:14px;color:var(--t1);line-height:1.6">${p.description||p.desc||'—'}</div>
+      <div style="font-size:12px;color:var(--t3);border-top:1px solid var(--bd);padding-top:8px">👤 ${p.author||'—'} &nbsp;·&nbsp; 📍 ${p.location||'—'} &nbsp;·&nbsp; 📅 ${fmtDate(p.date||p.created_at)}</div>
+    </div>`;
+  openModal('detailModal');
+}
+
+// ── COMMENTS ──────────────────────────────────────────────────────────────
+function showComments(id) {
+  const p = posts.find(x => x.id == id);
+  if (!p) return;
+  const comms = Array.isArray(p.comments) ? p.comments : (p.comments ? (() => { try { return JSON.parse(p.comments); } catch { return []; } })() : []);
+  document.getElementById('commentPostId').value = id;
+  document.getElementById('commentCount').textContent = comms.length;
+  document.getElementById('commentsList').innerHTML = comms.length
+    ? comms.map(c => `<div style="display:flex;gap:8px;margin-bottom:10px">
+        <div class="avatar grad" style="width:30px;height:30px;font-size:10px;flex-shrink:0">${initials(c.author)}</div>
+        <div><div style="font-size:12px;font-weight:700;color:var(--t1)">${c.author}</div><div style="font-size:13px;color:var(--t2)">${c.text}</div></div>
+      </div>`).join('')
+    : '<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">Пока нет комментариев</div>';
+  openModal('commentsModal');
+}
+
+document.getElementById('commentForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('commentPostId').value;
+  const text = document.getElementById('commentText').value.trim();
+  if (!text || !user) return;
+  const p = posts.find(x => x.id == id);
+  if (!p) return;
+  const comms = Array.isArray(p.comments) ? p.comments : (p.comments ? (() => { try { return JSON.parse(p.comments); } catch { return []; } })() : []);
+  comms.push({author: user.name, text, date: new Date().toISOString()});
+  p.comments = comms;
+  await SB.from('requests').update({comments: comms}).eq('id', id);
+  document.getElementById('commentText').value = '';
+  showComments(id);
+  renderFeed();
+  bumpTask('comm');
+  if (p.author_id && p.author_id !== user.empId) {
+    await pushNotif(p.author_id, '💬 Новый комментарий', `${user.name} прокомментировал вашу заявку ${pad(p.id)}: «${text.substring(0,60)}»`, p.id);
+  }
+});
+
+// ── CREATE POST ───────────────────────────────────────────────────────────
+let mediaFiles = [];
+function previewMedia(e) {
+  mediaFiles = Array.from(e.target.files).slice(0,5);
+  const prev = document.getElementById('mediaPrev');
+  prev.innerHTML = mediaFiles.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    const isV = f.type.startsWith('video');
+    return `<div style="position:relative;width:60px;height:60px;border-radius:8px;overflow:hidden;border:1px solid var(--bd)">
+      ${isV ? `<video src="${url}" style="width:100%;height:100%;object-fit:cover"></video>` : `<img src="${url}" style="width:100%;height:100%;object-fit:cover">`}
+      <button onclick="removeMedia(${i})" style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:#ef4444;border:none;color:#fff;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center">&times;</button>
+    </div>`;
+  }).join('');
+}
+function removeMedia(i) {
+  mediaFiles.splice(i,1);
+  const dt = new DataTransfer();
+  mediaFiles.forEach(f => dt.items.add(f));
+  document.getElementById('cMedia').files = dt.files;
+  previewMedia({target:{files:dt.files}});
+}
+function toggleRisk() {
+  const isRisk = document.querySelector('input[name="cType"]:checked')?.value === 'risk';
+  document.getElementById('riskExtra').style.display = isRisk ? 'flex' : 'none';
+  document.getElementById('cardIdea').style.cssText = !isRisk
+    ? 'padding:12px;border-radius:12px;border:2px solid #34d399;background:rgba(52,211,153,.08);text-align:center;transition:.2s'
+    : 'padding:12px;border-radius:12px;border:2px solid var(--bd);background:var(--bg3);text-align:center;transition:.2s';
+  document.getElementById('cardRisk').style.cssText = isRisk
+    ? 'padding:12px;border-radius:12px;border:2px solid #ef4444;background:rgba(239,68,68,.08);text-align:center;transition:.2s'
+    : 'padding:12px;border-radius:12px;border:2px solid var(--bd);background:var(--bg3);text-align:center;transition:.2s';
+}
+
+document.getElementById('createForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!user) return;
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = '…';
+  const type = document.querySelector('input[name="cType"]:checked')?.value || 'idea';
+  const isAnon = type === 'risk' && document.getElementById('cAnon').checked;
+  // Convert media to base64
+  const mediaB64 = await Promise.all(mediaFiles.map(f => new Promise(res => {
+    const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f);
+  })));
+  const rec = {
+    type, description: document.getElementById('cDesc').value,
+    location: document.getElementById('cLoc').value,
+    author: isAnon ? 'Аноним' : user.name,
+    author_id: isAnon ? null : user.empId,
+    date: new Date().toISOString(), status: 'new', likes: 0,
+    comments: [], media: mediaB64,
+    risk_event_type: document.getElementById('cRiskType')?.value || null,
+    risk_urgency: document.getElementById('cUrgency')?.value || null,
+    anonymous: isAnon
+  };
+  const { data: saved, error } = await SB.from('requests').insert(rec).select().single();
+  btn.disabled = false; btn.textContent = 'Опубликовать';
+  if (error) { alert('Ошибка: ' + error.message); return; }
+  posts.unshift(saved);
+  renderFeed();
+  closeModal('createModal');
+  e.target.reset();
+  document.getElementById('mediaPrev').innerHTML = '';
+  mediaFiles = [];
+  toggleRisk();
+  user.points += 5;
+  await SB.from('users').update({points: user.points}).eq('id', user.empId);
+  store.set('u', JSON.stringify(user));
+  updateProfileUI();
+  bumpTask(type);
+});
+
+// ── NEWS ──────────────────────────────────────────────────────────────────
+async function loadNews() {
+  const { data } = await SB.from('news').select('*').order('date', {ascending:false});
+  const list = document.getElementById('newsList');
+  if (!list) return;
+  if (!data?.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--t3);font-size:13px">Новостей пока нет</div>'; return; }
+  const catIcon = {announcement:'📢', achievement:'🏆', safety:'🛡️', general:'📌'};
+  list.innerHTML = data.map(n => {
+    const icon = n.icon || catIcon[n.category] || '📰';
+    const date = fmtDate(n.date || n.created_at);
+    return `<div class="news-card">
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">
+        <span style="font-size:24px;flex-shrink:0">${icon}</span>
+        <div>
+          <div style="font-size:14px;font-weight:700;color:var(--t1)">${n.title}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">${n.source||'Администрация'} · ${date}</div>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.5">${n.content||n.body||''}</div>
+    </div>`;
+  }).join('');
+  twemoji.parse(list, {folder:'svg',ext:'.svg'});
+}
+
+document.getElementById('newsForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!user || user.role !== 'admin') return;
+  const cat = document.getElementById('nCat').value;
+  const icons = {announcement:'📢', achievement:'🏆', safety:'🛡️', general:'📌'};
+  await SB.from('news').insert({
+    title: document.getElementById('nTitle').value,
+    content: document.getElementById('nContent').value,
+    source: user.name, icon: icons[cat]||'📰', color: '', date: new Date().toISOString()
+  });
+  closeModal('newsModal'); e.target.reset(); loadNews();
+});
+
+// ── LEADERBOARD ───────────────────────────────────────────────────────────
+async function renderLb() {
+  const { data } = await SB.from('users').select('id,name,department,points').order('points', {ascending:false}).limit(10);
+  const list = document.getElementById('lbList');
+  if (!list || !data) return;
+  const medals = ['🥇','🥈','🥉'];
+  const cls = ['lb-gold','lb-silver','lb-bronze'];
+  const inTop = data.some(u => u.id === user?.empId);
+  let myRow = '';
+  if (!inTop && user) {
+    const {count} = await SB.from('users').select('*',{count:'exact',head:true}).gt('points', user.points);
+    myRow = `<div style="border-top:2px dashed var(--bd);padding-top:6px;margin-top:4px">
+      <div class="lb-item me">
+        <span style="font-size:13px;font-weight:700;color:var(--t3);width:20px">#${(count||0)+1}</span>
+        <div class="avatar grad" style="width:28px;height:28px;font-size:10px">${initials(user.name)}</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:700;color:var(--acc)">${user.name} (вы)</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--acc)">${user.points} б.</div>
+      </div></div>`;
+  }
+  list.innerHTML = data.map((u,i) => {
+    const isMe = u.id === user?.empId;
+    const c = i < 3 ? cls[i] : '';
+    const badge = i < 3 ? `<span style="font-size:20px">${medals[i]}</span>` : `<span style="font-size:13px;font-weight:700;color:var(--t3);width:20px">#${i+1}</span>`;
+    return `<div class="lb-item ${c} ${isMe?'me':''}">
+      ${badge}
+      <div class="avatar grad" style="width:28px;height:28px;font-size:10px">${initials(u.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:${isMe?'var(--acc)':'var(--t1)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${u.name}${isMe?' (вы)':''}</div>
+        <div style="font-size:11px;color:var(--t3)">${DEPT_MAP[u.department]||u.department||'—'}</div>
+      </div>
+      <div style="font-size:14px;font-weight:700;color:var(--acc);flex-shrink:0">${u.points||0} б.</div>
+    </div>`;
+  }).join('') + myRow;
+}
+
+// ── ACHIEVEMENTS ──────────────────────────────────────────────────────────
+async function renderAch() {
+  if (!user) return;
+  const { data } = await SB.from('achievements').select('*');
+  if (data) achData = data;
+  const myPosts = posts.filter(p => p.author_id === user.empId || p.author === user.name);
+  const ideas = myPosts.filter(p => p.type==='idea').length;
+  const risks = myPosts.filter(p => p.type==='risk').length;
+  const likes = myPosts.reduce((s,p) => s+(p.likes||0), 0);
+  const list = document.getElementById('achList');
+  if (!list) return;
+  list.innerHTML = achData.map(a => {
+    let cur = 0;
+    const tt = a.target_type || a.targetType;
+    if (tt==='posts') cur = myPosts.length;
+    else if (tt==='ideas') cur = ideas;
+    else if (tt==='risks') cur = risks;
+    else if (tt==='likes') cur = likes;
+    else if (tt==='points') cur = user.points;
+    else if (tt==='manual') cur = user.isTrained?1:0;
+    const done = cur >= a.target;
+    const pct = Math.min(100, cur/a.target*100);
+    return `<div style="border-radius:12px;border:1px solid ${done?'#fbbf24':' var(--bd)'};background:${done?'rgba(251,191,36,.12)':'var(--bg3)'};padding:12px;text-align:center">
+      <div style="font-size:28px;margin-bottom:4px">${a.icon}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--t1)">${a.title}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px;height:28px">${a.description||a.desc||''}</div>
+      <div style="height:4px;border-radius:999px;background:var(--bd);margin-top:6px;overflow:hidden">
+        <div style="height:100%;border-radius:999px;background:linear-gradient(90deg,#667eea,#764ba2);width:${pct}%"></div>
+      </div>
+      <div style="font-size:10px;color:var(--t3);margin-top:3px">${cur}/${a.target}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── SHOP ──────────────────────────────────────────────────────────────────
+async function renderShop() {
+  if (!user) return;
+  const { data } = await SB.from('shop_items').select('*').order('points');
+  if (data) shopData = data;
+  const list = document.getElementById('shopList');
+  if (!list) return;
+  list.innerHTML = shopData.map(item => {
+    const can = user.points >= item.points;
+    return `<div style="border-radius:12px;border:1px solid var(--bd);background:var(--bg3);padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <div style="font-size:28px">${item.icon}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--t1);text-align:center">${item.title}</div>
+      <div style="font-size:12px;font-weight:700;color:${can?'#059669':'var(--acc)'}">${item.points} б.</div>
+      <button onclick="buyItem(${item.id})" ${!can?'disabled':''} style="width:100%;padding:6px;border-radius:8px;border:none;background:${can?'#3b82f6':'var(--bd)'};color:${can?'#fff':'var(--t4)'};font-size:12px;font-weight:700;cursor:${can?'pointer':'default'}">Купить</button>
+    </div>`;
+  }).join('');
+}
+
+async function buyItem(id) {
+  const item = shopData.find(i => i.id === id);
+  if (!item || user.points < item.points) return;
+  if (!confirm(`Купить «${item.title}» за ${item.points} баллов?`)) return;
+  user.points -= item.points;
+  await SB.from('users').update({points: user.points}).eq('id', user.empId);
+  await SB.from('purchases').insert({user_id: user.empId, item_id: item.id, date: new Date().toISOString()});
+  store.set('u', JSON.stringify(user));
+  updateProfileUI(); renderShop();
+}
+
+// ── PROFILE UI ────────────────────────────────────────────────────────────
+function updateProfileUI() {
+  if (!user) return;
+  document.getElementById('pName').textContent = user.name || '—';
+  document.getElementById('pDept').textContent = DEPT_MAP[user.dept] || user.dept || '—';
+  document.getElementById('pEmp').textContent = user.empId ? `Табельный: ${user.empId}` : '';
+  document.getElementById('pPhone').textContent = user.phone ? `Телефон: ${user.phone}` : '';
+  const lv = lvlInfo(user.points);
+  document.getElementById('pLevel').textContent = lv.num;
+  document.getElementById('pPoints').textContent = user.points;
+  document.getElementById('pToNext').textContent = lv.toNext || '—';
+  document.getElementById('pBar').style.width = lv.prog + '%';
+  const badge = document.getElementById('pLevelBadge');
+  badge.className = 'level-badge ' + lv.cls;
+  badge.textContent = lv.label;
+  document.getElementById('profileInitials').textContent = initials(user.name);
+  if (user.profilePic) {
+    const pic = document.getElementById('profilePic');
+    pic.innerHTML = `<img src="${user.profilePic}" style="width:100%;height:100%;object-fit:cover">`;
+  }
+  const myPosts = posts.filter(p => p.author_id===user.empId || p.author===user.name);
+  document.getElementById('sNew').textContent = myPosts.filter(p => p.status==='new').length;
+  document.getElementById('sWork').textContent = myPosts.filter(p => p.status==='work').length;
+  document.getElementById('sDone').textContent = myPosts.filter(p => p.status==='approved').length;
+}
+
+async function uploadAvatar(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = async ev => {
+    user.profilePic = ev.target.result;
+    await SB.from('users').update({profile_pic: user.profilePic}).eq('id', user.empId);
+    store.set('u', JSON.stringify(user));
+    updateProfileUI();
+  };
+  r.readAsDataURL(file);
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function mapUser(d) {
+  return {
+    name: d.name, empId: d.id, phone: d.phone||'', email: d.email||'',
+    dept: d.department||'', points: d.points||0, role: d.role||'user',
+    profilePic: d.profile_pic||null, isTrained: d.is_trained||false,
+    completedAchievements: d.completed_achievements||[],
+    unseenAchievements: d.unseen_achievements||[], tgId: d.telegram_id||null
+  };
+}
+
+async function launchApp(u) {
+  user = u;
+  store.set('u', JSON.stringify(u));
+  // Hide splash & reg, show app
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('reg').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  applyDark(isDark);
+  // Set sticky position for search bar
+  setTimeout(() => {
+    const hdr = document.getElementById('appHeader');
+    const sb = document.getElementById('searchBar');
+    if (hdr && sb) sb.style.top = hdr.getBoundingClientRect().height + 'px';
+  }, 50);
+  // Load data
+  await loadPosts();
+  loadNotifBadge();
+  if (u.role === 'admin') document.getElementById('addNewsBtn').style.display = '';
+  // Realtime
+  SB.channel('rt-requests')
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'requests'}, p => {
+      if (!posts.find(x => x.id === p.new.id)) { posts.unshift(p.new); renderFeed(); }
+    })
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'requests'}, p => {
+      const i = posts.findIndex(x => x.id === p.new.id);
+      if (i >= 0) { posts[i] = {...posts[i], ...p.new}; renderFeed(); }
+    })
+    .subscribe();
+  // Telegram back button
+  if (tg) {
+    tg.BackButton.onClick(() => {
+      const mods = ['createModal','detailModal','commentsModal','newsModal'];
+      const open = mods.find(m => document.getElementById(m).classList.contains('open'));
+      if (open) closeModal(open);
+      else { showSec('feed'); tg.BackButton.hide(); }
     });
+  }
+}
 
-    function renderFeed() {
-        const feed = document.getElementById('requestsFeed');
-        if (!feed) return;
-        
-        let data = [...requests];
-        const search = document.getElementById('searchByIdInput')?.value.trim().toLowerCase();
-        if (search) data = data.filter(r =>
-            String(r.id).includes(search) ||
-            getPaddedId(r.id).toLowerCase().includes(search) ||
-            (r.description || r.desc || '').toLowerCase().includes(search) ||
-            (r.author || '').toLowerCase().includes(search)
-        );
-        const locFilter = document.getElementById('filterLocation')?.value || 'all';
-        if (locFilter !== 'all') data = data.filter(r => r.location === locFilter);
-        if (currentFeedTab === 'my' && currentUser) data = data.filter(r => r.author_id === currentUser.empId || r.author === currentUser.name);
-        else if (currentFeedTab === 'assigned' && currentUser) data = data.filter(r => r.assigned_to === currentUser.name);
-        if (currentFilterType !== 'all') data = data.filter(r => r.type === currentFilterType);
-        if (currentSortBy === 'oldest') data.sort((a, b) => new Date(a.date||a.created_at) - new Date(b.date||b.created_at));
-        else if (currentSortBy === 'likes') data.sort((a, b) => (b.likes||0) - (a.likes||0));
-
-        if (data.length === 0) {
-            feed.innerHTML = '<div class="text-center py-20"><div class="text-5xl mb-4">📋</div><h3 class="text-lg font-bold text-gray-700">Пока пусто</h3><p class="text-sm text-gray-400 mt-1">Станьте первым!</p></div>';
-            return;
-        }
-
-        const statusMap = { new: { label: 'Новая', cls: 'bg-gray-100 text-gray-600' }, work: { label: 'В работе', cls: 'bg-blue-100 text-blue-700' }, approved: { label: 'Принята', cls: 'bg-green-100 text-green-700' }, rejected: { label: 'Отклонена', cls: 'bg-red-100 text-red-700' }, completed: { label: 'Выполнена', cls: 'bg-purple-100 text-purple-700' } };
-
-        feed.innerHTML = data.map(post => {
-            const initials = (post.author || '?').split(' ').map(n => n[0]).join('').substring(0,2).toUpperCase();
-            const media = Array.isArray(post.media) ? post.media : (post.media ? JSON.parse(post.media) : []);
-            const comments = Array.isArray(post.comments) ? post.comments : (post.comments ? JSON.parse(post.comments) : []);
-            const isMyPost = post.author_id === currentUser?.empId || post.author === currentUser?.name;
-            const st = statusMap[post.status] || statusMap.new;
-
-            // Media block
-            let mediaHtml = '';
-            if (media.length === 1) {
-                const m = media[0];
-                const isVideo = m.startsWith('data:video') || m.includes('.mp4') || m.includes('.mov');
-                mediaHtml = isVideo
-                    ? `<video src="${m}" class="w-full max-h-72 object-cover bg-black" controls playsinline onclick="event.stopPropagation()"></video>`
-                    : `<img src="${m}" class="w-full max-h-72 object-cover cursor-pointer" onclick="event.stopPropagation(); openGallery('${post.id}', 0)" loading="lazy">`;
-            } else if (media.length > 1) {
-                mediaHtml = `<div class="grid grid-cols-2 gap-0.5 bg-gray-200">${media.slice(0,4).map((m,i) => {
-                    const isVideo = m.startsWith('data:video');
-                    const overlay = (i === 3 && media.length > 4) ? `<div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white font-bold text-xl">+${media.length - 4}</div>` : '';
-                    return `<div class="relative aspect-square overflow-hidden">${isVideo ? `<video src="${m}" class="w-full h-full object-cover"></video>` : `<img src="${m}" class="w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); openGallery(${post.id}, ${i})" loading="lazy">`}${overlay}</div>`;
-                }).join('')}</div>`;
-            }
-
-            return `
-            <div class="feed-card bg-white" style="margin-bottom:8px; border-radius:12px; overflow:hidden; box-shadow:var(--card-shadow); border: 1px solid var(--border)">
-                <!-- Header -->
-                <div class="px-3 pt-3 pb-2 flex items-center justify-between">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">${initials}</div>
-                        <div>
-                            <div class="font-bold text-sm text-gray-900 leading-tight">${post.author || 'Аноним'}</div>
-                            <div class="text-[11px] text-gray-400 leading-tight">📍 ${post.location || '—'} &nbsp;·&nbsp; ${formatDate(post.date||post.created_at)}</div>
-                        </div>
-                    </div>
-                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${post.type === 'risk' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}">${post.type === 'risk' ? '⚠️ Риск' : '💡 Идея'}</span>
-                </div>
-                <!-- Media -->
-                ${mediaHtml ? `<div class="overflow-hidden" onclick="showDetailModal(${post.id})">${mediaHtml}</div>` : ''}
-                <!-- Description -->
-                <div class="px-3 pt-2 pb-1 cursor-pointer" onclick="showDetailModal(${post.id})">
-                    <span class="text-[11px] font-mono text-purple-500">${getPaddedId(post.id)}</span>
-                    <p class="text-sm text-gray-800 mt-0.5 leading-relaxed line-clamp-3">${post.description || post.desc || ''}</p>
-                </div>
-                <!-- Actions -->
-                <div class="px-3 py-2 flex items-center gap-5 border-t border-gray-50" onclick="event.stopPropagation()">
-                    <button onclick="likePost(${post.id})" class="flex items-center gap-1.5 text-gray-500 hover:text-red-500 transition active:scale-95">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                        <span class="text-sm font-medium">${post.likes || 0}</span>
-                    </button>
-                    <button onclick="showCommentsModal(${post.id})" class="flex items-center gap-1.5 text-gray-500 hover:text-blue-500 transition active:scale-95">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
-                        <span class="text-sm font-medium">${comments.length}</span>
-                    </button>
-                    <div class="ml-auto">
-                        <span class="text-[10px] font-semibold px-2.5 py-1 rounded-full ${st.cls}">${st.label}</span>
-                    </div>
-                </div>
-            </div>`;
-        }).join('');
-        parseTwemoji();
+async function init() {
+  // 1. Try localStorage
+  const saved = store.get('u');
+  if (saved) {
+    try {
+      const cached = JSON.parse(saved);
+      // Refresh from DB
+      const { data } = await SB.from('users').select('*').eq('id', cached.empId).single();
+      const u = data ? mapUser(data) : cached;
+      await launchApp(u);
+      return;
+    } catch(e) { store.del('u'); }
+  }
+  // 2. Try Telegram ID
+  const tgUser = tg?.initDataUnsafe?.user;
+  if (tgUser) {
+    const name = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
+    document.getElementById('rFio').value = name;
+    document.getElementById('tgNotice').style.display = '';
+    const { data } = await SB.from('users').select('*').eq('telegram_id', String(tgUser.id)).single();
+    if (data) {
+      await launchApp(mapUser(data));
+      return;
     }
-
-    function openGallery(postId, index) {
-        const post = requests.find(r => r.id == postId);
-        if (!post) return;
-        const media = Array.isArray(post.media) ? post.media : (post.media ? JSON.parse(post.media) : []);
-        const m = media[index];
-        if (!m) return;
-        const isVideo = m.startsWith('data:video');
-        const content = document.getElementById('galleryContent');
-        content.innerHTML = `
-            <div class="relative inline-block" onclick="event.stopPropagation()">
-                ${isVideo
-                    ? `<video src="${m}" controls autoplay class="max-w-[calc(100vw-32px)] max-h-[calc(100vh-80px)] rounded-lg object-contain"></video>`
-                    : `<img src="${m}" class="max-w-[calc(100vw-32px)] max-h-[calc(100vh-80px)] rounded-lg object-contain">`
-                }
-                <button onclick="toggleGalleryModal()" class="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black bg-opacity-50 text-white text-xl leading-none hover:bg-opacity-80 transition backdrop-blur-sm">&times;</button>
-            </div>`;
-        document.getElementById('galleryModal').classList.remove('hidden');
-    }
-
-    function updateProfileUI() {
-        if (!currentUser) return;
-        
-        const deptMap = { production: 'Производство', warehouse: 'Склад', office: 'Офис' };
-        document.getElementById('profileName').textContent = currentUser.name;
-        document.getElementById('profileDepartment').textContent = deptMap[currentUser.dept] || currentUser.dept;
-        document.getElementById('profileIdDisplay').textContent = `Табельный номер: ${currentUser.empId}`;
-        document.getElementById('profilePhoneDisplay').textContent = `Телефон: ${currentUser.phone}`;
-        document.getElementById('profilePoints').textContent = currentUser.points;
-
-        const lvl = getLevelInfo(currentUser.points);
-        document.getElementById('profileLevel').textContent = lvl.num;
-        document.getElementById('levelProgress').style.width = `${lvl.progress}%`;
-        document.getElementById('pointsToNext').textContent = lvl.pointsToNext || '—';
-        const badge = document.getElementById('levelBadge');
-        if (badge) { badge.textContent = `${lvl.emoji} ${lvl.name}`; badge.className = `level-badge ${lvl.badge}`; }
-
-        const myReqs = requests.filter(r => r.author === currentUser.name);
-        document.getElementById('statAccepted').textContent = myReqs.filter(r => r.status === 'new').length;
-        document.getElementById('statWork').textContent = myReqs.filter(r => r.status === 'work').length;
-        document.getElementById('statCompleted').textContent = myReqs.filter(r => r.status === 'approved').length;
-    }
-
-    async function renderShop() {
-        const shopList = document.getElementById('shopList');
-        if (!shopList || !currentUser) return;
-
-        // Загружаем из БД если ещё не загружено
-        if (shopItems.length === 0) {
-            const { data } = await kaizenSupabase.from('shop_items').select('*').order('points');
-            if (data) shopItems.push(...data);
-        }
-        
-        shopList.innerHTML = shopItems.map(item => {
-            const canBuy = currentUser.points >= item.points;
-            return `
-                <div class="bg-white border border-gray-100 rounded-xl p-3 flex items-center gap-3 shadow-sm">
-                    <div class="w-10 h-10 rounded-lg ${item.color} flex items-center justify-center text-xl">${item.icon}</div>
-                    <div class="flex-1">
-                        <div class="text-xs font-bold text-gray-900">${item.title}</div>
-                        <div class="text-xs font-semibold ${canBuy ? 'text-green-600' : 'text-purple-600'}">${item.points} б.</div>
-                    </div>
-                    <button onclick="buyItem(${item.id})" ${!canBuy ? 'disabled' : ''} class="text-xs bg-blue-500 text-white px-2 py-1 rounded ${!canBuy ? 'opacity-50' : 'active:scale-95 transition'}">Купить</button>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async function renderAchievements() {
-        const achList = document.getElementById('achievementsList');
-        if (!achList || !currentUser) return;
-
-        // Всегда загружаем свежие данные из БД
-        const { data } = await kaizenSupabase.from('achievements').select('*');
-        if (data && data.length > 0) achievements = data;
-        
-        if (achievements.length === 0) {
-            achList.innerHTML = '<div class="col-span-2 text-center text-gray-400 py-4 text-sm">Достижения загружаются…</div>';
-            return;
-        }
-        
-        const myReqs = requests.filter(r => r.author_id === currentUser.empId || r.author === currentUser.name);
-        const ideas = myReqs.filter(r => r.type === 'idea').length;
-        const risks = myReqs.filter(r => r.type === 'risk').length;
-        const totalLikes = myReqs.reduce((sum, r) => sum + (r.likes || 0), 0);
-
-        achList.innerHTML = achievements.map(ach => {
-            let currentCount = 0;
-            const targetType = ach.target_type || ach.targetType;
-            if (targetType === 'posts') currentCount = myReqs.length;
-            else if (targetType === 'ideas') currentCount = ideas;
-            else if (targetType === 'risks') currentCount = risks;
-            else if (targetType === 'likes') currentCount = totalLikes;
-            else if (targetType === 'points') currentCount = currentUser.points;
-            else if (targetType === 'manual') currentCount = currentUser.isTrained ? 1 : 0;
-
-            const isDone = currentCount >= ach.target;
-            const progressPercent = Math.min(100, (currentCount / ach.target) * 100);
-            const desc = ach.description || ach.desc;
-
-            return `
-                <div class="flex flex-col items-center p-2 rounded-lg border ${isDone ? 'bg-yellow-100 border-yellow-300' : 'bg-gray-50 border-gray-200'}">
-                    <div class="text-3xl mb-1">${ach.icon}</div>
-                    <div class="text-sm font-bold text-center">${ach.title}</div>
-                    <div class="text-[9px] text-gray-500 text-center h-8">${desc}</div>
-                    <div class="w-full mt-2">
-                        <div class="flex justify-between text-[10px] font-bold mb-1">
-                            <span>Прогресс:</span>
-                            <span>${currentCount}/${ach.target}</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-1.5">
-                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-1.5 rounded-full" style="width: ${progressPercent}%"></div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async function renderLeaderboard() {
-        const { data: users } = await kaizenSupabase.from('users').select('*').order('points', { ascending: false }).limit(10);
-        const list = document.getElementById('leaderboardList');
-        if (!list) return;
-
-        const medals = ['🥇', '🥈', '🥉'];
-        const medalBg = ['bg-yellow-50 border-yellow-300', 'bg-gray-100 border-gray-300', 'bg-orange-50 border-orange-200'];
-
-        const topList = users || [];
-        const meInTop = topList.some(u => u.id === currentUser?.empId || u.name === currentUser?.name);
-
-        // Если я не в топ-10 — подгружаем мои данные
-        let myRow = '';
-        if (!meInTop && currentUser) {
-            const { data: meData } = await kaizenSupabase.from('users').select('*').eq('id', currentUser.empId).single();
-            // Узнаём мою позицию
-            const { count } = await kaizenSupabase.from('users').select('*', { count: 'exact', head: true }).gt('points', currentUser.points);
-            const myPos = (count || 0) + 1;
-            const me = meData || {};
-            myRow = `
-            <div class="mt-2 pt-2 border-t-2 border-dashed border-gray-200">
-                <div class="leaderboard-item p-3 rounded-xl border current-user-highlight flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 flex-shrink-0 text-center"><span class="text-sm font-bold text-gray-400">#${myPos}</span></div>
-                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">${(currentUser.name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}</div>
-                        <div>
-                            <div class="font-bold text-sm text-purple-700">${currentUser.name} (вы)</div>
-                            <div class="text-xs text-gray-400">${currentUser.dept || '—'}</div>
-                        </div>
-                    </div>
-                    <div class="text-base font-bold text-purple-600 flex-shrink-0">${me.points || currentUser.points || 0} <span class="text-xs font-normal text-gray-400">б.</span></div>
-                </div>
-            </div>`;
-        }
-
-        list.innerHTML = topList.map((user, index) => {
-            const isTop3 = index < 3;
-            const isMe = currentUser?.empId === user.id || currentUser?.name === user.name;
-            return `
-            <div class="leaderboard-item p-3 rounded-xl border flex items-center justify-between mb-1.5 ${isMe ? 'current-user-highlight' : isTop3 ? medalBg[index] : 'bg-white border-gray-100'}">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 flex-shrink-0 flex items-center justify-center">
-                        ${isTop3 ? `<span class="text-2xl">${medals[index]}</span>` : `<span class="text-sm font-bold text-gray-400">#${index+1}</span>`}
-                    </div>
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">${(user.name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}</div>
-                    <div>
-                        <div class="font-bold text-sm ${isMe ? 'text-purple-700' : 'text-gray-900'}">${user.name}${isMe ? ' (вы)' : ''}</div>
-                        <div class="text-xs text-gray-400">${user.department || '—'}</div>
-                    </div>
-                </div>
-                <div class="text-base font-bold text-purple-600 flex-shrink-0">${user.points || 0} <span class="text-xs font-normal text-gray-400">б.</span></div>
-            </div>`;
-        }).join('') + myRow;
-        parseTwemoji();
-    }
-
-    async function createNotification(type, title, message, postId = null) {
-        if (!currentUser) return;
-        try {
-            await kaizenSupabase.from('notifications').insert({
-                user_id: currentUser.empId,
-                title,
-                message,
-                type,
-                post_id: postId,
-                read: false,
-                date: new Date().toISOString()
-            });
-            loadNotifications();
-        } catch(e) {
-            console.error('Ошибка уведомления:', e);
-        }
-    }
-
-    async function loadNotifications() {
-        if (!currentUser) return;
-        try {
-            const { data } = await kaizenSupabase
-                .from('notifications')
-                .select('*')
-                .eq('user_id', currentUser.empId)
-                .order('date', { ascending: false })
-                .limit(30);
-
-            const list = document.getElementById('notificationsList');
-            const empty = document.getElementById('emptyNotifications');
-            const markBtn = document.getElementById('markAllReadButton');
-            if (!list) return;
-
-            const items = data || [];
-            const unread = items.filter(n => !n.read);
-
-            // Обновляем бейдж
-            const badge = document.getElementById('notificationsBadge');
-            if (badge) {
-                badge.textContent = unread.length;
-                badge.classList.toggle('hidden', unread.length === 0);
-            }
-
-            if (items.length === 0) {
-                list.innerHTML = '';
-                empty?.classList.remove('hidden');
-                markBtn?.classList.add('hidden');
-                return;
-            }
-            empty?.classList.add('hidden');
-            markBtn?.classList.toggle('hidden', unread.length === 0);
-
-            list.innerHTML = items.map(n => {
-                const date = new Date(n.date);
-                const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')} ${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`;
-                const typeIcons = { welcome: '👋', new_request: '📋', status_update: '🔄', info: 'ℹ️', achievement: '🏅', comment: '💬' };
-                const clickAction = n.post_id ? `onNotificationClick(${n.id}, ${n.post_id})` : `markNotificationRead(${n.id})`;
-                return `
-                    <div class="notification-item p-3 rounded-xl border ${n.read ? 'bg-white border-gray-100' : 'notification-unread border-blue-100'}" onclick="${clickAction}">
-                        <div class="flex items-start gap-3">
-                            <span class="text-xl flex-shrink-0">${typeIcons[n.type] || 'ℹ️'}</span>
-                            <div class="flex-1 min-w-0">
-                                <div class="font-bold text-sm text-gray-900">${n.title}</div>
-                                <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">${n.message}</p>
-                                <div class="text-[10px] text-gray-400 mt-1">${dateStr}</div>
-                            </div>
-                            ${!n.read ? '<span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-1.5"></span>' : ''}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        } catch(e) {
-            console.error('Ошибка загрузки уведомлений:', e);
-        }
-    }
-
-    async function markNotificationRead(id) {
-        await kaizenSupabase.from('notifications').update({ read: true }).eq('id', id);
-        loadNotifications();
-    }
-
-    async function markAllNotificationsAsRead() {
-        if (!currentUser) return;
-        await kaizenSupabase.from('notifications')
-            .update({ read: true })
-            .eq('user_id', currentUser.empId);
-        loadNotifications();
-        showSection('notificationArchive');
-    }
-
-    async function onNotificationClick(notifId, postId) {
-        await markNotificationRead(notifId);
-        // Если пост ещё не загружен — подгружаем
-        if (!requests.find(r => r.id == postId)) {
-            const { data } = await kaizenSupabase.from('requests').select('*').eq('id', postId).single();
-            if (data) requests.unshift(data);
-        }
-        showSection('feed');
-        setTimeout(() => showCommentsModal(postId), 150);
-    }
-
-    function showNotificationArchive() {
-        showSection('notificationArchive');
-    }
-
-    function checkAchievements() {
-        renderAchievements();
-    }
-
-    async function buyItem(id) {
-        const item = shopItems.find(i => i.id === id);
-        if (!item || currentUser.points < item.points) return;
-        if (!confirm(`Купить "${item.title}" за ${item.points} баллов?`)) return;
-
-        currentUser.points -= item.points;
-        await saveUser(currentUser);
-        storage.set('kaizenUser', JSON.stringify(currentUser));
-
-        // Сохраняем покупку в БД
-        await kaizenSupabase.from('purchases').insert({
-            user_id: currentUser.empId,
-            item_id: item.id,
-            date: new Date().toISOString()
-        });
-
-        updateProfileUI();
-        renderShop();
-        createNotification('info', 'Покупка успешна!', `Вы приобрели: ${item.title}`);
-    }
-
-    function showDetailModal(id) {
-        const post = requests.find(r => r.id === id);
-        if (!post) return;
-        const statusMap = { new: '🆕 Новая', work: '🔧 В работе', approved: '✅ Принята', rejected: '❌ Отклонена', completed: '🏁 Выполнена' };
-        document.getElementById('detailContent').innerHTML = `
-            <div class="space-y-3">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold px-2 py-1 rounded-full ${post.type === 'risk' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}">${post.type === 'risk' ? '⚠️ Риск' : '💡 Идея'}</span>
-                    <span class="text-xs text-gray-500">${statusMap[post.status] || post.status}</span>
-                </div>
-                <div class="text-xs text-purple-600 font-mono">${getPaddedId(post.id)}</div>
-                <p class="text-gray-700 text-sm leading-relaxed">${post.description || post.desc || '—'}</p>
-                <div class="text-xs text-gray-400 pt-2 border-t border-gray-100">
-                    👤 ${post.author} &nbsp;•&nbsp; 📍 ${post.location || '—'} &nbsp;•&nbsp; 📅 ${formatDate(post.date || post.created_at)}
-                </div>
-            </div>
-        `;
-        document.getElementById('detailModal').classList.remove('hidden');
-    }
-
-    function showCommentsModal(id) {
-        const post = requests.find(r => r.id === id);
-        if (!post) return;
-        document.getElementById('currentPostId').value = id;
-        document.getElementById('commentsList').innerHTML = (post.comments || []).map(c => 
-            `<div class="flex gap-2"><div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold">${c.author[0]}</div><div><div class="font-bold text-sm">${c.author}</div><p class="text-sm">${c.text}</p></div></div>`
-        ).join('');
-        document.getElementById('commentCount').textContent = post.comments?.length || 0;
-        document.getElementById('commentsModal').classList.remove('hidden');
-    }
-
-    async function addComment(e) {
-        e.preventDefault();
-        const id = document.getElementById('currentPostId').value;
-        const text = document.getElementById('commentText').value.trim();
-        if (!text) return;
-        
-        const post = requests.find(r => r.id == id);
-        if (!post) return;
-
-        const btn = document.getElementById('submitCommentBtn');
-        btn.classList.add('btn-loading');
-        
-        post.comments = Array.isArray(post.comments) ? post.comments : [];
-        post.comments.push({ author: currentUser.name, text, date: new Date().toISOString() });
-
-        await kaizenSupabase.from('requests').update({ comments: post.comments }).eq('id', id);
-
-        btn.classList.remove('btn-loading');
-        showCommentsModal(id);
-        document.getElementById('commentText').value = '';
-        renderFeed();
-        incrementDailyTask('comment');
-
-        // Уведомляем автора поста (если это не сам автор)
-        const postAuthorId = post.author_id;
-        if (postAuthorId && postAuthorId !== currentUser.empId) {
-            await notifyUserWithPush(
-                postAuthorId,
-                '💬 Новый комментарий',
-                `${currentUser.name} прокомментировал вашу заявку ${getPaddedId(post.id)}: «${text.substring(0, 60)}${text.length > 60 ? '...' : ''}»`,
-                post.id
-            );
-        }
-    }
-
-    async function likePost(id) {
-        if (!currentUser) return;
-        // Проверяем, не лайкал ли уже
-        const { data: existing } = await kaizenSupabase
-            .from('likes')
-            .select('id')
-            .eq('user_id', currentUser.empId)
-            .eq('post_id', id)
-            .single();
-
-        if (existing) {
-            await kaizenSupabase.from('likes').delete()
-                .eq('user_id', currentUser.empId).eq('post_id', id);
-        } else {
-            await kaizenSupabase.from('likes').insert({ user_id: currentUser.empId, post_id: id });
-            incrementDailyTask('like');
-        }
-        // Пересчитываем количество лайков
-        const { count } = await kaizenSupabase
-            .from('likes').select('*', { count: 'exact', head: true }).eq('post_id', id);
-        const post = requests.find(r => r.id === id);
-        if (post) {
-            post.likes = count || 0;
-            await kaizenSupabase.from('requests').update({ likes: post.likes }).eq('id', id);
-        }
-        renderFeed();
-    }
-
-    function toggleCreateModal() {
-        const m = document.getElementById('createModal');
-        const open = m.classList.toggle('hidden');
-        document.body.classList.toggle('modal-open', !open);
-        // Сброс zoom Telegram при открытии модалки
-        if (!open && tg) { tg.disableVerticalSwipes?.(); }
-        else if (tg) { tg.enableVerticalSwipes?.(); }
-    }
-    function toggleDetailModal() { document.getElementById('detailModal').classList.toggle('hidden'); }
-    function toggleCommentsModal() { document.getElementById('commentsModal').classList.toggle('hidden'); }
-    function toggleGalleryModal() { document.getElementById('galleryModal').classList.toggle('hidden'); }
-    function toggleTrainingModal() { document.getElementById('trainingModal').classList.toggle('hidden'); }
-    function toggleFilterMenu() { document.getElementById('filterMenu').classList.toggle('hidden'); }
-    function toggleSettingsDropdown(e) { e?.stopPropagation(); document.getElementById('settingsDropdown').classList.toggle('hidden'); }
-    function toggleSection(section) {
-        const content = document.getElementById(section + 'Content');
-        const toggle = document.getElementById(section + 'Toggle');
-        if (!content) return;
-        if (content.style.maxHeight === '0px' || !content.style.maxHeight) {
-            content.style.maxHeight = content.scrollHeight + 2000 + 'px';
-            toggle?.classList.add('rotate-180');
-            if (section === 'dailyTasks') renderDailyTasks();
-        } else {
-            content.style.maxHeight = '0px';
-            toggle?.classList.remove('rotate-180');
-        }
-    }
-
-    function toggleFilterMenu() {
-        const menu = document.getElementById('filterMenu');
-        menu.classList.toggle('hidden');
-        const btn = document.getElementById('filterToggleBtn');
-        btn?.classList.toggle('bg-purple-50', !menu.classList.contains('hidden'));
-        btn?.classList.toggle('border-purple-300', !menu.classList.contains('hidden'));
-    }
-
-    function handleSearchAction() { renderFeed(); }
-
-    function applyFilter() {
-        currentFilterType = document.getElementById('filterType').value;
-        currentSortBy = document.getElementById('sortBy').value;
-        renderFeed();
-    }
-
-    function switchFeedTab(tab) {
-        currentFeedTab = tab;
-        ['all','my','assigned'].forEach(t => {
-            const btn = document.getElementById(t + 'FeedTab');
-            if (!btn) return;
-            if (t === tab) {
-                btn.className = 'flex-1 py-2.5 text-sm font-semibold text-gray-900 border-b-2 border-gray-900';
-            } else {
-                btn.className = 'flex-1 py-2.5 text-sm font-medium text-gray-500 hover:text-gray-700';
-            }
-        });
-        renderFeed();
-    }
-
-    function showSection(section) {
-        const sections = ['userProfile', 'userPanel', 'adminPanel', 'messagesSection', 'newsSection', 'notificationsSection', 'otherUserProfile', 'notificationArchive'];
-        sections.forEach(id => document.getElementById(id)?.classList.add('hidden'));
-        
-        let sectionId = section === 'profile' ? 'userProfile' : 
-                       section === 'feed' ? 'userPanel' :
-                       section === 'notifications' ? 'notificationsSection' :
-                       section === 'notificationArchive' ? 'notificationArchive' :
-                       section === 'news' ? 'newsSection' : null;
-        if (sectionId) document.getElementById(sectionId)?.classList.remove('hidden');
-
-        // Show/hide tabs in header — only visible on feed
-        const tabsInHeader = document.getElementById('feedTabsInHeader');
-        if (tabsInHeader) {
-            if (section === 'feed') tabsInHeader.classList.remove('hidden');
-            else tabsInHeader.classList.add('hidden');
-        }
-        
-        // Load data lazily
-        if (section === 'news') loadNews();
-        if (section === 'notifications') loadNotifications();
-
-        // Telegram back button: show when not on feed
-        if (tg) {
-            if (section === 'feed') tg.BackButton.hide();
-            else tg.BackButton.show();
-        }
-
-        document.querySelectorAll('.nav-btn').forEach(b => {
-            b.classList.remove('active', 'text-gray-900');
-            b.classList.add('text-gray-400');
-        });
-        const navBtn = document.getElementById('nav' + section.charAt(0).toUpperCase() + section.slice(1));
-        if (navBtn) {
-            navBtn.classList.add('active', 'text-gray-900');
-            navBtn.classList.remove('text-gray-400');
-        }
-    }
-
-    function toggleRiskFields() {
-        const isRisk = document.querySelector('input[name="type"][value="risk"]').checked;
-        document.getElementById('riskFields').classList.toggle('hidden', !isRisk);
-    }
-
-    function previewMultipleMedia(event) {
-        selectedMediaFiles = Array.from(event.target.files).slice(0, 5);
-        const previews = document.getElementById('mediaPreviews');
-        previews.innerHTML = '';
-        selectedMediaFiles.forEach((file, i) => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                previews.innerHTML += `<div class="media-preview-item"><img src="${e.target.result}"><div class="remove-media-btn" onclick="removeMediaFile(${i})">×</div></div>`;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function removeMediaFile(index) {
-        selectedMediaFiles.splice(index, 1);
-        const previews = document.getElementById('mediaPreviews');
-        previews.innerHTML = '';
-        selectedMediaFiles.forEach((file, i) => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                previews.innerHTML += `<div class="media-preview-item"><img src="${e.target.result}"><div class="remove-media-btn" onclick="removeMediaFile(${i})">×</div></div>`;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
-
-    function handleAvatarUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        reader.onload = e => {
-            currentUser.profilePic = e.target.result;
-            saveUser(currentUser);
-            updateProfileUI();
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function showTrainingModal() { document.getElementById('trainingModal').classList.remove('hidden'); }
-    function startTraining() {
-        document.getElementById('videoOverlay').classList.add('hidden');
-        setTimeout(() => {
-            document.getElementById('videoLesson').classList.add('hidden');
-            document.getElementById('trainingTest').classList.remove('hidden');
-        }, 5000);
-    }
-
-    function checkTest() {
-        const q1 = document.querySelector('input[name="q1"]:checked');
-        const q2 = document.querySelector('input[name="q2"]:checked');
-        if (q1?.value === 'idea' && q2?.value === 'profile') {
-            if (!currentUser.isTrained) {
-                currentUser.isTrained = true;
-                currentUser.points += 20;
-                saveUser(currentUser);
-                updateProfileUI();
-            }
-            toggleTrainingModal();
-            alert('✅ Тест пройден!');
-        } else {
-            alert('❌ Неправильные ответы');
-        }
-    }
-
-    function logout() {
-        if (confirm('Выйти из аккаунта?')) {
-            storage.remove('kaizenUser');
-            location.reload();
-        }
-    }
-
-    function updateAdminStats() {
-        document.getElementById('totalRequests').textContent = requests.length;
-        document.getElementById('inProgressRequests').textContent = requests.filter(r => r.status === 'work').length;
-    }
-
-    // ─── News ───────────────────────────────────────────────────────────────
-    async function loadNews() {
-        try {
-            const { data, error } = await kaizenSupabase
-                .from('news')
-                .select('*')
-                .order('date', { ascending: false })
-                .limit(20);
-
-            const feed = document.getElementById('newsFeed');
-            if (!feed) return;
-
-            if (error || !data || data.length === 0) {
-                feed.innerHTML = `<div class="text-center py-10 text-gray-400"><div class="text-5xl mb-3 opacity-30">📰</div><p class="text-sm">Новостей пока нет</p></div>`;
-                return;
-            }
-
-            feed.innerHTML = data.map(item => {
-                const date = new Date(item.date || item.created_at);
-                const dateStr = `${String(date.getDate()).padStart(2,'0')}.${String(date.getMonth()+1).padStart(2,'0')}.${date.getFullYear()}`;
-                const colorClass = item.color || 'bg-blue-100 text-blue-800';
-                const icon = item.icon || '📰';
-                return `
-                    <div class="bg-white border border-gray-100 rounded-xl overflow-hidden shadow-sm">
-                        <div class="p-4">
-                            <div class="flex items-start gap-3 mb-2">
-                                <span class="flex-shrink-0 w-10 h-10 rounded-xl ${colorClass} flex items-center justify-center text-xl">${icon}</span>
-                                <div class="flex-1 min-w-0">
-                                    <h3 class="font-bold text-gray-900 text-sm leading-tight">${item.title}</h3>
-                                    <div class="text-xs text-gray-400 mt-0.5">${item.source || 'Администрация'} • ${dateStr}</div>
-                                </div>
-                            </div>
-                            <p class="text-sm text-gray-600 leading-relaxed">${item.content}</p>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        } catch(err) {
-            console.error('Ошибка загрузки новостей:', err);
-            document.getElementById('newsFeed').innerHTML = `<div class="text-center py-10 text-gray-400"><p class="text-sm">Ошибка загрузки</p></div>`;
-        }
-    }
-
-    function toggleCreateNewsModal() {
-        document.getElementById('createNewsModal').classList.toggle('hidden');
-    }
-
-    document.getElementById('createNewsForm')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if (!currentUser || currentUser.role !== 'admin') return;
-        const btn = document.getElementById('submitNewsBtn');
-        btn.classList.add('btn-loading');
-
-        const categoryIcons = { announcement: '📢', achievement: '🏆', safety: '🛡️', general: '📌' };
-        const categoryColors = { announcement: 'bg-blue-100 text-blue-800', achievement: 'bg-yellow-100 text-yellow-800', safety: 'bg-yellow-100 text-yellow-800', general: 'bg-blue-100 text-blue-800' };
-        const cat = document.getElementById('newsCategoryInput').value;
-
-        const { error } = await kaizenSupabase.from('news').insert({
-            title: document.getElementById('newsTitleInput').value,
-            content: document.getElementById('newsBodyInput').value,
-            source: currentUser.name,
-            icon: categoryIcons[cat] || '📰',
-            color: categoryColors[cat] || 'bg-blue-100 text-blue-800',
-            date: new Date().toISOString()
-        });
-
-        btn.classList.remove('btn-loading');
-        if (!error) {
-            toggleCreateNewsModal();
-            e.target.reset();
-            loadNews();
-        } else {
-            alert('Ошибка публикации: ' + error.message);
-        }
-    });
-
-    // ─── Init ───────────────────────────────────────────────────────────────
-    async function init() {
-        // Сплэш уже виден по умолчанию через CSS
-        await loadRequests();
-
-        const tgUser = tg?.initDataUnsafe?.user;
-        const savedUserRaw = storage.get('kaizenUser');
-
-        if (savedUserRaw) {
-            try {
-                currentUser = JSON.parse(savedUserRaw);
-                const dbUser = await loadUser(currentUser.empId);
-                if (dbUser) {
-                    currentUser = { ...currentUser, ...dbUser };
-                    storage.set('kaizenUser', JSON.stringify(currentUser));
-                }
-                hideSplash();
-                launchApp();
-                return;
-            } catch(e) {
-                storage.remove('kaizenUser');
-            }
-        }
-
-        if (tgUser) {
-            const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
-            document.getElementById('regFullName').value = fullName;
-            document.getElementById('tgAutoFillNotice').classList.remove('hidden');
-            const { data: existingUser } = await kaizenSupabase
-                .from('users').select('*').eq('telegram_id', String(tgUser.id)).single();
-            if (existingUser) {
-                currentUser = {
-                    name: existingUser.name, empId: existingUser.id,
-                    phone: existingUser.phone || '', email: existingUser.email || '',
-                    dept: existingUser.department || '', points: existingUser.points || 0,
-                    role: existingUser.role || 'user', profilePic: existingUser.profile_pic || null,
-                    isTrained: existingUser.is_trained || false,
-                    completedAchievements: existingUser.completed_achievements || [],
-                    unseenAchievements: existingUser.unseen_achievements || [],
-                    tgId: tgUser.id
-                };
-                storage.set('kaizenUser', JSON.stringify(currentUser));
-                hideSplash();
-                launchApp();
-                return;
-            }
-        }
-
-        hideSplash();
-        showRegistration();
-    }
-
-    function hideSplash() {
-        document.getElementById('splashScreen').style.display = 'none';
-    }
-    function showRegistration() {
-        document.getElementById('registrationScreen').style.display = 'flex';
-    }
-
-    function parseTwemoji() {
-        if (window.twemoji) twemoji.parse(document.body, { folder: 'svg', ext: '.svg' });
-    }
-
-    function fixStickyPositions() {
-        const header = document.querySelector('#mainApp > header');
-        const searchBar = document.getElementById('searchBar');
-        if (header && searchBar) {
-            const h = header.getBoundingClientRect().height;
-            searchBar.style.top = h + 'px';
-        }
-    }
-
-    // ── Dark mode ────────────────────────────────────────────────────────────
-    function applyDarkMode(dark) {
-        document.documentElement.classList.toggle('dark', dark);
-        const btn = document.getElementById('darkModeBtn');
-        if (btn) btn.textContent = dark ? '☀️' : '🌙';
-    }
-
-    function toggleDarkMode() {
-        isDarkMode = !isDarkMode;
-        storage.set('darkMode', isDarkMode ? '1' : '0');
-        applyDarkMode(isDarkMode);
-    }
-
-    // ── Location chip filter ────────────────────────────────────────────────
-    function setLocationFilter(loc) {
-        currentLocationFilter = loc;
-        document.querySelectorAll('.location-chip').forEach(btn => {
-            const isActive = btn.dataset.loc === loc;
-            btn.className = `location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border transition ${
-                isActive
-                    ? 'border-purple-400 bg-purple-50 text-purple-700'
-                    : 'border-gray-200 bg-gray-50 text-gray-600'
-            }`;
-        });
-        renderFeed();
-    }
-
-    // ── Push notification via Telegram Bot API ───────────────────────────────
-    const TG_BOT_TOKEN = '8768160449:AAG1gBLhbA9yJ7V3t_9O0vb1S1deonnoFto';
-    async function sendTelegramPush(tgId, message) {
-        if (!TG_BOT_TOKEN || !tgId) return;
-        try {
-            await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ chat_id: tgId, text: message, parse_mode: 'HTML' })
-            });
-        } catch(e) { console.warn('Push failed:', e); }
-    }
-
-    async function notifyUserWithPush(userId, title, message, postId = null) {
-        // Сохраняем в БД
-        await kaizenSupabase.from('notifications').insert({
-            user_id: userId, title, message,
-            type: postId ? 'comment' : 'info',
-            post_id: postId, read: false,
-            date: new Date().toISOString()
-        });
-        // Пытаемся отправить Telegram push
-        const { data: userData } = await kaizenSupabase.from('users').select('telegram_id').eq('id', userId).single();
-        if (userData?.telegram_id) {
-            await sendTelegramPush(userData.telegram_id, `🔔 <b>${title}</b>\n${message}`);
-        }
-    }
-
-    function launchApp() {
-        document.getElementById('registrationScreen').style.display = 'none';
-        document.getElementById('splashScreen').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        renderFeed();
-        updateProfileUI();
-        // Загружаем данные параллельно для скорости
-        Promise.all([
-            renderShop(),
-            renderAchievements(),
-            renderLeaderboard(),
-            loadNews(),
-            loadNotifications()
-        ]);
-        parseTwemoji();
-        setTimeout(fixStickyPositions, 50);
-        applyDarkMode(isDarkMode);
-        renderDailyTasks();
-
-        // Realtime subscription — новые заявки сразу появляются в ленте
-        kaizenSupabase.channel('requests-realtime')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, payload => {
-                const exists = requests.find(r => r.id === payload.new.id);
-                if (!exists) { requests.unshift(payload.new); renderFeed(); }
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, payload => {
-                const idx = requests.findIndex(r => r.id === payload.new.id);
-                if (idx >= 0) { requests[idx] = { ...requests[idx], ...payload.new }; renderFeed(); }
-            })
-            .subscribe();
-
-        if (currentUser?.role === 'admin') {
-            document.getElementById('addNewsBtn')?.classList.remove('hidden');
-        }
-        if (tg) {
-            tg.BackButton.onClick(() => {
-                const visibleModals = ['createModal','detailModal','commentsModal','trainingModal','createNewsModal'];
-                const openModal = visibleModals.find(id => !document.getElementById(id)?.classList.contains('hidden'));
-                if (openModal) { document.getElementById(openModal).classList.add('hidden'); }
-                else { showSection('feed'); tg.BackButton.hide(); }
-            });
-        }
-    }
-
-    document.getElementById('commentForm').addEventListener('submit', addComment);
-    document.getElementById('trainingTestForm').addEventListener('submit', (e) => { e.preventDefault(); checkTest(); });
-    
-    init();
+  }
+  // 3. Show registration
+  document.getElementById('splash').style.display = 'none';
+  document.getElementById('reg').style.display = 'flex';
+}
+
+// Registration form
+document.getElementById('regForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('regBtn');
+  btn.disabled = true; btn.textContent = '…';
+  const empId = document.getElementById('rEmp').value.trim();
+  // Check existing
+  const { data: ex } = await SB.from('users').select('*').eq('id', empId).single();
+  if (ex) {
+    btn.disabled = false; btn.textContent = 'Начать работу';
+    await launchApp(mapUser(ex)); return;
+  }
+  const tgUser = tg?.initDataUnsafe?.user;
+  const rec = {
+    id: empId, name: document.getElementById('rFio').value,
+    phone: document.getElementById('rPhone').value,
+    email: document.getElementById('rEmail').value,
+    department: document.getElementById('rDept').value,
+    points: 0, role: empId === '11111' ? 'admin' : 'user',
+    telegram_id: tgUser ? String(tgUser.id) : null
+  };
+  const { data: saved, error } = await SB.from('users').insert(rec).select().single();
+  btn.disabled = false; btn.textContent = 'Начать работу';
+  if (error) { alert('Ошибка: ' + error.message); return; }
+  await launchApp(mapUser(saved));
+});
+
+function logout() {
+  if (!confirm('Выйти из аккаунта?')) return;
+  store.del('u'); location.reload();
+}
+
+// Start
+init();
 </script>
 </body>
 </html>
