@@ -18,7 +18,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Ari
 #reg,#app{overflow-y:auto}
 #splash{display:flex;align-items:center;justify-content:center;background:#f5f5f7;z-index:200}
 #reg{display:none;background:#f0f0f5;z-index:100;align-items:center;justify-content:center;padding:20px}
-#app{display:none;z-index:50;background:#f5f5f7}
+#app{display:none;z-index:50;background:var(--bg);overflow:hidden}
+
+/* App inner scroller */
+#appScroll{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
 
 /* ── DARK MODE ───────────────────────────── */
 :root{--bg:#f5f5f7;--bg2:#fff;--bg3:#f0f0f5;--bd:#e5e7eb;--t1:#111;--t2:#374151;--t3:#6b7280;--t4:#9ca3af;--acc:#667eea;--acc2:#764ba2}
@@ -60,19 +63,23 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Ari
   position:fixed;bottom:0;left:0;right:0;z-index:60;
   background:var(--bg2);border-top:1px solid var(--bd);
   display:grid;grid-template-columns:repeat(5,1fr);
-  height:calc(56px + env(safe-area-inset-bottom,0px));
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
-.nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;color:var(--t3);cursor:pointer;gap:2px;position:relative}
+.nav-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;background:none;border:none;color:var(--t3);cursor:pointer;gap:2px;position:relative;padding:10px 0;min-height:56px}
 .nav-btn.active{color:var(--acc)}
 .nav-btn span{font-size:10px;font-weight:600}
-.nav-add{display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px}
+.nav-add{display:flex;align-items:center;justify-content:center;padding:4px 0}
 .nav-add-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;font-size:26px;line-height:1;color:#fff;display:flex;align-items:center;justify-content:center}
-.nav-badge{position:absolute;top:4px;right:8px;min-width:16px;height:16px;background:#ef4444;color:#fff;border-radius:999px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
+.nav-badge{position:absolute;top:6px;right:6px;min-width:16px;height:16px;background:#ef4444;color:#fff;border-radius:999px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 3px}
 
 /* ── SECTIONS ────────────────────────────── */
-.section{display:none;padding-bottom:72px;min-height:100%}
+.section{display:none;min-height:100%;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 .section.active{display:block}
+/* Loading skeleton */
+.loading-dots{display:flex;justify-content:center;align-items:center;gap:8px;padding:60px 20px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--acc);animation:dotbounce .8s ease infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes dotbounce{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-10px);opacity:1}}
 
 /* ── FEED CARDS ──────────────────────────── */
 #feedList{padding:8px}
@@ -199,6 +206,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
 
 <!-- APP -->
 <div id="app">
+ <div id="appScroll">
   <!-- HEADER -->
   <div id="appHeader">
     <div class="header-title grad-text">AKKERMANN PULSE</div>
@@ -236,11 +244,13 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
 
   <!-- SECTIONS -->
   <div id="secFeed" class="section active">
-    <div id="feedList"></div>
+    <div id="feedList">
+      <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
   </div>
 
-  <div id="secNotif" class="section" style="padding:16px;padding-bottom:72px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <div id="secNotif" class="section" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-top:8px">
       <div style="font-size:17px;font-weight:700;color:var(--t1)">Уведомления</div>
       <button onclick="markAllRead()" style="font-size:12px;color:var(--acc);background:none;border:none;cursor:pointer">Прочитать все</button>
     </div>
@@ -251,15 +261,15 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
     </div>
   </div>
 
-  <div id="secNews" class="section" style="padding:16px;padding-bottom:72px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <div id="secNews" class="section" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;padding-top:8px">
       <div style="font-size:17px;font-weight:700;color:var(--t1)">Новости</div>
       <button id="addNewsBtn" onclick="openModal('newsModal')" style="display:none;font-size:12px;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer">+ Добавить</button>
     </div>
     <div id="newsList"></div>
   </div>
 
-  <div id="secProfile" class="section" style="padding-bottom:72px">
+  <div id="secProfile" class="section">
     <!-- profile toolbar -->
     <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--bd)">
       <button onclick="toggleDark()" id="darkBtn" style="background:none;border:none;font-size:22px;cursor:pointer">🌙</button>
@@ -289,7 +299,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
           <div style="font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em">Уровень</div>
           <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
             <span style="font-size:24px;font-weight:800;color:var(--t1)" id="pLevel">1</span>
-            <span class="level-badge lv1" id="pLevelBadge">🌱 Новичок</span>
+            <span class="level-badge lv1" id="pLevelBadge" onclick="openModal('levelsModal')" style="cursor:pointer" title="Все уровни">🌱 Новичок ›</span>
           </div>
         </div>
         <div style="text-align:right">
@@ -495,8 +505,22 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
   </div>
 </div>
 
+<!-- LEVELS MODAL -->
+<div class="modal-bg" id="levelsModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;color:var(--t1)">🏅 Система уровней</span>
+      <button class="modal-close" onclick="closeModal('levelsModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="levelsBody"></div>
+  </div>
+</div>
+
+ </div><!-- /appScroll -->
+</div><!-- /app -->
+
 <!-- GALLERY -->
-<div id="gallery" onclick="closeGallery()">
+<div id="gallery" onclick="closeGallery()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:200;align-items:center;justify-content:center">
   <div class="img-wrap" id="galleryWrap" onclick="event.stopPropagation()">
     <button class="gclose" onclick="closeGallery()">&times;</button>
     <div id="galleryContent"></div>
@@ -624,8 +648,29 @@ function toggleDark() {
 }
 
 // ── MODALS ────────────────────────────────────────────────────────────────
-function openModal(id) { document.getElementById(id).classList.add('open'); }
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'levelsModal') renderLevelsModal();
+}
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function renderLevelsModal() {
+  const pts = user?.points || 0;
+  const body = document.getElementById('levelsBody');
+  if (!body) return;
+  body.innerHTML = LEVELS.map((l, i) => {
+    const isCurrent = pts >= l.min && pts <= l.max;
+    const achieved = pts > l.max;
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;margin-bottom:6px;border:1.5px solid ${isCurrent?'var(--acc)':achieved?'#34d399':'var(--bd)'};background:${isCurrent?'rgba(102,126,234,.08)':achieved?'rgba(52,211,153,.06)':'var(--bg3)'}">
+      <div style="font-size:20px;width:28px;text-align:center">${achieved?'✅':isCurrent?'👆':'🔒'}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:${isCurrent?'var(--acc)':'var(--t1)'}">${l.label} <span style="font-size:11px;font-weight:400;color:var(--t3)">(Уровень ${i+1})</span></div>
+        <div style="font-size:11px;color:var(--t3);margin-top:1px">${l.min === 0 ? '0' : l.min.toLocaleString()} — ${l.max === Infinity ? '∞' : l.max.toLocaleString()} баллов</div>
+      </div>
+      ${isCurrent ? `<span style="font-size:10px;font-weight:700;color:var(--acc);background:rgba(102,126,234,.12);padding:2px 8px;border-radius:999px">Вы здесь</span>` : ''}
+    </div>`;
+  }).join('');
+}
 
 // ── GALLERY ───────────────────────────────────────────────────────────────
 function openGallery(src) {
@@ -641,15 +686,18 @@ function closeGallery() { document.getElementById('gallery').classList.remove('o
 function showSec(s) {
   document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const showHeader = s === 'feed';
-  document.getElementById('appHeader').style.display = showHeader ? '' : 'none';
-  document.getElementById('searchBar').style.display = showHeader ? '' : 'none';
+  const showFeedUI = s === 'feed';
+  document.getElementById('appHeader').style.display = showFeedUI ? '' : 'none';
+  document.getElementById('searchBar').style.display = showFeedUI ? '' : 'none';
   document.getElementById('secFeed').classList.toggle('active', s==='feed');
   document.getElementById('secNotif').classList.toggle('active', s==='notif');
   document.getElementById('secNews').classList.toggle('active', s==='news');
   document.getElementById('secProfile').classList.toggle('active', s==='profile');
   const nbMap = {feed:'nb-feed', notif:'nb-notif', news:'nb-news', profile:'nb-profile'};
   if (nbMap[s]) document.getElementById(nbMap[s]).classList.add('active');
+  // Scroll to top
+  const scroller = document.getElementById('appScroll');
+  if (scroller) scroller.scrollTop = 0;
   if (s === 'notif') loadNotifs();
   if (s === 'news') loadNews();
   if (s === 'profile') { updateProfileUI(); renderLb(); renderAch(); renderShop(); renderDaily(); }
@@ -690,15 +738,31 @@ async function pushNotif(userId, title, message, postId=null) {
       post_id: postId, read: false,
       date: new Date().toISOString()
     });
+    // Send Telegram push
     const { data: u } = await SB.from('users').select('telegram_id').eq('id', userId).single();
-    if (u?.telegram_id && BOT) {
-      fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
+    if (u?.telegram_id) {
+      const resp = await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ chat_id: u.telegram_id, text: `🔔 ${title}\n${message}`, parse_mode:'HTML' })
-      }).catch(()=>{});
+        body: JSON.stringify({ chat_id: u.telegram_id, text: `🔔 ${title}\n\n${message}` })
+      });
+      const json = await resp.json();
+      if (!json.ok) console.warn('TG push failed:', json.description);
+    } else {
+      console.warn('No telegram_id for user', userId);
     }
     loadNotifBadge();
-  } catch(e) {}
+  } catch(e) { console.error('pushNotif error:', e); }
+}
+
+// Self-push: send notification to current user's own telegram (for testing)
+async function sendSelfPush(text) {
+  if (!user?.tgId) { console.warn('No tgId for current user'); return; }
+  const resp = await fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ chat_id: user.tgId, text })
+  });
+  const j = await resp.json();
+  console.log('Self push result:', j);
 }
 
 // ── NOTIFICATIONS ─────────────────────────────────────────────────────────
@@ -758,6 +822,9 @@ async function onNotifClick(notifId, postId) {
 
 // ── FEED ──────────────────────────────────────────────────────────────────
 async function loadPosts() {
+  // Show loading dots
+  const list = document.getElementById('feedList');
+  if (list) list.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
   const { data } = await SB.from('requests').select('*').order('date', {ascending:false});
   posts = data || [];
   renderFeed();
@@ -936,10 +1003,10 @@ document.getElementById('createForm').addEventListener('submit', async e => {
   e.preventDefault();
   if (!user) return;
   const btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = '…';
+  if (btn.disabled) return; // prevent double submit
+  btn.disabled = true; btn.textContent = '⏳ Отправка…';
   const type = document.querySelector('input[name="cType"]:checked')?.value || 'idea';
   const isAnon = type === 'risk' && document.getElementById('cAnon').checked;
-  // Convert media to base64
   const mediaB64 = await Promise.all(mediaFiles.map(f => new Promise(res => {
     const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(f);
   })));
@@ -955,8 +1022,11 @@ document.getElementById('createForm').addEventListener('submit', async e => {
     anonymous: isAnon
   };
   const { data: saved, error } = await SB.from('requests').insert(rec).select().single();
-  btn.disabled = false; btn.textContent = 'Опубликовать';
-  if (error) { alert('Ошибка: ' + error.message); return; }
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Опубликовать';
+    alert('Ошибка: ' + error.message); return;
+  }
+  // Success — reset and close
   posts.unshift(saved);
   renderFeed();
   closeModal('createModal');
@@ -964,6 +1034,8 @@ document.getElementById('createForm').addEventListener('submit', async e => {
   document.getElementById('mediaPrev').innerHTML = '';
   mediaFiles = [];
   toggleRisk();
+  btn.disabled = false; btn.textContent = 'Опубликовать';
+  // Points & daily
   user.points += 5;
   await SB.from('users').update({points: user.points}).eq('id', user.empId);
   store.set('u', JSON.stringify(user));
@@ -978,18 +1050,20 @@ async function loadNews() {
   if (!list) return;
   if (!data?.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--t3);font-size:13px">Новостей пока нет</div>'; return; }
   const catIcon = {announcement:'📢', achievement:'🏆', safety:'🛡️', general:'📌'};
+  const catColor = {announcement:'#3b82f6', achievement:'#f59e0b', safety:'#ef4444', general:'#8b5cf6'};
   list.innerHTML = data.map(n => {
     const icon = n.icon || catIcon[n.category] || '📰';
+    const color = catColor[n.category] || '#6b7280';
     const date = fmtDate(n.date || n.created_at);
-    return `<div class="news-card">
-      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">
-        <span style="font-size:24px;flex-shrink:0">${icon}</span>
-        <div>
-          <div style="font-size:14px;font-weight:700;color:var(--t1)">${n.title}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${n.source||'Администрация'} · ${date}</div>
+    return `<div class="news-card" style="border-left:3px solid ${color}">
+      <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+        <div style="width:44px;height:44px;border-radius:12px;border:2px solid ${color}22;background:${color}12;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:14px;font-weight:700;color:var(--t1);line-height:1.3">${n.title}</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:3px">${n.source||'Администрация'} · ${date}</div>
         </div>
       </div>
-      <div style="font-size:13px;color:var(--t2);line-height:1.5">${n.content||n.body||''}</div>
+      <div style="font-size:13px;color:var(--t2);line-height:1.6">${n.content||n.body||''}</div>
     </div>`;
   }).join('');
   twemoji.parse(list, {folder:'svg',ext:'.svg'});
