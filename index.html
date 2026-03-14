@@ -71,6 +71,7 @@
         .btn-loading:after { content: ''; position: absolute; width: 16px; height: 16px; top: 50%; left: 50%; margin-left: -8px; margin-top: -8px; border: 2px solid #fff; border-radius: 50%; border-top-color: transparent; animation: spinner 0.6s linear infinite; }
         @keyframes spinner { to { transform: rotate(360deg); } }
         .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .dark .feed-card { background: var(--bg2) !important; border-color: var(--border) !important; }
         #requestsFeed { padding: 8px; }
 
         /* ── DARK MODE ─────────────────────────────────── */
@@ -87,31 +88,63 @@
             --text1: #f0f0f5; --text2: #c8c8d8; --text3: #8888a0; --text4: #555568;
             --card-shadow: 0 1px 4px rgba(0,0,0,0.4);
         }
-        body { background: var(--bg) !important; color: var(--text1) !important; }
-        .dark body, .dark #mainApp { background: var(--bg) !important; }
-        .dark .bg-white, .dark .bg-\[#fafafa\] { background: var(--bg2) !important; }
-        .dark .bg-gray-50, .dark .bg-gray-100 { background: var(--bg3) !important; }
+        .dark body { background: var(--bg) !important; color: var(--text1) !important; }
+        .dark #mainApp, .dark #mainApp > * { background-color: var(--bg) !important; }
+        /* Specific white overrides */
+        .dark .bg-white { background-color: var(--bg2) !important; }
+        .dark .bg-\[#fafafa\] { background-color: var(--bg) !important; }
+        .dark .bg-gray-50 { background-color: var(--bg3) !important; }
+        .dark .bg-gray-100 { background-color: var(--bg3) !important; }
+        .dark .bg-gray-200 { background-color: var(--border2) !important; }
+        /* Feed cards */
+        .dark [style*="background: white"], .dark [style*="background:white"] { background: var(--bg2) !important; }
+        .dark .post-card, .dark [style*="border-radius:12px"] { background: var(--bg2) !important; border-color: var(--border) !important; }
+        /* Borders */
         .dark .border-gray-100, .dark .border-gray-200 { border-color: var(--border) !important; }
-        .dark .text-gray-900 { color: var(--text1) !important; }
-        .dark .text-gray-800 { color: var(--text2) !important; }
-        .dark .text-gray-700 { color: var(--text2) !important; }
-        .dark .text-gray-600 { color: var(--text3) !important; }
+        .dark .border-t, .dark .border-b { border-color: var(--border) !important; }
+        /* Text */
+        .dark .text-gray-900, .dark .text-gray-800 { color: var(--text1) !important; }
+        .dark .text-gray-700, .dark .text-gray-600 { color: var(--text2) !important; }
         .dark .text-gray-500 { color: var(--text3) !important; }
         .dark .text-gray-400 { color: var(--text4) !important; }
+        /* Inputs & selects */
         .dark input, .dark select, .dark textarea { background: var(--bg3) !important; border-color: var(--border) !important; color: var(--text1) !important; }
-        .dark .post-card { background: var(--bg2) !important; border-color: var(--border) !important; }
+        /* Header, nav, modals */
         .dark header { background: var(--bg2) !important; border-color: var(--border) !important; }
         .dark .bottom-nav { background: var(--bg2) !important; border-color: var(--border) !important; }
         .dark #searchBar { background: var(--bg2) !important; border-color: var(--border) !important; }
-        .dark .bg-emerald-50 { background: rgba(16,185,129,0.15) !important; }
-        .dark .bg-red-50 { background: rgba(239,68,68,0.15) !important; }
-        .dark .bg-blue-50 { background: rgba(59,130,246,0.15) !important; }
-        .dark .bg-purple-50 { background: rgba(147,51,234,0.15) !important; }
-        .dark .bg-yellow-50 { background: rgba(234,179,8,0.12) !important; }
-        .dark .bg-orange-50 { background: rgba(249,115,22,0.12) !important; }
-        .dark .bg-gray-200 { background: var(--border2) !important; }
+        .dark [id$="Modal"] > div, .dark [id$="Modal"] .bg-white { background: var(--bg2) !important; }
+        .dark [class*="Modal"] .bg-gray-50 { background: var(--bg3) !important; }
+        /* Profile */
+        .dark #userProfile { background: var(--bg) !important; }
+        .dark #userProfile .bg-white { background: var(--bg2) !important; }
+        .dark .bg-gray-50.rounded-xl { background: var(--bg3) !important; }
+        /* Notification/news sections */
+        .dark #notificationsSection, .dark #newsSection, .dark #notificationArchive { background: var(--bg) !important; }
+        .dark .notification-item { background: var(--bg2) !important; border-color: var(--border) !important; }
         .dark .notification-unread { background: rgba(59,130,246,0.12) !important; }
         .dark .current-user-highlight { background: rgba(102,126,234,0.15) !important; border-color: var(--accent) !important; }
+        .dark .leaderboard-item { background: var(--bg2) !important; border-color: var(--border) !important; }
+        /* Colored badges stay readable */
+        .dark .bg-emerald-50 { background: rgba(16,185,129,0.18) !important; }
+        .dark .bg-red-50 { background: rgba(239,68,68,0.18) !important; }
+        .dark .bg-blue-50 { background: rgba(59,130,246,0.18) !important; }
+        .dark .bg-blue-100 { background: rgba(59,130,246,0.22) !important; }
+        .dark .bg-purple-50 { background: rgba(147,51,234,0.18) !important; }
+        .dark .bg-yellow-50 { background: rgba(234,179,8,0.15) !important; }
+        .dark .bg-yellow-100 { background: rgba(234,179,8,0.2) !important; }
+        .dark .bg-orange-50 { background: rgba(249,115,22,0.15) !important; }
+        .dark .bg-green-50 { background: rgba(22,163,74,0.15) !important; }
+        .dark .bg-green-100 { background: rgba(22,163,74,0.2) !important; }
+        /* Daily task cards */
+        .dark .daily-task-card { background: var(--bg3) !important; border-color: var(--border) !important; }
+        /* Shop items */
+        .dark .border.border-gray-100 { border-color: var(--border) !important; }
+        /* Registration screen */
+        .dark #registrationScreen { background: var(--bg) !important; }
+        .dark #registrationScreen .bg-white { background: var(--bg2) !important; }
+        /* Splash */
+        .dark #splashScreen { background: var(--bg) !important; }
 
         /* ── LEVEL BADGE ───────────────────────────────── */
         .level-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
@@ -135,7 +168,19 @@
 
 <div id="offlineIndicator" class="hidden offline-indicator bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">🔴 Оффлайн</div>
 
-<div id="registrationScreen" class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+<div id="splashScreen" class="hidden min-h-screen flex items-center justify-center bg-[#fafafa]">
+    <div class="flex flex-col items-center gap-4">
+        <div class="w-20 h-20 rounded-2xl primary-gradient flex items-center justify-center text-4xl shadow-xl">🚀</div>
+        <div class="text-xl font-bold tracking-widest gradient-text uppercase">AKKERMANN PULSE</div>
+        <div class="flex gap-1.5 mt-2">
+            <div class="w-2 h-2 rounded-full bg-purple-400 animate-bounce" style="animation-delay:0s"></div>
+            <div class="w-2 h-2 rounded-full bg-purple-500 animate-bounce" style="animation-delay:.15s"></div>
+            <div class="w-2 h-2 rounded-full bg-purple-600 animate-bounce" style="animation-delay:.3s"></div>
+        </div>
+    </div>
+</div>
+
+<div id="registrationScreen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gray-50">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div class="text-center mb-8">
             <div class="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-4xl mb-4 shadow-lg text-white">🚀</div>
@@ -182,27 +227,34 @@
         <div id="feedTabs" class="hidden"></div>
 
         <div class="p-3 bg-white border-b border-gray-100 sticky z-30" id="searchBar" style="top: 0px">
-            <div class="flex items-center gap-2 mb-2">
+            <div class="flex items-center gap-2">
                 <div class="flex-grow relative">
                     <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                    <input type="text" id="searchByIdInput" placeholder="Поиск по ID или тексту…" class="text-sm pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 w-full" oninput="renderFeed()" onkeyup="if(event.key==='Enter') renderFeed()">
+                    <input type="text" id="searchByIdInput" placeholder="Поиск по ID, тексту, автору…" class="text-sm pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl bg-gray-50 w-full" oninput="renderFeed()">
                 </div>
                 <button onclick="toggleFilterMenu()" id="filterToggleBtn" class="flex-shrink-0 w-10 h-10 rounded-xl border border-gray-200 bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition active:scale-95">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M7 8h10M11 12h2M9 16h6"/></svg>
                 </button>
             </div>
-            <!-- Location chips -->
-            <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide" id="locationChips">
-                <button onclick="setLocationFilter('all')" data-loc="all" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-purple-400 bg-purple-50 text-purple-700 active-chip">Все</button>
-                <button onclick="setLocationFilter('Цех 1')" data-loc="Цех 1" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Цех 1</button>
-                <button onclick="setLocationFilter('Цех 2')" data-loc="Цех 2" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Цех 2</button>
-                <button onclick="setLocationFilter('Склад')" data-loc="Склад" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Склад</button>
-                <button onclick="setLocationFilter('Офис')" data-loc="Офис" class="location-chip flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full border border-gray-200 bg-gray-50 text-gray-600">Офис</button>
-            </div>
-            <div id="filterMenu" class="hidden space-y-2 mt-2 pt-2 border-t border-gray-100">
+            <div id="filterMenu" class="hidden mt-2 pt-2 border-t border-gray-100">
                 <div class="flex items-center gap-2">
-                    <select id="filterType" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-grow"><option value="all">Все типы</option><option value="idea">💡 Идеи</option><option value="risk">⚠️ Риски</option></select>
-                    <select id="sortBy" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-shrink-0"><option value="date">Сначала новые</option><option value="oldest">Сначала старые</option><option value="likes">По популярности</option></select>
+                    <select id="filterType" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-grow">
+                        <option value="all">Все типы</option>
+                        <option value="idea">💡 Идеи</option>
+                        <option value="risk">⚠️ Риски</option>
+                    </select>
+                    <select id="filterLocation" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-shrink-0">
+                        <option value="all">Все участки</option>
+                        <option value="Цех 1">Цех 1</option>
+                        <option value="Цех 2">Цех 2</option>
+                        <option value="Склад">Склад</option>
+                        <option value="Офис">Офис</option>
+                    </select>
+                    <select id="sortBy" onchange="applyFilter()" class="text-sm p-2 border rounded-xl bg-gray-50 flex-shrink-0">
+                        <option value="date">Новые</option>
+                        <option value="oldest">Старые</option>
+                        <option value="likes">Топ</option>
+                    </select>
                 </div>
             </div>
         </div>
@@ -277,10 +329,10 @@
                     <div class="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full border-2 border-gray-200 flex items-center justify-center shadow-sm text-sm">📷</div>
                     <div id="trainingCheckmark" class="hidden absolute bottom-0 right-0 w-8 h-8 bg-green-500 rounded-full border-4 border-white flex items-center justify-center text-white shadow-lg"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg></div>
                 </div>
-                <h2 class="text-2xl font-bold text-gray-900 leading-tight" id="profileName">Имя Фамилия</h2>
-                <p class="text-gray-500 text-base" id="profileDepartment">Отдел</p>
-                <p class="text-gray-500 text-sm font-semibold" id="profileIdDisplay">Табельный номер: 000</p>
-                <p class="text-gray-500 text-sm font-semibold mt-[-4px]" id="profilePhoneDisplay">Телефон: +7 (XXX) XXX-XX-XX</p>
+                <h2 class="text-2xl font-bold text-gray-900 leading-tight" id="profileName"></h2>
+                <p class="text-gray-500 text-base" id="profileDepartment"></p>
+                <p class="text-gray-500 text-sm font-semibold" id="profileIdDisplay"></p>
+                <p class="text-gray-500 text-sm font-semibold mt-[-4px]" id="profilePhoneDisplay"></p>
             </div>
 
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 mt-4">
@@ -732,7 +784,8 @@
             (r.description || r.desc || '').toLowerCase().includes(search) ||
             (r.author || '').toLowerCase().includes(search)
         );
-        if (currentLocationFilter && currentLocationFilter !== 'all') data = data.filter(r => r.location === currentLocationFilter);
+        const locFilter = document.getElementById('filterLocation')?.value || 'all';
+        if (locFilter !== 'all') data = data.filter(r => r.location === locFilter);
         if (currentFeedTab === 'my' && currentUser) data = data.filter(r => r.author_id === currentUser.empId || r.author === currentUser.name);
         else if (currentFeedTab === 'assigned' && currentUser) data = data.filter(r => r.assigned_to === currentUser.name);
         if (currentFilterType !== 'all') data = data.filter(r => r.type === currentFilterType);
@@ -770,7 +823,7 @@
             }
 
             return `
-            <div class="bg-white border-b border-gray-100 mb-0" style="margin-bottom:8px; border-radius:12px; overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+            <div class="feed-card bg-white" style="margin-bottom:8px; border-radius:12px; overflow:hidden; box-shadow:var(--card-shadow); border: 1px solid var(--border)">
                 <!-- Header -->
                 <div class="px-3 pt-3 pb-2 flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
@@ -873,10 +926,13 @@
         const achList = document.getElementById('achievementsList');
         if (!achList || !currentUser) return;
 
-        // Загружаем из БД если ещё не загружено
+        // Всегда загружаем свежие данные из БД
+        const { data } = await kaizenSupabase.from('achievements').select('*');
+        if (data && data.length > 0) achievements = data;
+        
         if (achievements.length === 0) {
-            const { data } = await kaizenSupabase.from('achievements').select('*');
-            if (data) achievements.push(...data);
+            achList.innerHTML = '<div class="col-span-2 text-center text-gray-400 py-4 text-sm">Достижения загружаются…</div>';
+            return;
         }
         
         const myReqs = requests.filter(r => r.author_id === currentUser.empId || r.author === currentUser.name);
@@ -1447,52 +1503,58 @@
 
     // ─── Init ───────────────────────────────────────────────────────────────
     async function init() {
+        // Показываем сплэш вместо экрана регистрации пока идёт проверка
+        document.getElementById('registrationScreen').classList.add('hidden');
+        document.getElementById('splashScreen').classList.remove('hidden');
+
         await loadRequests();
 
-        // Try to get Telegram user data
         const tgUser = tg?.initDataUnsafe?.user;
-
         const savedUserRaw = storage.get('kaizenUser');
+
         if (savedUserRaw) {
-            currentUser = JSON.parse(savedUserRaw);
-            // Refresh from DB
-            const dbUser = await loadUser(currentUser.empId);
-            if (dbUser) {
-                currentUser = { ...currentUser, ...dbUser };
-                storage.set('kaizenUser', JSON.stringify(currentUser));
+            try {
+                currentUser = JSON.parse(savedUserRaw);
+                const dbUser = await loadUser(currentUser.empId);
+                if (dbUser) {
+                    currentUser = { ...currentUser, ...dbUser };
+                    storage.set('kaizenUser', JSON.stringify(currentUser));
+                }
+                document.getElementById('splashScreen').classList.add('hidden');
+                launchApp();
+                return;
+            } catch(e) {
+                storage.remove('kaizenUser');
             }
-            launchApp();
-        } else if (tgUser) {
-            // Pre-fill form with Telegram data
+        }
+
+        if (tgUser) {
             const fullName = [tgUser.first_name, tgUser.last_name].filter(Boolean).join(' ');
             document.getElementById('regFullName').value = fullName;
             document.getElementById('tgAutoFillNotice').classList.remove('hidden');
-            // Try to look up existing user by Telegram ID
             const { data: existingUser } = await kaizenSupabase
-                .from('users')
-                .select('*')
-                .eq('telegram_id', String(tgUser.id))
-                .single();
-            if (existingUser && existingUser.employee_id) {
+                .from('users').select('*').eq('telegram_id', String(tgUser.id)).single();
+            if (existingUser) {
                 currentUser = {
-                    name: existingUser.name,
-                    empId: existingUser.id,
-                    phone: existingUser.phone || '',
-                    email: existingUser.email || '',
-                    dept: existingUser.department || '',
-                    points: existingUser.points || 0,
-                    role: existingUser.role || 'user',
-                    profilePic: existingUser.profile_pic || null,
+                    name: existingUser.name, empId: existingUser.id,
+                    phone: existingUser.phone || '', email: existingUser.email || '',
+                    dept: existingUser.department || '', points: existingUser.points || 0,
+                    role: existingUser.role || 'user', profilePic: existingUser.profile_pic || null,
                     isTrained: existingUser.is_trained || false,
                     completedAchievements: existingUser.completed_achievements || [],
                     unseenAchievements: existingUser.unseen_achievements || [],
                     tgId: tgUser.id
                 };
                 storage.set('kaizenUser', JSON.stringify(currentUser));
+                document.getElementById('splashScreen').classList.add('hidden');
                 launchApp();
+                return;
             }
-            // else: show registration form (already pre-filled)
         }
+
+        // Не залогинен — показываем регистрацию
+        document.getElementById('splashScreen').classList.add('hidden');
+        document.getElementById('registrationScreen').classList.remove('hidden');
     }
 
     function parseTwemoji() {
@@ -1536,7 +1598,7 @@
     }
 
     // ── Push notification via Telegram Bot API ───────────────────────────────
-    const TG_BOT_TOKEN = '8768160449:AAG1gBLhbA9yJ7V3t_9O0vb1S1deonnoFto'; // вставь токен своего бота
+    const TG_BOT_TOKEN = '8768160449:AAG1gBLhbA9yJ7V3t_9O0vb1S1deonnoFto';
     async function sendTelegramPush(tgId, message) {
         if (!TG_BOT_TOKEN || !tgId) return;
         try {
