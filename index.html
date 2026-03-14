@@ -105,13 +105,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Ari
 
 /* ── COLLAPSIBLE ─────────────────────────── */
 .collapse-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:14px 16px;background:var(--bg2);border-bottom:1px solid var(--bd)}
-.collapse-body{
-  overflow:hidden;
-  max-height:0;
-  transition:max-height .4s cubic-bezier(0.4,0,0.2,1);
-}
-.collapse-body.open{max-height:3000px}
-.collapse-arrow{transition:transform .3s;flex-shrink:0}
+.collapse-body{display:none}
+.collapse-body.open{display:block}
+.collapse-arrow{transition:transform .25s;flex-shrink:0}
 .collapse-header.open .collapse-arrow{transform:rotate(180deg)}
 
 /* ── MODALS ──────────────────────────────── */
@@ -261,7 +257,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
     </div>
   </div>
 
-  <div id="secNotif" class="section" style="padding:16px;padding-top:calc(env(safe-area-inset-top,0px) + 80px)">
+  <div id="secNotif" class="section" style="padding:16px;padding-top:calc(env(safe-area-inset-top,0px) + 96px)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <div style="font-size:17px;font-weight:700;color:var(--t1)">Уведомления</div>
       <button onclick="markAllRead()" style="font-size:12px;color:var(--acc);background:none;border:none;cursor:pointer">Прочитать все</button>
@@ -273,7 +269,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
     </div>
   </div>
 
-  <div id="secNews" class="section" style="padding:16px;padding-top:calc(env(safe-area-inset-top,0px) + 80px)">
+  <div id="secNews" class="section" style="padding:16px;padding-top:calc(env(safe-area-inset-top,0px) + 96px)">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
       <div style="font-size:17px;font-weight:700;color:var(--t1)">Новости</div>
       <button id="addNewsBtn" onclick="openModal('newsModal')" style="display:none;font-size:12px;background:var(--acc);color:#fff;border:none;border-radius:8px;padding:5px 10px;cursor:pointer">+ Добавить</button>
@@ -283,9 +279,9 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
 
   <div id="secProfile" class="section">
     <!-- avatar & info block -->
-    <div style="background:var(--bg2);padding-top:calc(env(safe-area-inset-top,0px) + 76px);padding-bottom:20px;padding-left:16px;padding-right:16px;border-bottom:1px solid var(--bd);position:relative;text-align:center">
-      <!-- Icon buttons top-right -->
-      <div style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 14px);right:12px;display:flex;gap:6px">
+    <div style="background:var(--bg2);padding-top:calc(env(safe-area-inset-top,0px) + 90px);padding-bottom:20px;padding-left:16px;padding-right:16px;border-bottom:1px solid var(--bd);position:relative;text-align:center">
+      <!-- Icon buttons top-right — below TG buttons -->
+      <div style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 52px);right:12px;display:flex;gap:6px">
         <button onclick="toggleDark()" id="darkBtn" title="Тема" style="width:36px;height:36px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;color:var(--t2)">🌙</button>
         <button onclick="logout()" title="Выйти" style="width:36px;height:36px;border-radius:50%;background:#fef2f2;border:1px solid #fecaca;display:flex;align-items:center;justify-content:center;cursor:pointer">
           <svg width="16" height="16" fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
@@ -345,32 +341,65 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
       <span style="font-size:14px;font-weight:700;color:var(--t1)">⚡ Ежедневные задания <span id="dailyTimer" style="font-size:11px;font-weight:400;color:var(--t3)"></span></span>
       <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
     </div>
-    <div class="collapse-body" id="daily-body" style="padding:0 8px">
-      <div id="dailyList" style="padding:8px 0"></div>
+    <div class="collapse-body" id="daily-body">
+      <div style="padding:8px 8px 4px"><div id="dailyList"></div></div>
     </div>
     <!-- leaderboard -->
     <div class="collapse-header" onclick="toggleCollapse('lb')">
       <span style="font-size:14px;font-weight:700;color:var(--t1)">🏆 Лидерборд</span>
       <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
     </div>
-    <div class="collapse-body" id="lb-body" style="padding:8px">
-      <div id="lbList"><div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">Загрузка…</div></div>
+    <div class="collapse-body" id="lb-body">
+      <div style="padding:8px"><div id="lbList"><div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">Загрузка…</div></div></div>
     </div>
     <!-- achievements -->
     <div class="collapse-header" onclick="toggleCollapse('ach')">
       <span style="font-size:14px;font-weight:700;color:var(--t1)">🎖️ Достижения</span>
       <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
     </div>
-    <div class="collapse-body" id="ach-body" style="padding:8px">
-      <div id="achList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    <div class="collapse-body" id="ach-body">
+      <div style="padding:8px"><div id="achList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div></div>
     </div>
     <!-- shop -->
     <div class="collapse-header" onclick="toggleCollapse('shop')">
       <span style="font-size:14px;font-weight:700;color:var(--t1)">🎁 Магазин подарков</span>
       <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
     </div>
-    <div class="collapse-body" id="shop-body" style="padding:8px">
-      <div id="shopList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+    <div class="collapse-body" id="shop-body">
+      <div style="padding:8px"><div id="shopList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div></div>
+    </div>
+    <!-- training -->
+    <div class="collapse-header" onclick="toggleCollapse('training')">
+      <span style="font-size:14px;font-weight:700;color:var(--t1)">🎓 Обучение</span>
+      <svg class="collapse-arrow" width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+    </div>
+    <div class="collapse-body" id="training-body">
+      <div style="padding:12px 16px">
+        <div style="background:#eff6ff;border-left:4px solid #3b82f6;border-radius:8px;padding:12px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;color:#1e40af;margin-bottom:4px">📚 Пройдите обучение!</div>
+          <div style="font-size:12px;color:#3b82f6">Завершите видеоурок и тест — получите достижение и баллы.</div>
+        </div>
+        <div id="trainingStatus" style="display:none;text-align:center;color:#16a34a;font-size:13px;font-weight:700;margin-bottom:10px">✅ Обучение успешно завершено!</div>
+        <div style="background:var(--bg3);border-radius:12px;overflow:hidden;position:relative;padding-top:56.25%">
+          <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%"></iframe>
+        </div>
+        <div style="margin-top:12px;border:1px solid var(--bd);border-radius:12px;padding:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px">📝 Тест</div>
+          <form id="trainingForm" style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:13px;color:var(--t1)">1. Какой тип заявки для предложения улучшений?</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);cursor:pointer"><input type="radio" name="tq1" value="risk"> Риск</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);cursor:pointer"><input type="radio" name="tq1" value="idea"> Идея</label>
+            </div>
+            <div style="font-size:13px;color:var(--t1)">2. Где посмотреть баллы и уровень?</div>
+            <div style="display:flex;flex-direction:column;gap:5px">
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);cursor:pointer"><input type="radio" name="tq2" value="feed"> Лента</label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2);cursor:pointer"><input type="radio" name="tq2" value="profile"> Профиль</label>
+            </div>
+            <button type="submit" class="btn-main grad" style="margin-top:4px">Завершить тест</button>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1034,7 +1063,7 @@ document.getElementById('createForm').addEventListener('submit', async e => {
   e.preventDefault();
   if (!user) return;
   const btn = document.getElementById('submitBtn');
-  if (btn.disabled) return; // prevent double submit
+  if (btn.disabled) return;
   btn.disabled = true; btn.textContent = '⏳ Отправка…';
   const type = document.querySelector('input[name="cType"]:checked')?.value || 'idea';
   const isAnon = type === 'risk' && document.getElementById('cAnon').checked;
@@ -1057,18 +1086,18 @@ document.getElementById('createForm').addEventListener('submit', async e => {
     btn.disabled = false; btn.textContent = 'Опубликовать';
     alert('Ошибка: ' + error.message); return;
   }
-  // Success — reset and close
-  posts.unshift(saved);
-  renderFeed();
+  // ── Сначала закрываем и сбрасываем форму ──
   closeModal('createModal');
+  btn.disabled = false; btn.textContent = 'Опубликовать';
   e.target.reset();
   document.getElementById('mediaPrev').innerHTML = '';
   mediaFiles = [];
   toggleRisk();
-  btn.disabled = false; btn.textContent = 'Опубликовать';
-  // Points & daily
+  // ── Потом обновляем данные ──
+  posts.unshift(saved);
+  renderFeed();
   user.points += 5;
-  await SB.from('users').update({points: user.points}).eq('id', user.empId);
+  SB.from('users').update({points: user.points}).eq('id', user.empId);
   store.set('u', JSON.stringify(user));
   updateProfileUI();
   bumpTask(type);
@@ -1395,6 +1424,27 @@ function logout() {
   if (!confirm('Выйти из аккаунта?')) return;
   store.del('u'); location.reload();
 }
+
+// ── TRAINING ──────────────────────────────────────────────────────────────
+document.addEventListener('submit', e => {
+  if (e.target.id !== 'trainingForm') return;
+  e.preventDefault();
+  const q1 = document.querySelector('input[name="tq1"]:checked')?.value;
+  const q2 = document.querySelector('input[name="tq2"]:checked')?.value;
+  if (q1 === 'idea' && q2 === 'profile') {
+    if (user && !user.isTrained) {
+      user.isTrained = true;
+      user.points += 20;
+      SB.from('users').update({is_trained: true, points: user.points}).eq('id', user.empId);
+      store.set('u', JSON.stringify(user));
+      updateProfileUI();
+    }
+    document.getElementById('trainingStatus').style.display = '';
+    document.getElementById('trainingForm').style.display = 'none';
+  } else {
+    alert('❌ Неправильные ответы, попробуйте ещё раз');
+  }
+});
 
 // Start
 init();
