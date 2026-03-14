@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaizen • Service Desk</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -145,6 +145,32 @@
         .dark #registrationScreen .bg-white { background: var(--bg2) !important; }
         /* Splash */
         .dark #splashScreen { background: var(--bg) !important; }
+        /* ALL modals dark */
+        .dark #createModal > div,
+        .dark #detailModal > div,
+        .dark #commentsModal > div,
+        .dark #trainingModal > div,
+        .dark #createNewsModal > div { background: var(--bg2) !important; border-color: var(--border) !important; }
+        .dark #createModal .bg-gray-50,
+        .dark #detailModal .bg-gray-50,
+        .dark #commentsModal .bg-gray-50,
+        .dark #trainingModal .bg-gray-50,
+        .dark #createNewsModal .bg-gray-50 { background: var(--bg3) !important; }
+        /* Radio type cards dark */
+        .dark #createModal label > div { background: var(--bg3) !important; border-color: var(--border) !important; }
+        /* News section cards */
+        .dark #newsSection .bg-white { background: var(--bg2) !important; }
+        .dark #newsSection .border-gray-100 { border-color: var(--border) !important; }
+        /* Settings dropdown */
+        .dark #settingsDropdown { background: var(--bg2) !important; }
+        .dark #settingsDropdown a { color: var(--text2) !important; }
+        .dark #settingsDropdown a:hover { background: var(--bg3) !important; }
+        /* Achievements */
+        .dark #achievementsList > div { background: var(--bg3) !important; border-color: var(--border) !important; }
+        /* Shop list */
+        .dark #shopList > div { background: var(--bg3) !important; border-color: var(--border) !important; }
+        /* Logout button */
+        .dark .border-red-100 { border-color: rgba(239,68,68,0.3) !important; }
 
         /* ── LEVEL BADGE ───────────────────────────────── */
         .level-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; }
@@ -164,11 +190,18 @@
         .task-progress-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#667eea,#764ba2); transition: width .5s; }
     </style>
 </head>
-<body class="bg-[#fafafa] min-h-full">
+<body class="bg-[#fafafa] min-h-full overflow-x-hidden">
+<!-- Prevent body scroll when modal open -->
+<style>
+  body.modal-open { overflow: hidden; position: fixed; width: 100%; }
+  #mainApp { display: none; }
+  #registrationScreen { display: none; }
+  #splashScreen { display: flex; }
+</style>
 
 <div id="offlineIndicator" class="hidden offline-indicator bg-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full">🔴 Оффлайн</div>
 
-<div id="splashScreen" class="hidden min-h-screen flex items-center justify-center bg-[#fafafa]">
+<div id="splashScreen" class="min-h-screen flex items-center justify-center bg-[#fafafa]">
     <div class="flex flex-col items-center gap-4">
         <div class="w-20 h-20 rounded-2xl primary-gradient flex items-center justify-center text-4xl shadow-xl">🚀</div>
         <div class="text-xl font-bold tracking-widest gradient-text uppercase">AKKERMANN PULSE</div>
@@ -180,7 +213,7 @@
     </div>
 </div>
 
-<div id="registrationScreen" class="hidden min-h-screen flex items-center justify-center p-4 bg-gray-50">
+<div id="registrationScreen" class="min-h-screen flex items-center justify-center p-4 bg-gray-50">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
         <div class="text-center mb-8">
             <div class="w-20 h-20 mx-auto bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-4xl mb-4 shadow-lg text-white">🚀</div>
@@ -428,9 +461,10 @@
     </div>
 
     <div id="galleryModal" class="hidden fixed inset-0 bg-black bg-opacity-95 z-[110] flex items-center justify-center" onclick="toggleGalleryModal()">
-        <div class="w-full h-full flex items-center justify-center relative p-4">
-            <div id="galleryContent" class="max-w-full max-h-full flex items-center justify-center"></div>
-            <button onclick="event.stopPropagation(); toggleGalleryModal();" class="absolute text-white text-3xl opacity-80 hover:opacity-100 transition p-3 bg-black bg-opacity-40 rounded-full leading-none" style="top: calc(env(safe-area-inset-top, 0px) + 60px); right: 16px;">&times;</button>
+        <div class="relative flex items-center justify-center w-full h-full p-4">
+            <div id="galleryContent" class="relative max-w-full max-h-full flex items-center justify-center">
+                <!-- Крестик вставляется JS-ом поверх фото -->
+            </div>
         </div>
     </div>
 
@@ -868,9 +902,15 @@
         const m = media[index];
         if (!m) return;
         const isVideo = m.startsWith('data:video');
-        document.getElementById('galleryContent').innerHTML = isVideo
-            ? `<video src="${m}" controls autoplay class="max-w-full max-h-screen object-contain"></video>`
-            : `<img src="${m}" class="max-w-full max-h-screen object-contain">`;
+        const content = document.getElementById('galleryContent');
+        content.innerHTML = `
+            <div class="relative inline-block" onclick="event.stopPropagation()">
+                ${isVideo
+                    ? `<video src="${m}" controls autoplay class="max-w-[calc(100vw-32px)] max-h-[calc(100vh-80px)] rounded-lg object-contain"></video>`
+                    : `<img src="${m}" class="max-w-[calc(100vw-32px)] max-h-[calc(100vh-80px)] rounded-lg object-contain">`
+                }
+                <button onclick="toggleGalleryModal()" class="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-full bg-black bg-opacity-50 text-white text-xl leading-none hover:bg-opacity-80 transition backdrop-blur-sm">&times;</button>
+            </div>`;
         document.getElementById('galleryModal').classList.remove('hidden');
     }
 
@@ -1253,7 +1293,14 @@
         renderFeed();
     }
 
-    function toggleCreateModal() { document.getElementById('createModal').classList.toggle('hidden'); }
+    function toggleCreateModal() {
+        const m = document.getElementById('createModal');
+        const open = m.classList.toggle('hidden');
+        document.body.classList.toggle('modal-open', !open);
+        // Сброс zoom Telegram при открытии модалки
+        if (!open && tg) { tg.disableVerticalSwipes?.(); }
+        else if (tg) { tg.enableVerticalSwipes?.(); }
+    }
     function toggleDetailModal() { document.getElementById('detailModal').classList.toggle('hidden'); }
     function toggleCommentsModal() { document.getElementById('commentsModal').classList.toggle('hidden'); }
     function toggleGalleryModal() { document.getElementById('galleryModal').classList.toggle('hidden'); }
@@ -1503,10 +1550,7 @@
 
     // ─── Init ───────────────────────────────────────────────────────────────
     async function init() {
-        // Показываем сплэш вместо экрана регистрации пока идёт проверка
-        document.getElementById('registrationScreen').classList.add('hidden');
-        document.getElementById('splashScreen').classList.remove('hidden');
-
+        // Сплэш уже виден по умолчанию через CSS
         await loadRequests();
 
         const tgUser = tg?.initDataUnsafe?.user;
@@ -1520,7 +1564,7 @@
                     currentUser = { ...currentUser, ...dbUser };
                     storage.set('kaizenUser', JSON.stringify(currentUser));
                 }
-                document.getElementById('splashScreen').classList.add('hidden');
+                hideSplash();
                 launchApp();
                 return;
             } catch(e) {
@@ -1546,15 +1590,21 @@
                     tgId: tgUser.id
                 };
                 storage.set('kaizenUser', JSON.stringify(currentUser));
-                document.getElementById('splashScreen').classList.add('hidden');
+                hideSplash();
                 launchApp();
                 return;
             }
         }
 
-        // Не залогинен — показываем регистрацию
-        document.getElementById('splashScreen').classList.add('hidden');
-        document.getElementById('registrationScreen').classList.remove('hidden');
+        hideSplash();
+        showRegistration();
+    }
+
+    function hideSplash() {
+        document.getElementById('splashScreen').style.display = 'none';
+    }
+    function showRegistration() {
+        document.getElementById('registrationScreen').style.display = 'flex';
     }
 
     function parseTwemoji() {
@@ -1626,34 +1676,45 @@
     }
 
     function launchApp() {
-        document.getElementById('registrationScreen').classList.add('hidden');
-        document.getElementById('mainApp').classList.remove('hidden');
+        document.getElementById('registrationScreen').style.display = 'none';
+        document.getElementById('splashScreen').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
         renderFeed();
         updateProfileUI();
-        renderShop();
-        renderAchievements();
-        renderLeaderboard();
-        loadNews();
-        loadNotifications();
+        // Загружаем данные параллельно для скорости
+        Promise.all([
+            renderShop(),
+            renderAchievements(),
+            renderLeaderboard(),
+            loadNews(),
+            loadNotifications()
+        ]);
         parseTwemoji();
         setTimeout(fixStickyPositions, 50);
         applyDarkMode(isDarkMode);
         renderDailyTasks();
-        // Show admin button in news section if admin
+
+        // Realtime subscription — новые заявки сразу появляются в ленте
+        kaizenSupabase.channel('requests-realtime')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, payload => {
+                const exists = requests.find(r => r.id === payload.new.id);
+                if (!exists) { requests.unshift(payload.new); renderFeed(); }
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, payload => {
+                const idx = requests.findIndex(r => r.id === payload.new.id);
+                if (idx >= 0) { requests[idx] = { ...requests[idx], ...payload.new }; renderFeed(); }
+            })
+            .subscribe();
+
         if (currentUser?.role === 'admin') {
             document.getElementById('addNewsBtn')?.classList.remove('hidden');
         }
-        // Telegram back button
         if (tg) {
             tg.BackButton.onClick(() => {
                 const visibleModals = ['createModal','detailModal','commentsModal','trainingModal','createNewsModal'];
                 const openModal = visibleModals.find(id => !document.getElementById(id)?.classList.contains('hidden'));
-                if (openModal) {
-                    document.getElementById(openModal).classList.add('hidden');
-                } else {
-                    showSection('feed');
-                    tg.BackButton.hide();
-                }
+                if (openModal) { document.getElementById(openModal).classList.add('hidden'); }
+                else { showSection('feed'); tg.BackButton.hide(); }
             });
         }
     }
