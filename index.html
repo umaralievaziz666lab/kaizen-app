@@ -193,12 +193,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
       <div><label class="lbl">Email</label><input class="inp" id="rEmail" type="email" placeholder="user@example.com"></div>
       <div><label class="lbl">Участок</label>
         <select class="inp" id="rDept" required>
-          <option value="">Выберите участок</option>
-          <option value="production">Производство</option>
-          <option value="warehouse">Склад</option>
-          <option value="office">Офис</option>
-          <option value="Цех 1">Цех 1</option>
-          <option value="Цех 2">Цех 2</option>
+          <option value="">Загрузка участков…</option>
         </select>
       </div>
       <div><label class="lbl">Реферальный код (необязательно)</label><input class="inp" id="rRef" placeholder="REF_12345" style="text-transform:uppercase"></div>
@@ -233,13 +228,8 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
       </button>
     </div>
     <div id="extraFilter" style="display:none;margin-top:8px;flex-direction:column;gap:6px">
-      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
+      <div class="chip-row" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px">
         <button class="chip active" data-loc="all" onclick="setLoc(this,'all')">Все участки</button>
-        <button class="chip" data-loc="Производство" onclick="setLoc(this,'Производство')">Производство</button>
-        <button class="chip" data-loc="Цех 1" onclick="setLoc(this,'Цех 1')">Цех 1</button>
-        <button class="chip" data-loc="Цех 2" onclick="setLoc(this,'Цех 2')">Цех 2</button>
-        <button class="chip" data-loc="Склад" onclick="setLoc(this,'Склад')">Склад</button>
-        <button class="chip" data-loc="Офис" onclick="setLoc(this,'Офис')">Офис</button>
       </div>
       <div style="display:flex;gap:6px">
         <select class="inp" id="selType" onchange="renderFeed()" style="flex:1;padding:7px 10px;font-size:12px">
@@ -499,8 +489,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
         </div>
         <div><label class="lbl">Участок</label>
           <select class="inp" id="cLoc">
-            <option>Цех 1</option><option>Цех 2</option><option>Склад</option>
-            <option>Офис</option><option>Производство</option>
+            <option value="">Загрузка…</option>
           </select>
         </div>
         <div><label class="lbl">Описание</label>
@@ -722,6 +711,61 @@ const pad = id => '#' + String(id).padStart(5,'0');
 const fmtDate = iso => { const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; };
 const initials = name => (name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
 const DEPT_MAP = {production:'Производство', warehouse:'Склад', office:'Офис'};
+
+// ── DEPARTMENTS (динамически из БД) ───────────────────────────────
+let deptsCache = [];
+async function loadDepartments() {
+  try {
+    const { data } = await SB.from('departments').select('*').order('name');
+    deptsCache = data || [];
+  } catch(e) {
+    deptsCache = [
+      {id:'1',name:'Производство',parent_id:null},{id:'2',name:'Цех 1',parent_id:null},
+      {id:'3',name:'Цех 2',parent_id:null},{id:'4',name:'Склад',parent_id:null},{id:'5',name:'Офис',parent_id:null},
+    ];
+  }
+  populateDeptSelects();
+  populateFilterChips();
+}
+
+function buildDeptOptions(selectedVal='', placeholder='Выберите участок') {
+  const parents = deptsCache.filter(d => !d.parent_id);
+  let opts = placeholder ? `<option value="">${placeholder}</option>` : '';
+  if (!parents.length) {
+    deptsCache.forEach(d => { opts += `<option value="${d.name}" ${selectedVal===d.name?'selected':''}>${d.name}</option>`; });
+    return opts;
+  }
+  parents.forEach(p => {
+    opts += `<option value="${p.name}" ${selectedVal===p.name?'selected':''}>${p.name}</option>`;
+    deptsCache.filter(d => d.parent_id === p.id).forEach(c => {
+      opts += `<option value="${c.name}" ${selectedVal===c.name?'selected':''}>　└ ${c.name}</option>`;
+    });
+  });
+  return opts;
+}
+
+function populateDeptSelects() {
+  const rDept = document.getElementById('rDept');
+  if (rDept) rDept.innerHTML = buildDeptOptions();
+  const cLoc = document.getElementById('cLoc');
+  if (cLoc) cLoc.innerHTML = buildDeptOptions('', null);
+}
+
+function populateFilterChips() {
+  const filterRow = document.querySelector('#extraFilter .chip-row');
+  if (!filterRow) return;
+  filterRow.innerHTML = '<button class="chip active" data-loc="all" onclick="setLoc(this,\'all\')">Все участки</button>';
+  deptsCache.filter(d => !d.parent_id).forEach(p => {
+    const btn = document.createElement('button');
+    btn.className='chip'; btn.dataset.loc=p.name; btn.textContent=p.name;
+    btn.onclick=()=>setLoc(btn,p.name); filterRow.appendChild(btn);
+    deptsCache.filter(d=>d.parent_id===p.id).forEach(c=>{
+      const cb=document.createElement('button');
+      cb.className='chip'; cb.dataset.loc=c.name; cb.textContent=`└ ${c.name}`;
+      cb.onclick=()=>setLoc(cb,c.name); filterRow.appendChild(cb);
+    });
+  });
+}
 
 // ── USERS CACHE (for @mentions and mini-profile) ──────────────────────────
 let allUsers = [];
@@ -1743,7 +1787,8 @@ async function launchApp(u) {
   // Load feed
   loadPosts();
   loadNotifBadge();
-  loadAllUsers(); // for @mentions and mini-profiles
+  loadAllUsers();
+  loadDepartments(); // populate dept selects everywhere
   if (u.role === 'admin') { const b = document.getElementById('addNewsBtn'); if(b) b.style.display=''; }
   setupSwipe();
   setupInfiniteScroll();
@@ -1812,6 +1857,7 @@ async function init() {
   }
 
   // 3. Show registration — only if not launched
+  loadDepartments(); // pre-populate reg form even before login
   document.getElementById('splash').style.display = 'none';
   document.getElementById('reg').style.display = 'flex';
 }
@@ -1837,14 +1883,20 @@ document.getElementById('regForm').addEventListener('submit', async e => {
     email: document.getElementById('rEmail').value,
     department: document.getElementById('rDept').value,
     points: 0, role: empId === '11111' ? 'admin' : 'user',
-    telegram_id: tgUser ? String(tgUser.id) : null,
-    referred_by: referredBy || null
+    telegram_id: tgUser ? String(tgUser.id) : null
   };
-  const { data: saved, error } = await SB.from('users').insert(rec).select().single();
+  // Try insert with referred_by first, fallback without it if column doesn't exist yet
+  let saved, error;
+  const withRef = { ...rec, referred_by: referredBy || null };
+  ({ data: saved, error } = await SB.from('users').insert(withRef).select().single());
+  if (error && error.message && error.message.includes('referred_by')) {
+    // Column doesn't exist yet — insert without it
+    ({ data: saved, error } = await SB.from('users').insert(rec).select().single());
+  }
   btn.disabled = false; btn.textContent = 'Начать работу';
   if (error) { alert('Ошибка: ' + error.message); return; }
   // Начислить баллы реферреру
-  if (referredBy) {
+  if (referredBy && saved) {
     const { data: refUser } = await SB.from('users').select('id,name,points').eq('id', referredBy).single();
     if (refUser) {
       const newPoints = (refUser.points || 0) + REFERRAL_BONUS;
