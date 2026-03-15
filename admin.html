@@ -8,1079 +8,883 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
-:root{
-  --bg:#f0f2f5;--bg2:#fff;--bg3:#f8f9fa;--bd:#e2e8f0;
-  --t1:#1a1a2e;--t2:#4a5568;--t3:#718096;--t4:#a0aec0;
-  --acc:#667eea;--acc2:#764ba2;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--blue:#3b82f6;
-  --sidebar:240px
-}
-.grad{background:linear-gradient(135deg,#667eea,#764ba2)}
-.grad-text{background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;min-height:100vh}
+:root{--bg:#f0f2f5;--bg2:#fff;--bg3:#f8f9fa;--bd:#e2e8f0;--t1:#1a1a2e;--t2:#4a5568;--t3:#718096;--acc:#667eea;--sidebar:220px}
 
-/* ── AUTH ── */
-#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea22,#764ba222)}
-.auth-card{background:var(--bg2);border-radius:20px;padding:40px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(102,126,234,.15)}
+/* AUTH */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:linear-gradient(135deg,#667eea18,#764ba218)}
+.auth-card{background:#fff;border-radius:20px;padding:40px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(102,126,234,.15)}
 
-/* ── LAYOUT ── */
-#adminApp{display:none;min-height:100vh}
-.layout{display:flex;min-height:100vh}
+/* LAYOUT */
+#adminApp{display:none}
+.sidebar{width:var(--sidebar);background:#fff;border-right:1px solid var(--bd);position:fixed;top:0;left:0;bottom:0;z-index:50;display:flex;flex-direction:column;overflow-y:auto}
+.sb-logo{padding:18px 16px 12px;border-bottom:1px solid var(--bd)}
+.sb-logo .t{font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sb-logo .s{font-size:10px;color:var(--t3);margin-top:1px}
+.sb-nav{flex:1;padding:10px 8px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;color:var(--t2);margin-bottom:1px;border:none;background:none;width:100%;text-align:left;transition:.15s}
+.ni:hover{background:var(--bg3);color:var(--t1)}
+.ni.active{background:rgba(102,126,234,.1);color:var(--acc)}
+.ni .ic{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nb{margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:999px;min-width:16px;text-align:center}
+.sb-btm{padding:10px 8px;border-top:1px solid var(--bd)}
+.main{margin-left:var(--sidebar);flex:1;min-height:100vh}
+.topbar{background:#fff;border-bottom:1px solid var(--bd);padding:12px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.content{padding:20px}
+.page{display:none}.page.active{display:block}
 
-/* ── SIDEBAR ── */
-.sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:50}
-.sidebar-logo{padding:20px 16px;border-bottom:1px solid var(--bd)}
-.sidebar-logo .title{font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
-.sidebar-logo .sub{font-size:11px;color:var(--t3);margin-top:2px}
-.sidebar-nav{flex:1;padding:12px 8px;overflow-y:auto}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:var(--t2);margin-bottom:2px;transition:all .15s;text-decoration:none}
-.nav-item:hover{background:var(--bg3);color:var(--t1)}
-.nav-item.active{background:rgba(102,126,234,.1);color:var(--acc)}
-.nav-item .icon{width:18px;text-align:center;font-size:16px}
-.nav-badge{margin-left:auto;background:#ef4444;color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:999px;min-width:16px;text-align:center}
-.sidebar-bottom{padding:12px 8px;border-top:1px solid var(--bd)}
+/* STATS */
+.sg{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.sc{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid var(--bd);display:flex;align-items:center;gap:12px}
+.si{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
 
-/* ── MAIN ── */
-.main{margin-left:var(--sidebar);flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:var(--bg2);border-bottom:1px solid var(--bd);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
-.topbar-title{font-size:17px;font-weight:700;color:var(--t1)}
-.topbar-right{display:flex;align-items:center;gap:12px}
-.content{padding:24px;flex:1}
+/* CHARTS */
+.cr{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.cc{background:#fff;border-radius:12px;border:1px solid var(--bd);padding:14px}
+.ct{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:10px}
 
-/* ── PAGES ── */
-.page{display:none}
-.page.active{display:block}
-
-/* ── STAT CARDS ── */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.stat-card{background:var(--bg2);border-radius:14px;padding:18px 20px;border:1px solid var(--bd);display:flex;align-items:center;gap:14px}
-.stat-icon{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
-.stat-val{font-size:26px;font-weight:800;color:var(--t1);line-height:1}
-.stat-label{font-size:12px;color:var(--t3);margin-top:3px}
-.stat-delta{font-size:11px;font-weight:600;margin-top:4px}
-.delta-up{color:var(--green)}
-.delta-down{color:var(--red)}
-
-/* ── TABLES ── */
-.card{background:var(--bg2);border-radius:14px;border:1px solid var(--bd);overflow:hidden;margin-bottom:20px}
-.card-head{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
-.card-title{font-size:14px;font-weight:700;color:var(--t1)}
+/* CARD / TABLE */
+.card{background:#fff;border-radius:12px;border:1px solid var(--bd);overflow:hidden;margin-bottom:14px}
+.ch{padding:11px 16px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;background:var(--bg3)}
+.ct2{font-size:13px;font-weight:700;color:var(--t1)}
 table{width:100%;border-collapse:collapse}
-thead th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.06em;background:var(--bg3);border-bottom:1px solid var(--bd)}
-tbody td{padding:11px 16px;font-size:13px;color:var(--t2);border-bottom:1px solid var(--bg3)}
+thead th{padding:8px 13px;text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;background:var(--bg3);border-bottom:1px solid var(--bd);white-space:nowrap}
+tbody td{padding:9px 13px;font-size:13px;color:var(--t2);border-bottom:1px solid var(--bg3);vertical-align:middle}
 tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--bg3)}
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
-.badge-new{background:#f0fdf4;color:#15803d}
-.badge-work{background:#eff6ff;color:#1d4ed8}
-.badge-approved{background:#f0fdf4;color:#15803d}
-.badge-rejected{background:#fef2f2;color:#dc2626}
-.badge-completed{background:#faf5ff;color:#7c3aed}
-.badge-idea{background:#ecfdf5;color:#059669}
-.badge-risk{background:#fff7ed;color:#c2410c}
+tbody tr:hover td{background:#fafbff;cursor:pointer}
 
-/* ── BUTTONS ── */
-.btn{padding:8px 14px;border-radius:10px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
-.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
-.btn-primary:hover{opacity:.9}
-.btn-ghost{background:var(--bg3);color:var(--t2);border:1px solid var(--bd)}
-.btn-ghost:hover{background:var(--bd)}
-.btn-danger{background:#fef2f2;color:#ef4444;border:1px solid #fecaca}
-.btn-success{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0}
-.btn-sm{padding:5px 10px;font-size:12px}
+/* BADGES */
+.b{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-new{background:#f0fdf4;color:#15803d}.b-work{background:#eff6ff;color:#1d4ed8}
+.b-approved{background:#dcfce7;color:#15803d}.b-rejected{background:#fef2f2;color:#dc2626}
+.b-completed{background:#faf5ff;color:#7c3aed}
+.b-idea{background:#ecfdf5;color:#059669}.b-risk{background:#fff7ed;color:#c2410c}
+.b-admin{background:rgba(102,126,234,.12);color:#4f46e5}
+.b-manager{background:rgba(245,158,11,.12);color:#b45309}
+.b-engineer{background:rgba(59,130,246,.12);color:#1d4ed8}
+.b-master{background:rgba(16,185,129,.12);color:#065f46}
+.b-staff{background:var(--bg3);color:var(--t2)}
 
-/* ── INPUTS ── */
-.inp{width:100%;padding:9px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg3);color:var(--t1);font-size:13px;outline:none;font-family:inherit}
+/* BTNS */
+.btn{padding:7px 13px;border-radius:9px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:5px}
+.bp{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}.bp:hover{opacity:.9}
+.bg{background:var(--bg3);color:var(--t2);border:1px solid var(--bd)}.bg:hover{background:var(--bd)}
+.bd{background:#fef2f2;color:#ef4444;border:1px solid #fecaca}
+.bsm{padding:4px 9px;font-size:11px}
+
+/* INPUTS */
+.inp{width:100%;padding:8px 11px;border:1px solid var(--bd);border-radius:9px;background:var(--bg3);color:var(--t1);font-size:13px;outline:none;font-family:inherit;transition:.15s}
 .inp:focus{border-color:var(--acc);background:#fff}
-.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
 
-/* ── MODAL ── */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center;padding:20px}
-.modal-bg.open{display:flex}
-.modal-box{background:var(--bg2);border-radius:16px;width:100%;max-width:520px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.2)}
-.modal-head{padding:16px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;background:var(--bg3)}
-.modal-body{overflow-y:auto;flex:1;padding:20px}
-.modal-foot{padding:14px 20px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px;background:var(--bg3)}
-.modal-close{background:none;border:none;font-size:20px;color:var(--t3);cursor:pointer;line-height:1;padding:2px 6px}
+/* MODAL */
+.mbg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:flex-start;justify-content:center;padding:40px 20px;overflow-y:auto}
+.mbg.open{display:flex}
+.mbox{background:#fff;border-radius:16px;width:100%;max-width:600px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 25px 60px rgba(0,0,0,.2);margin:auto}
+.mbox.sm{max-width:460px}.mbox.lg{max-width:820px}
+.mh{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);flex-shrink:0}
+.mb{overflow-y:auto;padding:18px;max-height:72vh}
+.mf{padding:12px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:8px;background:var(--bg3)}
+.mc{background:none;border:none;font-size:20px;color:var(--t3);cursor:pointer;padding:2px 6px}
 
-/* ── CHARTS ── */
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.chart-card{background:var(--bg2);border-radius:14px;border:1px solid var(--bd);padding:20px}
-.chart-title{font-size:14px;font-weight:700;color:var(--t1);margin-bottom:16px}
+/* FILTERS */
+.fr{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.sb{position:relative;flex:1;min-width:180px}
+.sb svg{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3)}
+.sb input{width:100%;padding:8px 11px 8px 32px;border:1px solid var(--bd);border-radius:9px;background:var(--bg3);color:var(--t1);font-size:13px;outline:none}
+.sb input:focus{border-color:var(--acc)}
 
-/* ── FILTERS ── */
-.filters-row{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
-.search-wrap{position:relative;flex:1;min-width:200px}
-.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:14px}
-.search-input{width:100%;padding:8px 12px 8px 32px;border:1px solid var(--bd);border-radius:10px;background:var(--bg3);color:var(--t1);font-size:13px;outline:none}
-.search-input:focus{border-color:var(--acc)}
+/* DATE RANGE */
+.dr{display:flex;gap:6px;align-items:center;background:var(--bg3);border:1px solid var(--bd);border-radius:9px;padding:5px 10px}
+.dr input[type=date]{border:none;background:transparent;color:var(--t1);font-size:12px;outline:none;cursor:pointer}
 
-/* ── USER CARD ── */
-.user-row{display:flex;align-items:center;gap:10px}
-.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0}
+/* AVATAR */
+.av{border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;background:linear-gradient(135deg,#667eea,#764ba2);flex-shrink:0}
 
-/* ── TOAST ── */
-#toast{position:fixed;bottom:24px;right:24px;z-index:999;pointer-events:none}
-.toast-item{background:var(--t1);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;margin-top:8px;animation:slideIn .3s ease;box-shadow:0 4px 20px rgba(0,0,0,.2)}
-@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+/* AUTOCOMPLETE */
+.aclist{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--bd);border-radius:9px;box-shadow:0 4px 20px rgba(0,0,0,.1);z-index:200;max-height:180px;overflow-y:auto;margin-top:2px}
+.acitem{padding:8px 12px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px}
+.acitem:hover{background:var(--bg3)}
 
-/* ── EMPTY ── */
-.empty{text-align:center;padding:60px 20px;color:var(--t3)}
-.empty-icon{font-size:48px;margin-bottom:12px;opacity:.4}
+/* MEDIA THUMB */
+.mthumb{width:42px;height:42px;border-radius:6px;object-fit:cover;cursor:pointer;border:1px solid var(--bd)}
 
-/* ── RESPONSIVE ── */
-@media(max-width:900px){
-  .stats-grid{grid-template-columns:1fr 1fr}
-  .charts-grid{grid-template-columns:1fr}
-}
-@media(max-width:600px){
-  .sidebar{display:none}
-  .main{margin-left:0}
-  .stats-grid{grid-template-columns:1fr 1fr}
-}
+/* GALLERY */
+#gOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:300;align-items:center;justify-content:center}
+#gOverlay.open{display:flex}
+
+/* LOGS */
+.li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--bg3)}
+.li:last-child{border-bottom:none}
+.ld{width:8px;height:8px;border-radius:50%;background:var(--acc);flex-shrink:0;margin-top:4px}
+
+/* DEADLINE */
+.dl-warn{color:#dc2626!important;font-weight:700!important}
+
+/* DEPT TREE */
+.dp{padding:10px 12px;background:rgba(102,126,234,.05);border-radius:10px;border:1px solid rgba(102,126,234,.15);margin-bottom:8px}
+.dc{padding:6px 12px 6px 28px;border-left:2px solid var(--bd);margin-left:16px;margin-top:3px;display:flex;align-items:center;justify-content:space-between;border-radius:0 8px 8px 0}
+
+/* TOAST */
+#tc{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:6px}
+.toast{background:#1a1a2e;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:tIn .3s ease}
+@keyframes tIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* RESPONSIVE */
+@media(max-width:960px){.sg{grid-template-columns:1fr 1fr}.cr{grid-template-columns:1fr 1fr}}
+@media(max-width:640px){.sidebar{display:none}.main{margin-left:0}.sg{grid-template-columns:1fr 1fr}.cr{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
-<!-- AUTH SCREEN -->
+<!-- AUTH -->
 <div id="authScreen">
   <div class="auth-card">
-    <div style="text-align:center;margin-bottom:28px">
-      <div class="grad" style="width:60px;height:60px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 14px">⚙️</div>
-      <div class="grad-text" style="font-size:20px;font-weight:800;letter-spacing:.08em">AKKERMANN PULSE</div>
-      <div style="font-size:13px;color:var(--t3);margin-top:4px">Панель администратора</div>
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#667eea,#764ba2);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px">⚙️</div>
+      <div style="font-size:17px;font-weight:800;background:linear-gradient(135deg,#667eea,#764ba2);-webkit-background-clip:text;-webkit-text-fill-color:transparent">AKKERMANN PULSE</div>
+      <div style="font-size:12px;color:var(--t3);margin-top:3px">Панель администратора</div>
     </div>
-    <form id="authForm" style="display:flex;flex-direction:column;gap:14px">
-      <div>
-        <label class="lbl">Табельный номер</label>
-        <input class="inp" id="authEmpId" required placeholder="11111" autocomplete="off">
-      </div>
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:11px" id="authBtn">Войти</button>
-      <div id="authError" style="display:none;color:#ef4444;font-size:12px;text-align:center"></div>
+    <form id="authForm" style="display:flex;flex-direction:column;gap:12px">
+      <div><label class="lbl">Табельный номер</label><input class="inp" id="authId" required placeholder="11111"></div>
+      <button type="submit" class="btn bp" style="width:100%;justify-content:center;padding:10px" id="authBtn">Войти</button>
+      <div id="authErr" style="display:none;color:#ef4444;font-size:12px;text-align:center"></div>
     </form>
   </div>
 </div>
 
-<!-- ADMIN APP -->
+<!-- APP -->
 <div id="adminApp">
-  <div class="layout">
-
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="grad-text title">AKKERMANN</div>
-        <div class="sub">Admin Panel</div>
+  <aside class="sidebar">
+    <div class="sb-logo"><div class="t">AKKERMANN</div><div class="s">Admin Panel</div></div>
+    <nav class="sb-nav">
+      <button class="ni active" onclick="showPage('dashboard')"><span class="ic">📊</span>Дашборд</button>
+      <button class="ni" onclick="showPage('requests')"><span class="ic">📋</span>Заявки<span class="nb" id="nbReq">0</span></button>
+      <button class="ni" onclick="showPage('users')"><span class="ic">👥</span>Пользователи</button>
+      <button class="ni" onclick="showPage('departments')"><span class="ic">🏭</span>Участки</button>
+      <button class="ni" onclick="showPage('roles')"><span class="ic">🔑</span>Роли</button>
+      <button class="ni" onclick="showPage('news')"><span class="ic">📰</span>Новости</button>
+      <button class="ni" onclick="showPage('achievements')"><span class="ic">🏅</span>Достижения</button>
+      <button class="ni" onclick="showPage('shop')"><span class="ic">🎁</span>Магазин</button>
+    </nav>
+    <div class="sb-btm">
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;background:var(--bg3)">
+        <div class="av" style="width:30px;height:30px;font-size:11px" id="adminAv">АД</div>
+        <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="adminName">Admin</div><div style="font-size:10px;color:var(--t3)" id="adminRoleLbl">Администратор</div></div>
+        <button onclick="adminLogout()" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:14px">🚪</button>
       </div>
-      <nav class="sidebar-nav">
-        <a class="nav-item active" onclick="showPage('dashboard')">
-          <span class="icon">📊</span> Дашборд
-        </a>
-        <a class="nav-item" onclick="showPage('requests')">
-          <span class="icon">📋</span> Заявки
-          <span class="nav-badge" id="nbRequests">0</span>
-        </a>
-        <a class="nav-item" onclick="showPage('users')">
-          <span class="icon">👥</span> Пользователи
-        </a>
-        <a class="nav-item" onclick="showPage('news')">
-          <span class="icon">📰</span> Новости
-        </a>
-        <a class="nav-item" onclick="showPage('achievements')">
-          <span class="icon">🏅</span> Достижения
-        </a>
-        <a class="nav-item" onclick="showPage('shop')">
-          <span class="icon">🎁</span> Магазин
-        </a>
-      </nav>
-      <div class="sidebar-bottom">
-        <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:var(--bg3)">
-          <div class="avatar grad" id="adminAvatar">АД</div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:12px;font-weight:700;color:var(--t1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="adminName">Admin</div>
-            <div style="font-size:10px;color:var(--t3)">Администратор</div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="font-size:16px;font-weight:700" id="pgTitle">Дашборд</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span style="font-size:11px;color:var(--t3)" id="lastUpd"></span>
+        <button class="btn bg bsm" onclick="refreshAll()">🔄 Обновить</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="sg">
+          <div class="sc"><div class="si" style="background:#eff6ff">📋</div><div><div style="font-size:22px;font-weight:800" id="stTotal">—</div><div style="font-size:11px;color:var(--t3)">Всего заявок</div></div></div>
+          <div class="sc"><div class="si" style="background:#fff7ed">🆕</div><div><div style="font-size:22px;font-weight:800" id="stNew">—</div><div style="font-size:11px;color:var(--t3)">Новые</div></div></div>
+          <div class="sc"><div class="si" style="background:#eff6ff">🔧</div><div><div style="font-size:22px;font-weight:800" id="stWork">—</div><div style="font-size:11px;color:var(--t3)">В работе</div></div></div>
+          <div class="sc"><div class="si" style="background:#f0fdf4">✅</div><div><div style="font-size:22px;font-weight:800" id="stDone">—</div><div style="font-size:11px;color:var(--t3)">Выполнено</div></div></div>
+        </div>
+        <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+          <div class="sc"><div class="si" style="background:#f0fdf4">👥</div><div><div style="font-size:22px;font-weight:800" id="stUsers">—</div><div style="font-size:11px;color:var(--t3)">Пользователей</div></div></div>
+          <div class="sc"><div class="si" style="background:#ecfdf5">💡</div><div><div style="font-size:22px;font-weight:800" id="stIdeas">—</div><div style="font-size:11px;color:var(--t3)">Идей</div></div></div>
+          <div class="sc"><div class="si" style="background:#fff7ed">⚠️</div><div><div style="font-size:22px;font-weight:800" id="stRisks">—</div><div style="font-size:11px;color:var(--t3)">Рисков</div></div></div>
+        </div>
+        <!-- Date filter -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+          <span style="font-size:12px;font-weight:600;color:var(--t3)">Период:</span>
+          <div class="dr">
+            <span style="font-size:11px;color:var(--t3)">с</span>
+            <input type="date" id="dateFrom" onchange="renderCharts()">
+            <span style="font-size:11px;color:var(--t3)">по</span>
+            <input type="date" id="dateTo" onchange="renderCharts()">
           </div>
-          <button onclick="adminLogout()" title="Выйти" style="background:none;border:none;cursor:pointer;color:var(--t3);font-size:16px">🚪</button>
+          <button class="btn bg bsm" onclick="setDR(7)">7д</button>
+          <button class="btn bg bsm" onclick="setDR(30)">30д</button>
+          <button class="btn bg bsm" onclick="setDR(90)">3 мес</button>
+          <button class="btn bg bsm" onclick="setDR(0)">Всё</button>
+        </div>
+        <div class="cr">
+          <div class="cc"><div class="ct">Статусы</div><canvas id="cStatus" height="150"></canvas></div>
+          <div class="cc"><div class="ct">По участкам</div><canvas id="cLoc" height="150"></canvas></div>
+          <div class="cc"><div class="ct">Идеи / Риски</div><canvas id="cTypes" height="150"></canvas></div>
+        </div>
+        <div class="cc" style="margin-bottom:14px"><div class="ct">Активность по дням</div><canvas id="cAct" height="70"></canvas></div>
+        <div class="card">
+          <div class="ch"><div class="ct2">Последние заявки</div><button class="btn bg bsm" onclick="showPage('requests')">Все →</button></div>
+          <div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Тип</th><th>Автор</th><th>Участок</th><th>Описание</th><th>Статус</th><th>Дата</th></tr></thead><tbody id="recentReqs"></tbody></table></div>
         </div>
       </div>
-    </aside>
 
-    <!-- MAIN -->
-    <div class="main">
-      <div class="topbar">
-        <div class="topbar-title" id="pageTitle">Дашборд</div>
-        <div class="topbar-right">
-          <span style="font-size:12px;color:var(--t3)" id="lastUpdated"></span>
-          <button class="btn btn-ghost btn-sm" onclick="refreshAll()">🔄 Обновить</button>
+      <!-- REQUESTS -->
+      <div class="page" id="page-requests">
+        <div class="fr">
+          <div class="sb"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input id="rqSearch" placeholder="Поиск…" oninput="filterReqs()"></div>
+          <select class="inp" style="width:130px" id="rqSt" onchange="filterReqs()">
+            <option value="all">Все статусы</option><option value="new">Новые</option><option value="work">В работе</option><option value="approved">Принято</option><option value="rejected">Отклонено</option><option value="completed">Выполнено</option>
+          </select>
+          <select class="inp" style="width:110px" id="rqTp" onchange="filterReqs()">
+            <option value="all">Все типы</option><option value="idea">💡 Идеи</option><option value="risk">⚠️ Риски</option>
+          </select>
+          <select class="inp" style="width:140px" id="rqLoc" onchange="filterReqs()">
+            <option value="all">Все участки</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct2">Заявки <span id="rqCount" style="font-weight:400;color:var(--t3)"></span></div></div>
+          <div style="overflow-x:auto"><table><thead><tr><th>ID</th><th>Тип</th><th>Автор</th><th>Участок</th><th>Медиа</th><th>Описание</th><th>Статус</th><th>Ответственный</th><th>Дедлайн</th></tr></thead><tbody id="rqTable"></tbody></table></div>
         </div>
       </div>
-      <div class="content">
 
-        <!-- DASHBOARD -->
-        <div class="page active" id="page-dashboard">
-          <div class="stats-grid" id="statsGrid">
-            <div class="stat-card"><div class="stat-icon" style="background:#eff6ff">📋</div><div><div class="stat-val" id="st-total">—</div><div class="stat-label">Всего заявок</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:#fff7ed">🆕</div><div><div class="stat-val" id="st-new">—</div><div class="stat-label">Новые</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:#eff6ff">🔧</div><div><div class="stat-val" id="st-work">—</div><div class="stat-label">В работе</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:#f0fdf4">✅</div><div><div class="stat-val" id="st-done">—</div><div class="stat-label">Выполнено</div></div></div>
-          </div>
-          <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
-            <div class="stat-card"><div class="stat-icon" style="background:#f0fdf4">👥</div><div><div class="stat-val" id="st-users">—</div><div class="stat-label">Пользователей</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:#ecfdf5">💡</div><div><div class="stat-val" id="st-ideas">—</div><div class="stat-label">Идей</div></div></div>
-            <div class="stat-card"><div class="stat-icon" style="background:#fff7ed">⚠️</div><div><div class="stat-val" id="st-risks">—</div><div class="stat-label">Рисков</div></div></div>
-          </div>
-          <div class="charts-grid">
-            <div class="chart-card">
-              <div class="chart-title">Заявки по статусам</div>
-              <canvas id="chartStatus" height="200"></canvas>
-            </div>
-            <div class="chart-card">
-              <div class="chart-title">По участкам</div>
-              <canvas id="chartLocation" height="200"></canvas>
-            </div>
-          </div>
-          <div class="charts-grid">
-            <div class="chart-card" style="grid-column:1/-1">
-              <div class="chart-title">Активность за последние 14 дней</div>
-              <canvas id="chartActivity" height="120"></canvas>
-            </div>
-          </div>
-          <!-- Recent requests -->
-          <div class="card">
-            <div class="card-head">
-              <div class="card-title">Последние заявки</div>
-              <button class="btn btn-ghost btn-sm" onclick="showPage('requests')">Все заявки →</button>
-            </div>
-            <table><thead><tr><th>ID</th><th>Тип</th><th>Автор</th><th>Участок</th><th>Описание</th><th>Статус</th><th>Дата</th></tr></thead>
-            <tbody id="recentRequests"></tbody></table>
-          </div>
+      <!-- USERS -->
+      <div class="page" id="page-users">
+        <div class="fr">
+          <div class="sb"><svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg><input id="uSearch" placeholder="Поиск…" oninput="filterUsers()"></div>
+          <select class="inp" style="width:150px" id="uRole" onchange="filterUsers()">
+            <option value="all">Все роли</option><option value="admin">Администратор</option><option value="manager">Руководитель</option><option value="engineer">Инженер</option><option value="master">Мастер</option><option value="staff">Сотрудник</option>
+          </select>
         </div>
-
-        <!-- REQUESTS -->
-        <div class="page" id="page-requests">
-          <div class="filters-row">
-            <div class="search-wrap">
-              <span class="search-icon">🔍</span>
-              <input class="search-input" id="reqSearch" placeholder="Поиск по ID, автору, описанию…" oninput="filterRequests()">
-            </div>
-            <select class="inp" id="reqStatusFilter" onchange="filterRequests()" style="width:140px;padding:8px 10px">
-              <option value="all">Все статусы</option>
-              <option value="new">Новые</option>
-              <option value="work">В работе</option>
-              <option value="approved">Принято</option>
-              <option value="rejected">Отклонено</option>
-              <option value="completed">Выполнено</option>
-            </select>
-            <select class="inp" id="reqTypeFilter" onchange="filterRequests()" style="width:130px;padding:8px 10px">
-              <option value="all">Все типы</option>
-              <option value="idea">💡 Идеи</option>
-              <option value="risk">⚠️ Риски</option>
-            </select>
-            <select class="inp" id="reqLocFilter" onchange="filterRequests()" style="width:130px;padding:8px 10px">
-              <option value="all">Все участки</option>
-              <option>Цех 1</option><option>Цех 2</option>
-              <option>Склад</option><option>Офис</option><option>Производство</option>
-            </select>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div class="card-title">Заявки <span id="reqCount" style="font-weight:400;color:var(--t3)"></span></div>
-            </div>
-            <div style="overflow-x:auto">
-              <table><thead><tr>
-                <th>ID</th><th>Тип</th><th>Автор</th><th>Участок</th>
-                <th>Описание</th><th>Статус</th><th>Лайки</th><th>Дата</th><th>Действия</th>
-              </tr></thead>
-              <tbody id="requestsTable"></tbody></table>
-            </div>
-          </div>
+        <div class="card">
+          <div class="ch"><div class="ct2">Пользователи <span id="uCount" style="font-weight:400;color:var(--t3)"></span></div></div>
+          <table><thead><tr><th>Сотрудник</th><th>Табельный</th><th>Участок</th><th>Роль</th><th>Баллы</th><th>Уровень</th><th>Заявок</th><th></th></tr></thead><tbody id="uTable"></tbody></table>
         </div>
-
-        <!-- USERS -->
-        <div class="page" id="page-users">
-          <div class="filters-row">
-            <div class="search-wrap">
-              <span class="search-icon">🔍</span>
-              <input class="search-input" id="userSearch" placeholder="Поиск по имени, табельному…" oninput="filterUsers()">
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-head">
-              <div class="card-title">Пользователи <span id="userCount" style="font-weight:400;color:var(--t3)"></span></div>
-            </div>
-            <table><thead><tr>
-              <th>Пользователь</th><th>Табельный</th><th>Участок</th>
-              <th>Баллы</th><th>Уровень</th><th>Заявок</th><th>Роль</th><th>Действия</th>
-            </tr></thead>
-            <tbody id="usersTable"></tbody></table>
-          </div>
-        </div>
-
-        <!-- NEWS -->
-        <div class="page" id="page-news">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button class="btn btn-primary" onclick="openNewsModal()">+ Новая новость</button>
-          </div>
-          <div id="newsList" style="display:grid;gap:12px"></div>
-        </div>
-
-        <!-- ACHIEVEMENTS -->
-        <div class="page" id="page-achievements">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button class="btn btn-primary" onclick="openAchModal()">+ Новое достижение</button>
-          </div>
-          <div id="achGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div>
-        </div>
-
-        <!-- SHOP -->
-        <div class="page" id="page-shop">
-          <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-            <button class="btn btn-primary" onclick="openShopModal()">+ Новый товар</button>
-          </div>
-          <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px"></div>
-        </div>
-
       </div>
+
+      <!-- DEPARTMENTS -->
+      <div class="page" id="page-departments">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="openDeptModal()">+ Добавить участок</button></div>
+        <div class="card"><div class="ch"><div class="ct2">Структура участков</div></div><div id="deptTree" style="padding:14px"></div></div>
+        <div class="card" style="padding:14px">
+          <div style="font-size:12px;color:var(--t3);line-height:1.6">
+            ⚙️ <strong>Как работает иерархия:</strong> Корневой участок — это цех или подразделение (например «Цех 1»). Дочерний — конкретное рабочее место внутри него (например «Сверлильный станок»). При выборе участка в мобильном приложении пользователи видят оба уровня.
+          </div>
+        </div>
+      </div>
+
+      <!-- ROLES -->
+      <div class="page" id="page-roles">
+        <div class="card"><div class="ch"><div class="ct2">🔑 Роли и права доступа</div></div><div id="rolesContent" style="padding:16px"></div></div>
+      </div>
+
+      <!-- NEWS -->
+      <div class="page" id="page-news">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="openNewsModal()">+ Новая новость</button></div>
+        <div id="newsList" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
+      <!-- ACHIEVEMENTS -->
+      <div class="page" id="page-achievements">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="openAchModal()">+ Добавить</button></div>
+        <div id="achGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px"></div>
+      </div>
+
+      <!-- SHOP -->
+      <div class="page" id="page-shop">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn bp" onclick="openShopModal()">+ Добавить</button></div>
+        <div id="shopGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px"></div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- REQUEST DETAIL MODAL -->
-<div class="modal-bg" id="reqModal">
-  <div class="modal-box" style="max-width:600px">
-    <div class="modal-head">
-      <span style="font-size:15px;font-weight:700" id="reqModalTitle">Заявка</span>
-      <button class="modal-close" onclick="closeModal('reqModal')">&times;</button>
+<!-- REQUEST MODAL -->
+<div class="mbg" id="reqModal">
+  <div class="mbox lg">
+    <div class="mh"><span style="font-size:14px;font-weight:700" id="reqMTitle">Заявка</span><button class="mc" onclick="closeModal('reqModal')">&times;</button></div>
+    <div class="mb" id="reqMBody"></div>
+    <div class="mf"><button class="btn bg" onclick="closeModal('reqModal')">Закрыть</button><button class="btn bp" onclick="saveReq()">💾 Сохранить</button></div>
+  </div>
+</div>
+
+<!-- LOGS MODAL -->
+<div class="mbg" id="logsModal">
+  <div class="mbox sm">
+    <div class="mh"><span style="font-size:14px;font-weight:700">📋 История изменений</span><button class="mc" onclick="closeModal('logsModal')">&times;</button></div>
+    <div class="mb" id="logsMBody"></div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="mbg" id="userModal">
+  <div class="mbox sm">
+    <div class="mh"><span style="font-size:14px;font-weight:700" id="uMTitle">Пользователь</span><button class="mc" onclick="closeModal('userModal')">&times;</button></div>
+    <div class="mb" id="uMBody"></div>
+    <div class="mf"><button class="btn bg" onclick="closeModal('userModal')">Закрыть</button><button class="btn bp" onclick="saveUser()">Сохранить</button></div>
+  </div>
+</div>
+
+<!-- DEPT MODAL -->
+<div class="mbg" id="deptModal">
+  <div class="mbox sm">
+    <div class="mh"><span style="font-size:14px;font-weight:700" id="dMTitle">Участок</span><button class="mc" onclick="closeModal('deptModal')">&times;</button></div>
+    <div class="mb">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <input type="hidden" id="dId">
+        <div><label class="lbl">Название участка</label><input class="inp" id="dName" placeholder="Например: Цех 1 или Сверлильный станок"></div>
+        <div><label class="lbl">Родительский участок (если дочерний)</label><select class="inp" id="dParent"><option value="">— Корневой (верхний уровень) —</option></select></div>
+        <div><label class="lbl">Описание (необязательно)</label><input class="inp" id="dDesc" placeholder="Краткое описание"></div>
+      </div>
     </div>
-    <div class="modal-body" id="reqModalBody"></div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('reqModal')">Закрыть</button>
-      <button class="btn btn-primary" id="reqSaveBtn" onclick="saveRequestChanges()">Сохранить</button>
-    </div>
+    <div class="mf"><button class="btn bg" onclick="closeModal('deptModal')">Отмена</button><button class="btn bp" onclick="saveDept()">Сохранить</button></div>
   </div>
 </div>
 
 <!-- NEWS MODAL -->
-<div class="modal-bg" id="newsModal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span style="font-size:15px;font-weight:700" id="newsModalTitle">Новая новость</span>
-      <button class="modal-close" onclick="closeModal('newsModal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <form id="newsForm" style="display:flex;flex-direction:column;gap:14px">
-        <input type="hidden" id="newsId">
-        <div><label class="lbl">Заголовок</label><input class="inp" id="newsTitle" required placeholder="Заголовок новости"></div>
-        <div><label class="lbl">Текст</label><textarea class="inp" id="newsContent" rows="5" required placeholder="Текст новости…" style="resize:vertical"></textarea></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div><label class="lbl">Категория</label>
-            <select class="inp" id="newsCategory">
-              <option value="announcement">📢 Объявление</option>
-              <option value="achievement">🏆 Достижение</option>
-              <option value="safety">🛡️ Безопасность</option>
-              <option value="general">📌 Общее</option>
-            </select>
-          </div>
-          <div><label class="lbl">Источник</label><input class="inp" id="newsSource" placeholder="Администрация"></div>
+<div class="mbg" id="newsModal">
+  <div class="mbox sm">
+    <div class="mh"><span style="font-size:14px;font-weight:700" id="nMTitle">Новость</span><button class="mc" onclick="closeModal('newsModal')">&times;</button></div>
+    <div class="mb">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <input type="hidden" id="nId">
+        <div><label class="lbl">Заголовок</label><input class="inp" id="nTitle" required></div>
+        <div><label class="lbl">Текст</label><textarea class="inp" id="nContent" rows="5" style="resize:vertical"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="lbl">Категория</label><select class="inp" id="nCat"><option value="announcement">📢 Объявление</option><option value="achievement">🏆 Достижение</option><option value="safety">🛡️ Безопасность</option><option value="general">📌 Общее</option></select></div>
+          <div><label class="lbl">Источник</label><input class="inp" id="nSrc"></div>
         </div>
-      </form>
+      </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('newsModal')">Отмена</button>
-      <button class="btn btn-primary" onclick="saveNews()">Сохранить</button>
-    </div>
+    <div class="mf"><button class="btn bg" onclick="closeModal('newsModal')">Отмена</button><button class="btn bp" onclick="saveNews()">Сохранить</button></div>
   </div>
 </div>
 
-<!-- ACHIEVEMENT MODAL -->
-<div class="modal-bg" id="achModal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span style="font-size:15px;font-weight:700">Достижение</span>
-      <button class="modal-close" onclick="closeModal('achModal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <form id="achForm" style="display:flex;flex-direction:column;gap:12px">
-        <input type="hidden" id="achId">
-        <div style="display:grid;grid-template-columns:80px 1fr;gap:12px">
-          <div><label class="lbl">Иконка</label><input class="inp" id="achIcon" placeholder="🏆" style="text-align:center;font-size:24px"></div>
-          <div><label class="lbl">Название</label><input class="inp" id="achTitle" required placeholder="Первая идея"></div>
+<!-- ACH MODAL -->
+<div class="mbg" id="achModal">
+  <div class="mbox sm">
+    <div class="mh"><span style="font-size:14px;font-weight:700">Достижение</span><button class="mc" onclick="closeModal('achModal')">&times;</button></div>
+    <div class="mb">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <input type="hidden" id="aId">
+        <div style="display:grid;grid-template-columns:70px 1fr;gap:10px">
+          <div><label class="lbl">Иконка</label><input class="inp" id="aIcon" style="text-align:center;font-size:22px"></div>
+          <div><label class="lbl">Название</label><input class="inp" id="aTitle" required></div>
         </div>
-        <div><label class="lbl">Описание</label><input class="inp" id="achDesc" placeholder="Отправьте первую идею"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-          <div><label class="lbl">Тип цели</label>
-            <select class="inp" id="achTargetType">
-              <option value="posts">Всего заявок</option>
-              <option value="ideas">Идей</option>
-              <option value="risks">Рисков</option>
-              <option value="likes">Лайков получено</option>
-              <option value="points">Баллов</option>
-              <option value="manual">Вручную</option>
-            </select>
-          </div>
-          <div><label class="lbl">Цель</label><input class="inp" id="achTarget" type="number" min="1" value="1"></div>
-          <div><label class="lbl">Баллов за выполн.</label><input class="inp" id="achPoints" type="number" min="1" value="10"></div>
+        <div><label class="lbl">Описание</label><input class="inp" id="aDesc"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div><label class="lbl">Тип цели</label><select class="inp" id="aTType"><option value="posts">Заявок</option><option value="ideas">Идей</option><option value="risks">Рисков</option><option value="likes">Лайков</option><option value="points">Баллов</option><option value="manual">Вручную</option></select></div>
+          <div><label class="lbl">Цель</label><input class="inp" id="aTarget" type="number" min="1" value="1"></div>
+          <div><label class="lbl">Баллы</label><input class="inp" id="aPoints" type="number" min="1" value="10"></div>
         </div>
-      </form>
+      </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('achModal')">Отмена</button>
-      <button class="btn btn-primary" onclick="saveAch()">Сохранить</button>
-    </div>
+    <div class="mf"><button class="btn bg" onclick="closeModal('achModal')">Отмена</button><button class="btn bp" onclick="saveAch()">Сохранить</button></div>
   </div>
 </div>
 
 <!-- SHOP MODAL -->
-<div class="modal-bg" id="shopModal">
-  <div class="modal-box">
-    <div class="modal-head">
-      <span style="font-size:15px;font-weight:700">Товар магазина</span>
-      <button class="modal-close" onclick="closeModal('shopModal')">&times;</button>
-    </div>
-    <div class="modal-body">
-      <form id="shopForm" style="display:flex;flex-direction:column;gap:12px">
-        <input type="hidden" id="shopItemId">
-        <div style="display:grid;grid-template-columns:80px 1fr;gap:12px">
-          <div><label class="lbl">Иконка</label><input class="inp" id="shopIcon" placeholder="🎁" style="text-align:center;font-size:24px"></div>
-          <div><label class="lbl">Название</label><input class="inp" id="shopTitle" required placeholder="Подарок"></div>
+<div class="mbg" id="shopModal">
+  <div class="mbox sm">
+    <div class="mh"><span style="font-size:14px;font-weight:700">Товар</span><button class="mc" onclick="closeModal('shopModal')">&times;</button></div>
+    <div class="mb">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <input type="hidden" id="sId">
+        <div style="display:grid;grid-template-columns:70px 1fr;gap:10px">
+          <div><label class="lbl">Иконка</label><input class="inp" id="sIcon" style="text-align:center;font-size:22px"></div>
+          <div><label class="lbl">Название</label><input class="inp" id="sTitle" required></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div><label class="lbl">Стоимость (баллы)</label><input class="inp" id="shopPoints" type="number" min="1" value="100"></div>
-          <div><label class="lbl">Цвет фона</label><input class="inp" id="shopColor" placeholder="bg-blue-100 text-blue-800"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="lbl">Баллы</label><input class="inp" id="sPoints" type="number" min="1" value="100"></div>
+          <div><label class="lbl">Цвет (необяз.)</label><input class="inp" id="sColor"></div>
         </div>
-      </form>
+      </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="closeModal('shopModal')">Отмена</button>
-      <button class="btn btn-primary" onclick="saveShopItem()">Сохранить</button>
-    </div>
+    <div class="mf"><button class="btn bg" onclick="closeModal('shopModal')">Отмена</button><button class="btn bp" onclick="saveShopItem()">Сохранить</button></div>
   </div>
 </div>
 
-<!-- TOAST -->
-<div id="toast"></div>
+<!-- GALLERY -->
+<div id="gOverlay" onclick="closeGal()">
+  <div onclick="event.stopPropagation()" style="position:relative;max-width:90vw;max-height:90vh" id="gInner"></div>
+</div>
+
+<div id="tc"></div>
 
 <script>
-// ── SUPABASE ─────────────────────────────────────────────────────────────
 const SB = window.supabase.createClient(
   'https://slshulewvdanriwvmitu.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsc2h1bGV3dmRhbnJpd3ZtaXR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzNzExOTQsImV4cCI6MjA4ODk0NzE5NH0.jUsiWjf87pdwMRBsaxt76IeXRKZB7obYoq90yDDDLcc'
 );
-const BOT = '8768160449:AAG1gBLhbA9yJ7V3t_9O0vb1S1deonnoFto';
 
-// ── STATE ─────────────────────────────────────────────────────────────────
-let adminUser = null;
-let allRequests = [], allUsers = [];
-let charts = {};
-let editingReqId = null;
+// ── GLOBALS ─────────────────────────────────────────────────────
+let adminUser=null, allReqs=[], allUsers=[], allDepts=[];
+let editReqId=null, editUserId=null;
+let charts={};
 
-// ── HELPERS ───────────────────────────────────────────────────────────────
-const pad = id => '#' + String(id).padStart(5,'0');
-const fmtDate = iso => { const d = new Date(iso); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; };
-const fmtDateTime = iso => { const d = new Date(iso); return `${fmtDate(iso)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-const initials = n => (n||'?').split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+const ROLES = {
+  admin:   {label:'Администратор', cls:'b-admin',    icon:'👑'},
+  manager: {label:'Руководитель',  cls:'b-manager',  icon:'🎯'},
+  engineer:{label:'Инженер',       cls:'b-engineer', icon:'⚙️'},
+  master:  {label:'Мастер',        cls:'b-master',   icon:'🔧'},
+  staff:   {label:'Сотрудник',     cls:'b-staff',    icon:'👤'},
+};
+const STA = {
+  new:{l:'Новая',c:'b-new'}, work:{l:'В работе',c:'b-work'},
+  approved:{l:'Принята',c:'b-approved'}, rejected:{l:'Отклонена',c:'b-rejected'},
+  completed:{l:'Выполнена',c:'b-completed'},
+};
+const LVL = [{min:0,max:99,l:'🌱 Новичок'},{min:100,max:249,l:'🌿 Активист'},{min:250,max:499,l:'⭐ Участник'},{min:500,max:999,l:'💎 Эксперт'},{min:1000,max:1999,l:'🏆 Чемпион'},{min:2000,max:3999,l:'🔥 Мастер'},{min:4000,max:7999,l:'👑 Легенда'},{min:8000,max:Infinity,l:'🚀 Кайзен-Боец'}];
+const getLvl = p => LVL.find(l=>p>=l.min&&p<=l.max)?.l || '🌱 Новичок';
+const pad = id => '#'+String(id).padStart(5,'0');
+const fd = iso => { if(!iso) return '—'; const d=new Date(iso); return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`; };
+const fdt = iso => { if(!iso) return '—'; const d=new Date(iso); return `${fd(iso)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const ini = n => (n||'?').split(' ').map(x=>x[0]).join('').substring(0,2).toUpperCase();
+const pm = m => { try { return Array.isArray(m)?m:JSON.parse(m||'[]'); } catch { return []; } };
 
-function toast(msg, type='success') {
-  const t = document.getElementById('toast');
-  const el = document.createElement('div');
-  el.className = 'toast-item';
-  el.style.background = type === 'error' ? '#ef4444' : type === 'info' ? '#3b82f6' : '#10b981';
-  el.textContent = msg;
-  t.appendChild(el);
-  setTimeout(() => el.remove(), 3500);
-}
-
+// ── UTILS ────────────────────────────────────────────────────────
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function toast(msg, type='ok') {
+  const el=document.createElement('div'); el.className='toast';
+  el.style.background=type==='err'?'#ef4444':type==='info'?'#3b82f6':'#10b981';
+  el.textContent=msg; document.getElementById('tc').appendChild(el);
+  setTimeout(()=>el.remove(),3000);
+}
+function openGal(src) {
+  const isV=src.startsWith('data:video');
+  document.getElementById('gInner').innerHTML=`<button onclick="closeGal()" style="position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:1">&times;</button>${isV?`<video src="${src}" controls style="max-width:90vw;max-height:88vh;border-radius:10px">`:`<img src="${src}" style="max-width:90vw;max-height:88vh;border-radius:10px;object-fit:contain">` }`;
+  document.getElementById('gOverlay').classList.add('open');
+}
+function closeGal() { document.getElementById('gOverlay').classList.remove('open'); }
 
-const STATUS_MAP = {
-  new:       {l:'Новая',     cls:'badge-new'},
-  work:      {l:'В работе',  cls:'badge-work'},
-  approved:  {l:'Принята',   cls:'badge-approved'},
-  rejected:  {l:'Отклонена', cls:'badge-rejected'},
-  completed: {l:'Выполнена', cls:'badge-completed'},
-};
-
-const LEVELS = [
-  {min:0,max:99,label:'🌱 Новичок'},
-  {min:100,max:249,label:'🌿 Активист'},
-  {min:250,max:499,label:'⭐ Участник'},
-  {min:500,max:999,label:'💎 Эксперт'},
-  {min:1000,max:1999,label:'🏆 Чемпион'},
-  {min:2000,max:3999,label:'🔥 Мастер'},
-  {min:4000,max:7999,label:'👑 Легенда'},
-  {min:8000,max:Infinity,label:'🚀 Кайзен-Боец'},
-];
-const getLvl = pts => LEVELS.find(l => pts >= l.min && pts <= l.max)?.label || '🌱 Новичок';
-
-// ── AUTH ──────────────────────────────────────────────────────────────────
+// ── AUTH ──────────────────────────────────────────────────────────
 document.getElementById('authForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const btn = document.getElementById('authBtn');
-  const err = document.getElementById('authError');
-  btn.disabled = true; btn.textContent = '…';
-  err.style.display = 'none';
-  const empId = document.getElementById('authEmpId').value.trim();
-  const { data } = await SB.from('users').select('*').eq('id', empId).single();
-  btn.disabled = false; btn.textContent = 'Войти';
-  if (!data || data.role !== 'admin') {
-    err.style.display = ''; err.textContent = '❌ Нет доступа. Требуется роль администратора.'; return;
-  }
-  adminUser = data;
-  document.getElementById('adminName').textContent = data.name;
-  document.getElementById('adminAvatar').textContent = initials(data.name);
-  document.getElementById('authScreen').style.display = 'none';
-  document.getElementById('adminApp').style.display = 'block';
+  const btn=document.getElementById('authBtn'); btn.disabled=true; btn.textContent='…';
+  const err=document.getElementById('authErr'); err.style.display='none';
+  const {data}=await SB.from('users').select('*').eq('id',document.getElementById('authId').value.trim()).single();
+  btn.disabled=false; btn.textContent='Войти';
+  if(!data||!['admin','manager'].includes(data.role)){err.style.display='';err.textContent='❌ Нет доступа. Требуется роль Администратора или Руководителя.';return;}
+  adminUser=data;
+  document.getElementById('adminName').textContent=data.name;
+  document.getElementById('adminAv').textContent=ini(data.name);
+  const r=ROLES[data.role];if(r)document.getElementById('adminRoleLbl').textContent=r.label;
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('adminApp').style.display='block';
+  setDR(30);
   await refreshAll();
-  // Realtime
   SB.channel('admin-rt')
-    .on('postgres_changes', {event:'*', schema:'public', table:'requests'}, () => loadRequests())
-    .on('postgres_changes', {event:'*', schema:'public', table:'users'}, () => loadUsers())
+    .on('postgres_changes',{event:'*',schema:'public',table:'requests'},()=>loadReqs())
+    .on('postgres_changes',{event:'*',schema:'public',table:'users'},()=>loadUsers())
     .subscribe();
 });
+function adminLogout(){if(!confirm('Выйти?'))return;document.getElementById('adminApp').style.display='none';document.getElementById('authScreen').style.display='flex';adminUser=null;}
 
-function adminLogout() {
-  if (!confirm('Выйти?')) return;
-  document.getElementById('adminApp').style.display = 'none';
-  document.getElementById('authScreen').style.display = 'flex';
-  adminUser = null;
+// ── NAVIGATION ────────────────────────────────────────────────────
+const PT={dashboard:'Дашборд',requests:'Заявки',users:'Пользователи',departments:'Участки',roles:'Роли',news:'Новости',achievements:'Достижения',shop:'Магазин'};
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id)?.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n=>{if(n.textContent.includes(PT[id]?.slice(0,4)))n.classList.add('active');});
+  document.getElementById('pgTitle').textContent=PT[id]||id;
+  if(id==='news')loadNewsPage();
+  if(id==='achievements')loadAchPage();
+  if(id==='shop')loadShopPage();
+  if(id==='departments')loadDepts();
+  if(id==='roles')renderRoles();
 }
 
-// ── NAVIGATION ────────────────────────────────────────────────────────────
-const PAGE_TITLES = {
-  dashboard:'Дашборд', requests:'Заявки', users:'Пользователи',
-  news:'Новости', achievements:'Достижения', shop:'Магазин'
-};
-function showPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('page-'+id).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.textContent.trim().includes(PAGE_TITLES[id]?.slice(0,4))) n.classList.add('active');
-  });
-  document.getElementById('pageTitle').textContent = PAGE_TITLES[id] || id;
-  if (id === 'news') loadNewsPage();
-  if (id === 'achievements') loadAchPage();
-  if (id === 'shop') loadShopPage();
+// ── REFRESH ALL ───────────────────────────────────────────────────
+async function refreshAll(){
+  document.getElementById('lastUpd').textContent='Обновлено: '+new Date().toLocaleTimeString('ru');
+  await Promise.all([loadReqs(),loadUsers(),loadDeptsData()]);
+  renderDash();renderCharts();
 }
 
-// ── LOAD DATA ─────────────────────────────────────────────────────────────
-async function refreshAll() {
-  document.getElementById('lastUpdated').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru');
-  await Promise.all([loadRequests(), loadUsers()]);
-  renderDashboard();
+// ── LOAD DATA ──────────────────────────────────────────────────────
+async function loadReqs(){
+  const{data}=await SB.from('requests').select('*').order('date',{ascending:false});
+  allReqs=data||[];
+  document.getElementById('nbReq').textContent=allReqs.filter(r=>r.status==='new').length;
+  filterReqs();
+  // Refresh recent on dashboard
+  const rb=document.getElementById('recentReqs'); if(rb){rb.innerHTML='';allReqs.slice(0,7).forEach(r=>rb.appendChild(mkReqRow(r)));}
+}
+async function loadUsers(){
+  const{data}=await SB.from('users').select('*').order('points',{ascending:false});
+  allUsers=data||[];filterUsers();
+}
+async function loadDeptsData(){
+  try{const{data}=await SB.from('departments').select('*').order('name');allDepts=data||[];}catch(e){allDepts=[];}
+  // Update location filter in requests page
+  const sel=document.getElementById('rqLoc');if(!sel)return;
+  const parents=allDepts.filter(d=>!d.parent_id);
+  let opts='<option value="all">Все участки</option>';
+  if(parents.length){parents.forEach(p=>{opts+=`<option value="${p.name}">${p.name}</option>`;allDepts.filter(d=>d.parent_id===p.id).forEach(c=>{opts+=`<option value="${c.name}">&nbsp;&nbsp;└ ${c.name}</option>`;});});}
+  else{allDepts.forEach(d=>{opts+=`<option value="${d.name}">${d.name}</option>`;});}
+  sel.innerHTML=opts;
 }
 
-async function loadRequests() {
-  const { data } = await SB.from('requests').select('*').order('date', {ascending:false});
-  allRequests = data || [];
-  const newCount = allRequests.filter(r => r.status === 'new').length;
-  document.getElementById('nbRequests').textContent = newCount;
-  renderRequestsTable();
-  renderRecentRequests();
+// ── DASHBOARD ──────────────────────────────────────────────────────
+function renderDash(){
+  const r=allReqs;
+  document.getElementById('stTotal').textContent=r.length;
+  document.getElementById('stNew').textContent=r.filter(x=>x.status==='new').length;
+  document.getElementById('stWork').textContent=r.filter(x=>x.status==='work').length;
+  document.getElementById('stDone').textContent=r.filter(x=>x.status==='completed'||x.status==='approved').length;
+  document.getElementById('stUsers').textContent=allUsers.length;
+  document.getElementById('stIdeas').textContent=r.filter(x=>x.type==='idea').length;
+  document.getElementById('stRisks').textContent=r.filter(x=>x.type==='risk').length;
 }
-
-async function loadUsers() {
-  const { data } = await SB.from('users').select('*').order('points', {ascending:false});
-  allUsers = data || [];
-  renderUsersTable();
+function getFR(){
+  const from=document.getElementById('dateFrom')?.value;
+  const to=document.getElementById('dateTo')?.value;
+  if(!from&&!to)return allReqs;
+  return allReqs.filter(r=>{const d=(r.date||r.created_at||'').slice(0,10);if(from&&d<from)return false;if(to&&d>to)return false;return true;});
 }
-
-// ── DASHBOARD ─────────────────────────────────────────────────────────────
-function renderDashboard() {
-  const total = allRequests.length;
-  const newR = allRequests.filter(r => r.status === 'new').length;
-  const work = allRequests.filter(r => r.status === 'work').length;
-  const done = allRequests.filter(r => r.status === 'completed' || r.status === 'approved').length;
-  const ideas = allRequests.filter(r => r.type === 'idea').length;
-  const risks = allRequests.filter(r => r.type === 'risk').length;
-  document.getElementById('st-total').textContent = total;
-  document.getElementById('st-new').textContent = newR;
-  document.getElementById('st-work').textContent = work;
-  document.getElementById('st-done').textContent = done;
-  document.getElementById('st-users').textContent = allUsers.length;
-  document.getElementById('st-ideas').textContent = ideas;
-  document.getElementById('st-risks').textContent = risks;
+function setDR(days){
+  const to=new Date(),from=new Date();
+  if(days>0)from.setDate(to.getDate()-days);
+  document.getElementById('dateTo').value=to.toISOString().slice(0,10);
+  document.getElementById('dateFrom').value=days>0?from.toISOString().slice(0,10):'';
   renderCharts();
-  renderRecentRequests();
+}
+function renderCharts(){
+  const r=getFR();
+  const dk=id=>{if(charts[id]){charts[id].destroy();delete charts[id];}};
+  dk('s');charts.s=new Chart(document.getElementById('cStatus'),{type:'doughnut',data:{labels:['Новые','В работе','Принято','Отклонено','Выполнено'],datasets:[{data:['new','work','approved','rejected','completed'].map(s=>r.filter(x=>x.status===s).length),backgroundColor:['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},cutout:'60%'}});
+  dk('l');const lc={};r.forEach(x=>{lc[x.location||'—']=(lc[x.location||'—']||0)+1;});const le=Object.entries(lc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  charts.l=new Chart(document.getElementById('cLoc'),{type:'bar',data:{labels:le.map(e=>e[0]),datasets:[{data:le.map(e=>e[1]),backgroundColor:'rgba(102,126,234,.7)',borderRadius:4,borderWidth:0}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f0f2f5'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+  dk('t');charts.t=new Chart(document.getElementById('cTypes'),{type:'doughnut',data:{labels:['Идеи','Риски'],datasets:[{data:[r.filter(x=>x.type==='idea').length,r.filter(x=>x.type==='risk').length],backgroundColor:['#10b981','#f59e0b'],borderWidth:0}]},options:{plugins:{legend:{position:'bottom',labels:{font:{size:10},boxWidth:10}}},cutout:'60%'}});
+  dk('a');const ds=[];for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);ds.push(d.toISOString().slice(0,10));}
+  charts.a=new Chart(document.getElementById('cAct'),{type:'line',data:{labels:ds.map(d=>d.slice(5)),datasets:[{data:ds.map(d=>r.filter(x=>(x.date||x.created_at||'').slice(0,10)===d).length),borderColor:'#667eea',backgroundColor:'rgba(102,126,234,.08)',borderWidth:2,pointRadius:3,fill:true,tension:.4}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,grid:{color:'#f0f2f5'},ticks:{font:{size:10}}},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+}
+function mkReqRow(r){
+  const st=STA[r.status]||STA.new;
+  const tr=document.createElement('tr');tr.style.cursor='pointer';tr.onclick=()=>openReqModal(r.id);
+  tr.innerHTML=`<td style="font-family:monospace;font-size:11px;color:var(--acc)">${pad(r.id)}</td><td><span class="b ${r.type==='idea'?'b-idea':'b-risk'}">${r.type==='idea'?'💡 Идея':'⚠️ Риск'}</span></td><td>${r.anonymous?'<em>Аноним</em>':r.author||'—'}</td><td>${r.location||'—'}</td><td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.description||'—'}</td><td><span class="b ${st.c}">${st.l}</span></td><td style="color:var(--t3)">${fd(r.date||r.created_at)}</td>`;
+  return tr;
 }
 
-function renderCharts() {
-  // Status pie
-  const statusData = ['new','work','approved','rejected','completed'].map(s => allRequests.filter(r => r.status===s).length);
-  if (charts.status) charts.status.destroy();
-  charts.status = new Chart(document.getElementById('chartStatus'), {
-    type:'doughnut',
-    data:{
-      labels:['Новые','В работе','Принято','Отклонено','Выполнено'],
-      datasets:[{data:statusData, backgroundColor:['#f59e0b','#3b82f6','#10b981','#ef4444','#8b5cf6'], borderWidth:0}]
-    },
-    options:{plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}},cutout:'65%'}
-  });
-  // Location bar
-  const locs = {};
-  allRequests.forEach(r => { locs[r.location||'—'] = (locs[r.location||'—']||0)+1; });
-  const locEntries = Object.entries(locs).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  if (charts.loc) charts.loc.destroy();
-  charts.loc = new Chart(document.getElementById('chartLocation'), {
-    type:'bar',
-    data:{
-      labels: locEntries.map(e=>e[0]),
-      datasets:[{data:locEntries.map(e=>e[1]), backgroundColor:'rgba(102,126,234,.7)', borderRadius:6, borderWidth:0}]
-    },
-    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,grid:{color:'#f0f0f5'},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
-  });
-  // Activity line (last 14 days)
-  const days = [];
-  for (let i=13; i>=0; i--) {
-    const d = new Date(); d.setDate(d.getDate()-i);
-    days.push(d.toISOString().slice(0,10));
-  }
-  const counts = days.map(day => allRequests.filter(r => (r.date||r.created_at||'').slice(0,10)===day).length);
-  if (charts.activity) charts.activity.destroy();
-  charts.activity = new Chart(document.getElementById('chartActivity'), {
-    type:'line',
-    data:{
-      labels:days.map(d=>d.slice(5)),
-      datasets:[{data:counts, borderColor:'#667eea', backgroundColor:'rgba(102,126,234,.08)', borderWidth:2, pointRadius:3, pointBackgroundColor:'#667eea', fill:true, tension:.4}]
-    },
-    options:{plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,grid:{color:'#f0f0f5'},ticks:{font:{size:11}}},x:{grid:{display:false},ticks:{font:{size:11}}}}}
-  });
-}
-
-function renderRecentRequests() {
-  const tbody = document.getElementById('recentRequests');
-  if (!tbody) return;
-  const recent = allRequests.slice(0,8);
-  tbody.innerHTML = recent.map(r => {
-    const st = STATUS_MAP[r.status] || STATUS_MAP.new;
-    return `<tr style="cursor:pointer" onclick="openRequestModal(${r.id})">
-      <td style="font-family:monospace;font-size:12px;color:var(--acc)">${pad(r.id)}</td>
-      <td><span class="badge ${r.type==='idea'?'badge-idea':'badge-risk'}">${r.type==='idea'?'💡 Идея':'⚠️ Риск'}</span></td>
-      <td>${r.anonymous ? '<em style="color:var(--t3)">Аноним</em>' : r.author||'—'}</td>
+// ── REQUESTS TABLE ─────────────────────────────────────────────────
+function filterReqs(){
+  const q=(document.getElementById('rqSearch')?.value||'').toLowerCase();
+  const st=document.getElementById('rqSt')?.value||'all';
+  const tp=document.getElementById('rqTp')?.value||'all';
+  const lc=document.getElementById('rqLoc')?.value||'all';
+  let d=allReqs;
+  if(q)d=d.filter(r=>String(r.id).includes(q)||(r.author||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q));
+  if(st!=='all')d=d.filter(r=>r.status===st);
+  if(tp!=='all')d=d.filter(r=>r.type===tp);
+  if(lc!=='all')d=d.filter(r=>r.location===lc);
+  document.getElementById('rqCount').textContent=`(${d.length})`;
+  const tbody=document.getElementById('rqTable');tbody.innerHTML='';
+  d.forEach(r=>{
+    const st2=STA[r.status]||STA.new;
+    const media=pm(r.media);
+    const thumb=media[0]?`<img src="${media[0]}" class="mthumb" onclick="event.stopPropagation();openGal('${media[0]}')" onerror="this.style.display='none'">`:'—';
+    let dlHtml='—';
+    if(r.deadline){const dl=Math.ceil((new Date(r.deadline)-Date.now())/86400000);dlHtml=`<span class="${dl<=7?'dl-warn':''}">${fd(r.deadline)}${dl<=7&&dl>0?` (${dl}д)`:dl<=0?' ⚠️':''}</span>`;}
+    const tr=document.createElement('tr');tr.style.cursor='pointer';tr.onclick=()=>openReqModal(r.id);
+    tr.innerHTML=`<td style="font-family:monospace;font-size:11px;color:var(--acc)">${pad(r.id)}</td>
+      <td><span class="b ${r.type==='idea'?'b-idea':'b-risk'}">${r.type==='idea'?'💡':'⚠️'} ${r.type==='idea'?'Идея':'Риск'}</span></td>
+      <td>${r.anonymous?'<em style="color:var(--t3)">Аноним</em>':r.author||'—'}</td>
       <td>${r.location||'—'}</td>
+      <td onclick="event.stopPropagation()">${thumb}</td>
       <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.description||'—'}</td>
-      <td><span class="badge ${st.cls}">${st.l}</span></td>
-      <td style="color:var(--t3)">${fmtDate(r.date||r.created_at)}</td>
-    </tr>`;
-  }).join('');
+      <td><span class="b ${st2.c}">${st2.l}</span></td>
+      <td>${r.assigned_to||'<span style="color:var(--t3)">—</span>'}</td>
+      <td>${dlHtml}</td>`;
+    tbody.appendChild(tr);
+  });
 }
 
-// ── REQUESTS TABLE ─────────────────────────────────────────────────────────
-function filterRequests() {
-  const q = (document.getElementById('reqSearch')?.value||'').toLowerCase();
-  const st = document.getElementById('reqStatusFilter')?.value||'all';
-  const tp = document.getElementById('reqTypeFilter')?.value||'all';
-  const lc = document.getElementById('reqLocFilter')?.value||'all';
-  let data = allRequests;
-  if (q) data = data.filter(r => String(r.id).includes(q) || (r.author||'').toLowerCase().includes(q) || (r.description||'').toLowerCase().includes(q));
-  if (st !== 'all') data = data.filter(r => r.status === st);
-  if (tp !== 'all') data = data.filter(r => r.type === tp);
-  if (lc !== 'all') data = data.filter(r => r.location === lc);
-  renderRequestsTable(data);
-}
-
-function renderRequestsTable(data) {
-  const d = data || allRequests;
-  document.getElementById('reqCount').textContent = `(${d.length})`;
-  const tbody = document.getElementById('requestsTable');
-  if (!tbody) return;
-  if (!d.length) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--t3)">Нет заявок</td></tr>`; return; }
-  tbody.innerHTML = d.map(r => {
-    const st = STATUS_MAP[r.status] || STATUS_MAP.new;
-    const comms = (() => { try { return Array.isArray(r.comments) ? r.comments : JSON.parse(r.comments||'[]'); } catch { return []; } })();
-    return `<tr style="cursor:pointer">
-      <td onclick="openRequestModal(${r.id})" style="font-family:monospace;font-size:12px;color:var(--acc)">${pad(r.id)}</td>
-      <td onclick="openRequestModal(${r.id})"><span class="badge ${r.type==='idea'?'badge-idea':'badge-risk'}">${r.type==='idea'?'💡':'⚠️'} ${r.type==='idea'?'Идея':'Риск'}</span></td>
-      <td onclick="openRequestModal(${r.id})">${r.anonymous ? '<em style="color:var(--t3);font-size:12px">Аноним</em>' : r.author||'—'}</td>
-      <td onclick="openRequestModal(${r.id})">${r.location||'—'}</td>
-      <td onclick="openRequestModal(${r.id})" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.description||'—'}</td>
-      <td>
-        <select class="inp" style="padding:4px 8px;font-size:12px;width:auto" onchange="quickStatus(${r.id}, this.value)" onclick="event.stopPropagation()">
-          ${['new','work','approved','rejected','completed'].map(s => `<option value="${s}" ${r.status===s?'selected':''}>${STATUS_MAP[s].l}</option>`).join('')}
-        </select>
-      </td>
-      <td>❤️ ${r.likes||0} 💬 ${comms.length}</td>
-      <td style="color:var(--t3);font-size:12px">${fmtDate(r.date||r.created_at)}</td>
-      <td onclick="event.stopPropagation()">
-        <button class="btn btn-ghost btn-sm" onclick="openRequestModal(${r.id})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteRequest(${r.id})" style="margin-left:4px">🗑️</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-async function quickStatus(id, status) {
-  await SB.from('requests').update({status}).eq('id', id);
-  const r = allRequests.find(x => x.id === id);
-  if (r) {
-    r.status = status;
-    // Notify author
-    if (r.author_id) {
-      const labels = {new:'Новая',work:'Взята в работу',approved:'Принята',rejected:'Отклонена',completed:'Выполнена'};
-      await notifyUser(r.author_id, `📋 Статус заявки изменён`, `Заявка ${pad(id)}: «${labels[status]}»`, id);
-    }
-  }
-  toast('Статус обновлён');
-}
-
-async function deleteRequest(id) {
-  if (!confirm(`Удалить заявку ${pad(id)}?`)) return;
-  await SB.from('requests').delete().eq('id', id);
-  allRequests = allRequests.filter(r => r.id !== id);
-  renderRequestsTable(); renderRecentRequests(); renderDashboard();
-  toast('Заявка удалена', 'info');
-}
-
-// ── REQUEST MODAL ──────────────────────────────────────────────────────────
-function openRequestModal(id) {
-  const r = allRequests.find(x => x.id == id);
-  if (!r) return;
-  editingReqId = id;
-  document.getElementById('reqModalTitle').textContent = `Заявка ${pad(id)}`;
-  const media = (() => { try { return Array.isArray(r.media) ? r.media : JSON.parse(r.media||'[]'); } catch { return []; } })();
-  const comms = (() => { try { return Array.isArray(r.comments) ? r.comments : JSON.parse(r.comments||'[]'); } catch { return []; } })();
-  const st = STATUS_MAP[r.status] || STATUS_MAP.new;
-  document.getElementById('reqModalBody').innerHTML = `
+// ── REQUEST MODAL ──────────────────────────────────────────────────
+function openReqModal(id){
+  const r=allReqs.find(x=>x.id==id);if(!r)return;
+  editReqId=id;
+  document.getElementById('reqMTitle').textContent=`${pad(id)} — ${r.type==='idea'?'💡 Идея':'⚠️ Риск'}`;
+  const media=pm(r.media);
+  const comms=pm(r.comments);
+  const mediaThumbs=media.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${media.map(m=>{const isV=m.startsWith('data:video');return isV?`<video src="${m}" style="width:100px;height:75px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="openGal('${m}')">`:`<img src="${m}" style="width:100px;height:75px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--bd)" onclick="openGal('${m}')">`}).join('')}</div>`:'' ;
+  document.getElementById('reqMBody').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:16px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <span class="badge ${r.type==='idea'?'badge-idea':'badge-risk'}">${r.type==='idea'?'💡 Идея':'⚠️ Риск'}</span>
-        <span class="badge ${st.cls}">${st.l}</span>
-        ${r.anonymous ? '<span class="badge" style="background:#f3f4f6;color:#6b7280">🎭 Анонимно</span>' : ''}
+      <!-- Info row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:var(--bg3);border-radius:10px;padding:12px">
+        <div><div class="lbl" style="margin-bottom:2px">Автор</div><div style="font-size:13px;font-weight:600">${r.anonymous?'🎭 Аноним':r.author||'—'}</div></div>
+        <div><div class="lbl" style="margin-bottom:2px">Участок</div><div style="font-size:13px">${r.location||'—'}</div></div>
+        <div><div class="lbl" style="margin-bottom:2px">Дата подачи</div><div style="font-size:13px">${fdt(r.date||r.created_at)}</div></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><div class="lbl">Автор</div><div style="font-size:13px;color:var(--t1)">${r.author||'Аноним'}</div></div>
-        <div><div class="lbl">Участок</div><div style="font-size:13px;color:var(--t1)">${r.location||'—'}</div></div>
-        <div><div class="lbl">Дата</div><div style="font-size:13px;color:var(--t1)">${fmtDateTime(r.date||r.created_at)}</div></div>
-        <div><div class="lbl">Лайки / Комментарии</div><div style="font-size:13px;color:var(--t1)">❤️ ${r.likes||0} &nbsp; 💬 ${comms.length}</div></div>
-      </div>
+      <!-- Description -->
       <div>
         <div class="lbl">Описание</div>
-        <div style="font-size:13px;color:var(--t1);line-height:1.6;background:var(--bg3);padding:12px;border-radius:10px">${r.description||'—'}</div>
+        <div style="font-size:14px;color:var(--t1);line-height:1.6;background:var(--bg3);padding:12px;border-radius:10px">${r.description||'—'}</div>
       </div>
-      ${media.length ? `<div>
-        <div class="lbl">Медиафайлы (${media.length})</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
-          ${media.map(m => m.startsWith('data:video')
-            ? `<video src="${m}" style="width:120px;height:90px;object-fit:cover;border-radius:8px" controls></video>`
-            : `<img src="${m}" style="width:120px;height:90px;object-fit:cover;border-radius:8px;cursor:pointer" onclick="window.open('${m}','_blank')">`
-          ).join('')}
+      <!-- Media -->
+      ${media.length?`<div><div class="lbl">Медиафайлы (${media.length})</div>${mediaThumbs}</div>`:''}
+      <!-- Assignee + Deadline -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div style="position:relative">
+          <label class="lbl">Ответственный</label>
+          <input class="inp" id="assInput" placeholder="Начните вводить имя…" value="${r.assigned_to||''}" oninput="filterAss()" autocomplete="off">
+          <input type="hidden" id="assVal" value="${r.assigned_to||''}">
+          <div id="assAC" class="aclist" style="display:none"></div>
         </div>
-      </div>` : ''}
-      ${comms.length ? `<div>
-        <div class="lbl">Комментарии</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
-          ${comms.map(c => `<div style="background:var(--bg3);border-radius:8px;padding:8px 12px">
-            <div style="font-size:11px;font-weight:700;color:var(--t2)">${c.author} · ${fmtDateTime(c.date)}</div>
-            <div style="font-size:13px;color:var(--t1);margin-top:2px">${c.text}</div>
-          </div>`).join('')}
-        </div>
-      </div>` : ''}
-      <div style="border-top:1px solid var(--bd);padding-top:14px">
-        <div class="lbl">Изменить статус</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
-          ${['new','work','approved','rejected','completed'].map(s => `
-            <button onclick="setReqStatus('${s}')" class="btn btn-sm ${r.status===s?'btn-primary':'btn-ghost'}" id="stBtn-${s}">${STATUS_MAP[s].l}</button>
-          `).join('')}
+        <div>
+          <label class="lbl">Дедлайн</label>
+          <input class="inp" id="dlInput" type="date" value="${r.deadline?r.deadline.slice(0,10):''}">
         </div>
       </div>
+      <!-- Status select -->
       <div>
-        <div class="lbl">Назначить исполнителя</div>
-        <select class="inp" id="reqAssignee" style="margin-top:6px">
-          <option value="">— Не назначен —</option>
-          ${allUsers.map(u => `<option value="${u.name}" ${r.assigned_to===u.name?'selected':''}>${u.name}</option>`).join('')}
+        <label class="lbl">Статус заявки</label>
+        <select class="inp" id="stSelect">
+          ${Object.entries(STA).map(([k,v])=>`<option value="${k}" ${r.status===k?'selected':''}>${v.l}</option>`).join('')}
         </select>
       </div>
+      <!-- Admin comment -->
       <div>
-        <div class="lbl">Комментарий администратора</div>
-        <textarea class="inp" id="reqAdminComment" rows="3" placeholder="Оставьте комментарий для автора…" style="margin-top:6px;resize:vertical">${r.admin_comment||''}</textarea>
+        <label class="lbl">Комментарий администратора</label>
+        <textarea class="inp" id="acText" rows="2" style="resize:none" placeholder="Видит автор заявки…">${r.admin_comment||''}</textarea>
+      </div>
+      <!-- Logs button -->
+      <div>
+        <button class="btn bg" onclick="openLogs(${id})" style="font-size:12px">📋 История изменений ${pm(r.change_log||'[]').length?`(${pm(r.change_log||'[]').length})`:'(пусто)'}</button>
+      </div>
+      <!-- Comments -->
+      <div>
+        <div class="lbl">Комментарии (${comms.length})</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:220px;overflow-y:auto;padding-right:4px">
+          ${comms.map(c=>`<div style="background:var(--bg3);border-radius:8px;padding:8px 12px"><div style="font-size:11px;font-weight:700;color:var(--t3)">${c.author} · ${fdt(c.date)}</div><div style="font-size:13px;color:var(--t1);margin-top:2px">${c.text}</div></div>`).join('')||'<div style="color:var(--t3);font-size:13px">Нет комментариев</div>'}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <input class="inp" id="newComm" placeholder="Написать комментарий…" style="flex:1">
+          <button class="btn bp" onclick="addAdminComm(${id})">Отправить</button>
+        </div>
       </div>
     </div>`;
   openModal('reqModal');
 }
 
-function setReqStatus(s) {
-  document.querySelectorAll('[id^="stBtn-"]').forEach(b => b.className = 'btn btn-sm btn-ghost');
-  document.getElementById('stBtn-'+s).className = 'btn btn-sm btn-primary';
-  document.getElementById('stBtn-'+s).dataset.selected = '1';
-  // Store selected
-  document.getElementById('reqSaveBtn').dataset.status = s;
+function filterAss(){
+  const q=document.getElementById('assInput').value.toLowerCase();
+  const ac=document.getElementById('assAC');
+  if(!q){ac.style.display='none';return;}
+  const m=allUsers.filter(u=>u.name.toLowerCase().includes(q)).slice(0,6);
+  if(!m.length){ac.style.display='none';return;}
+  ac.style.display='block';
+  ac.innerHTML=m.map(u=>`<div class="acitem" onclick="selAss('${u.name}')"><div class="av" style="width:24px;height:24px;font-size:8px">${ini(u.name)}</div>${u.name}</div>`).join('');
+}
+function selAss(n){document.getElementById('assInput').value=n;document.getElementById('assVal').value=n;document.getElementById('assAC').style.display='none';}
+
+async function addAdminComm(id){
+  const text=document.getElementById('newComm').value.trim();
+  if(!text||!adminUser)return;
+  const r=allReqs.find(x=>x.id==id);if(!r)return;
+  const comms=pm(r.comments);
+  comms.push({author:adminUser.name,text,date:new Date().toISOString()});
+  r.comments=comms;
+  await SB.from('requests').update({comments:comms}).eq('id',id);
+  document.getElementById('newComm').value='';
+  openReqModal(id);toast('Комментарий добавлен');
 }
 
-async function saveRequestChanges() {
-  const r = allRequests.find(x => x.id == editingReqId);
-  if (!r) return;
-  const status = document.getElementById('reqSaveBtn').dataset.status || r.status;
-  const assigned_to = document.getElementById('reqAssignee').value || null;
-  const admin_comment = document.getElementById('reqAdminComment').value || null;
-  await SB.from('requests').update({status, assigned_to, admin_comment}).eq('id', editingReqId);
-  Object.assign(r, {status, assigned_to, admin_comment});
-  if (r.author_id && status !== r.status) {
-    const labels = {new:'Новая',work:'Взята в работу',approved:'Принята',rejected:'Отклонена',completed:'Выполнена'};
-    await notifyUser(r.author_id, '📋 Статус заявки изменён', `${pad(editingReqId)}: «${labels[status]}»${admin_comment?'\n'+admin_comment:''}`, editingReqId);
+async function saveReq(){
+  const r=allReqs.find(x=>x.id==editReqId);if(!r)return;
+  const newSt=document.getElementById('stSelect').value;
+  const ass=document.getElementById('assVal').value||document.getElementById('assInput').value||null;
+  const dl=document.getElementById('dlInput').value||null;
+  const ac=document.getElementById('acText').value||null;
+  // Build change_log
+  const logs=pm(r.change_log||'[]');
+  const prevSt=r.status;
+  if(newSt!==r.status)logs.push({who:adminUser.name,action:`Статус: «${STA[r.status]?.l}» → «${STA[newSt]?.l}»`,date:new Date().toISOString()});
+  if(ass!==r.assigned_to)logs.push({who:adminUser.name,action:`Назначен: ${ass||'—'}`,date:new Date().toISOString()});
+  if(dl!==r.deadline?.slice?.(0,10))logs.push({who:adminUser.name,action:`Дедлайн: ${dl?fd(dl):'убран'}`,date:new Date().toISOString()});
+  await SB.from('requests').update({status:newSt,assigned_to:ass,deadline:dl,admin_comment:ac,change_log:logs}).eq('id',editReqId);
+  Object.assign(r,{status:newSt,assigned_to:ass,deadline:dl,admin_comment:ac,change_log:logs});
+  if(newSt!==prevSt&&r.author_id){
+    await SB.from('notifications').insert({user_id:r.author_id,title:'🔄 Статус изменён',message:`Заявка ${pad(editReqId)}: «${STA[newSt]?.l}»${ac?'\n'+ac:''}`,type:'status_update',post_id:editReqId,read:false,date:new Date().toISOString()});
   }
-  closeModal('reqModal');
-  renderRequestsTable(); renderRecentRequests(); renderDashboard();
-  toast('Заявка сохранена ✅');
+  closeModal('reqModal');filterReqs();toast('Заявка сохранена ✅');
 }
 
-// ── USERS TABLE ────────────────────────────────────────────────────────────
-function filterUsers() {
-  const q = (document.getElementById('userSearch')?.value||'').toLowerCase();
-  const d = q ? allUsers.filter(u => (u.name||'').toLowerCase().includes(q) || String(u.id).includes(q)) : allUsers;
-  renderUsersTable(d);
+function openLogs(id){
+  const r=allReqs.find(x=>x.id==id);if(!r)return;
+  const logs=pm(r.change_log||'[]');
+  document.getElementById('logsMBody').innerHTML=logs.length
+    ?[...logs].reverse().map(l=>`<div class="li"><div class="ld"></div><div><div style="font-size:13px;font-weight:600;color:var(--t1)">${l.action}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${l.who} · ${fdt(l.date)}</div></div></div>`).join('')
+    :'<div style="text-align:center;padding:30px;color:var(--t3)">История изменений пуста</div>';
+  openModal('logsModal');
 }
 
-function renderUsersTable(data) {
-  const d = data || allUsers;
-  document.getElementById('userCount').textContent = `(${d.length})`;
-  const tbody = document.getElementById('usersTable');
-  if (!tbody) return;
-  tbody.innerHTML = d.map(u => {
-    const myPosts = allRequests.filter(r => r.author_id === u.id || r.author === u.name).length;
-    const lvl = getLvl(u.points||0);
-    return `<tr>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="avatar grad" style="width:28px;height:28px;font-size:10px">${initials(u.name)}</div>
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--t1)">${u.name||'—'}</div>
-            <div style="font-size:11px;color:var(--t3)">${u.phone||u.email||'—'}</div>
-          </div>
-        </div>
-      </td>
-      <td style="font-family:monospace;color:var(--t2)">${u.id}</td>
+// ── USERS ──────────────────────────────────────────────────────────
+function filterUsers(){
+  const q=(document.getElementById('uSearch')?.value||'').toLowerCase();
+  const rf=document.getElementById('uRole')?.value||'all';
+  let d=allUsers;
+  if(q)d=d.filter(u=>(u.name||'').toLowerCase().includes(q)||String(u.id).includes(q));
+  if(rf!=='all')d=d.filter(u=>(u.role||'staff')===rf);
+  document.getElementById('uCount').textContent=`(${d.length})`;
+  const tbody=document.getElementById('uTable');tbody.innerHTML='';
+  d.forEach(u=>{
+    const myP=allReqs.filter(r=>r.author_id===u.id||r.author===u.name).length;
+    const rl=ROLES[u.role||'staff']||ROLES.staff;
+    const tr=document.createElement('tr');tr.style.cursor='pointer';tr.onclick=()=>openUserModal(u.id);
+    tr.innerHTML=`<td><div style="display:flex;align-items:center;gap:8px"><div class="av" style="width:28px;height:28px;font-size:10px">${ini(u.name)}</div><div><div style="font-size:13px;font-weight:600">${u.name}</div><div style="font-size:11px;color:var(--t3)">${u.phone||u.email||'—'}</div></div></div></td>
+      <td style="font-family:monospace">${u.id}</td>
       <td>${u.department||'—'}</td>
+      <td><span class="b ${rl.cls}">${rl.icon} ${rl.label}</span></td>
       <td><strong style="color:var(--acc)">${u.points||0}</strong></td>
-      <td style="font-size:12px">${lvl}</td>
-      <td>${myPosts}</td>
-      <td><span class="badge ${u.role==='admin'?'badge-work':'badge-new'}">${u.role==='admin'?'👑 Админ':'👤 Юзер'}</span></td>
-      <td>
-        <button class="btn btn-ghost btn-sm" onclick="toggleAdmin('${u.id}','${u.role}')">${u.role==='admin'?'Снять админа':'Сделать админом'}</button>
-        <button class="btn btn-ghost btn-sm" style="margin-left:4px" onclick="addPoints('${u.id}','${u.name}')">+ Баллы</button>
-      </td>
-    </tr>`;
+      <td style="font-size:12px">${getLvl(u.points||0)}</td>
+      <td>${myP}</td>
+      <td><button class="btn bg bsm" onclick="event.stopPropagation();openUserModal('${u.id}')">✏️ Изменить</button></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function openUserModal(userId){
+  const u=allUsers.find(x=>x.id===userId);if(!u)return;
+  editUserId=userId;
+  document.getElementById('uMTitle').textContent=u.name;
+  const parents=allDepts.filter(d=>!d.parent_id);
+  let dOpts='<option value="">— Не указан —</option>';
+  if(parents.length){parents.forEach(p=>{dOpts+=`<option value="${p.name}" ${u.department===p.name?'selected':''}>${p.name}</option>`;allDepts.filter(d=>d.parent_id===p.id).forEach(c=>{dOpts+=`<option value="${c.name}" ${u.department===c.name?'selected':''}>　└ ${c.name}</option>`;});});}
+  else{allDepts.forEach(d=>{dOpts+=`<option value="${d.name}" ${u.department===d.name?'selected':''}>${d.name}</option>`;});}
+  const rl=ROLES[u.role||'staff']||ROLES.staff;
+  const myPosts=allReqs.filter(r=>r.author_id===u.id||r.author===u.name);
+  document.getElementById('uMBody').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="text-align:center;background:var(--bg3);border-radius:10px;padding:16px">
+        <div class="av" style="width:54px;height:54px;font-size:20px;margin:0 auto 8px">${ini(u.name)}</div>
+        <div style="font-size:15px;font-weight:700">${u.name}</div>
+        <span class="b ${rl.cls}" style="margin-top:4px;display:inline-flex">${rl.icon} ${rl.label}</span>
+        <div style="display:flex;justify-content:center;gap:12px;margin-top:10px">
+          <div style="text-align:center"><div style="font-size:16px;font-weight:800;color:var(--acc)">${u.points||0}</div><div style="font-size:10px;color:var(--t3)">баллов</div></div>
+          <div style="text-align:center"><div style="font-size:16px;font-weight:800">${myPosts.length}</div><div style="font-size:10px;color:var(--t3)">заявок</div></div>
+          <div style="text-align:center"><div style="font-size:16px;font-weight:800">${getLvl(u.points||0).split(' ').slice(1).join(' ')}</div><div style="font-size:10px;color:var(--t3)">уровень</div></div>
+        </div>
+      </div>
+      <div><label class="lbl">Роль</label>
+        <select class="inp" id="uRoleS">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${(u.role||'staff')===k?'selected':''}>${v.icon} ${v.label}</option>`).join('')}</select>
+      </div>
+      <div><label class="lbl">Участок</label><select class="inp" id="uDeptS">${dOpts}</select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div><label class="lbl">Баллы</label><input class="inp" id="uPointsI" type="number" value="${u.points||0}"></div>
+        <div><label class="lbl">Телефон</label><input class="inp" id="uPhoneI" value="${u.phone||''}"></div>
+      </div>
+      <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px;font-size:12px;color:#92400e">⚠️ Изменения вступают в силу при следующем входе пользователя.</div>
+    </div>`;
+  openModal('userModal');
+}
+
+async function saveUser(){
+  const u=allUsers.find(x=>x.id===editUserId);if(!u)return;
+  const role=document.getElementById('uRoleS').value;
+  const department=document.getElementById('uDeptS').value;
+  const points=parseInt(document.getElementById('uPointsI').value)||0;
+  const phone=document.getElementById('uPhoneI').value;
+  await SB.from('users').update({role,department,points,phone}).eq('id',editUserId);
+  Object.assign(u,{role,department,points,phone});
+  closeModal('userModal');filterUsers();toast('Пользователь обновлён ✅');
+}
+
+// ── DEPARTMENTS ────────────────────────────────────────────────────
+async function loadDepts(){
+  await loadDeptsData();
+  const tree=document.getElementById('deptTree');if(!tree)return;
+  const parents=allDepts.filter(d=>!d.parent_id);
+  if(!parents.length){tree.innerHTML='<div style="color:var(--t3);font-size:13px">Нет участков. Нажмите «+ Добавить участок».</div>';return;}
+  tree.innerHTML=parents.map(p=>{
+    const ch=allDepts.filter(d=>d.parent_id===p.id);
+    return `<div class="dp">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:14px;font-weight:700">🏭 ${p.name}</div>${p.description?`<div style="font-size:11px;color:var(--t3)">${p.description}</div>`:''}<div style="font-size:11px;color:var(--t3);margin-top:2px">${ch.length} дочерних</div></div>
+        <div style="display:flex;gap:5px"><button class="btn bg bsm" onclick="openDeptModal('${p.id}')">✏️</button><button class="btn bd bsm" onclick="delDept('${p.id}')">🗑️</button><button class="btn bg bsm" onclick="openDeptModal('','${p.id}','${p.name}')">+ дочерний</button></div>
+      </div>
+      ${ch.map(c=>`<div class="dc"><div style="display:flex;align-items:center;gap:6px"><span style="color:var(--t3)">└</span><div><div style="font-size:13px;font-weight:600">${c.name}</div>${c.description?`<div style="font-size:11px;color:var(--t3)">${c.description}</div>`:''}</div></div><div style="display:flex;gap:5px"><button class="btn bg bsm" onclick="openDeptModal('${c.id}')">✏️</button><button class="btn bd bsm" onclick="delDept('${c.id}')">🗑️</button></div></div>`).join('')}
+    </div>`;
   }).join('');
 }
 
-async function toggleAdmin(id, role) {
-  const newRole = role === 'admin' ? 'user' : 'admin';
-  if (!confirm(`Изменить роль на «${newRole}»?`)) return;
-  await SB.from('users').update({role: newRole}).eq('id', id);
-  const u = allUsers.find(x => x.id === id);
-  if (u) u.role = newRole;
-  renderUsersTable();
-  toast(`Роль изменена на ${newRole}`);
+function openDeptModal(id='', parentId='', parentName=''){
+  const d=id?allDepts.find(x=>x.id===id):null;
+  document.getElementById('dMTitle').textContent=d?'Редактировать участок':parentId?`Дочерний участок → ${parentName}`:'Новый участок';
+  document.getElementById('dId').value=id;
+  document.getElementById('dName').value=d?.name||'';
+  document.getElementById('dDesc').value=d?.description||'';
+  const parents=allDepts.filter(x=>!x.parent_id&&x.id!==id);
+  document.getElementById('dParent').innerHTML='<option value="">— Корневой (верхний уровень) —</option>'+
+    parents.map(p=>`<option value="${p.id}" ${(d?.parent_id||parentId)===p.id?'selected':''}>${p.name}</option>`).join('');
+  openModal('deptModal');
+}
+async function saveDept(){
+  const id=document.getElementById('dId').value;
+  const rec={name:document.getElementById('dName').value.trim(),description:document.getElementById('dDesc').value.trim()||null,parent_id:document.getElementById('dParent').value||null};
+  if(!rec.name){toast('Введите название','err');return;}
+  if(id){const{error}=await SB.from('departments').update(rec).eq('id',id);if(error){toast('Ошибка: '+error.message,'err');return;}}
+  else{const{error}=await SB.from('departments').insert(rec);if(error){toast('Ошибка: '+error.message,'err');return;}}
+  closeModal('deptModal');await loadDeptsData();loadDepts();toast('Участок сохранён ✅');
+}
+async function delDept(id){
+  const ch=allDepts.filter(d=>d.parent_id===id);
+  if(ch.length&&!confirm(`Удалить участок вместе с ${ch.length} дочерними?`))return;
+  for(const c of ch)await SB.from('departments').delete().eq('id',c.id);
+  await SB.from('departments').delete().eq('id',id);
+  await loadDeptsData();loadDepts();toast('Удалено','info');
 }
 
-async function addPoints(id, name) {
-  const pts = prompt(`Добавить баллы пользователю ${name}:`, '10');
-  if (!pts || isNaN(pts)) return;
-  const u = allUsers.find(x => x.id === id);
-  if (!u) return;
-  u.points = (u.points||0) + parseInt(pts);
-  await SB.from('users').update({points: u.points}).eq('id', id);
-  renderUsersTable();
-  toast(`+${pts} баллов для ${name}`);
-}
-
-// ── NEWS PAGE ──────────────────────────────────────────────────────────────
-async function loadNewsPage() {
-  const { data } = await SB.from('news').select('*').order('date', {ascending:false});
-  const list = document.getElementById('newsList');
-  if (!list) return;
-  const catIcon = {announcement:'📢',achievement:'🏆',safety:'🛡️',general:'📌'};
-  list.innerHTML = (data||[]).map(n => `
-    <div class="card" style="border-radius:12px">
-      <div style="padding:14px 16px;display:flex;align-items:flex-start;gap:12px">
-        <div style="width:40px;height:40px;border-radius:10px;background:var(--bg3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">${n.icon||catIcon[n.category]||'📰'}</div>
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:700;color:var(--t1)">${n.title}</div>
-          <div style="font-size:11px;color:var(--t3);margin-top:2px">${n.source||'Администрация'} · ${fmtDate(n.date||n.created_at)}</div>
-          <div style="font-size:13px;color:var(--t2);margin-top:6px;line-height:1.5">${(n.content||n.body||'').substring(0,150)}${(n.content||n.body||'').length>150?'…':''}</div>
-        </div>
-        <div style="display:flex;gap:6px;flex-shrink:0">
-          <button class="btn btn-ghost btn-sm" onclick="editNews(${n.id})">✏️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteNews(${n.id})">🗑️</button>
-        </div>
-      </div>
-    </div>`).join('') || '<div class="empty"><div class="empty-icon">📰</div><div>Новостей пока нет</div></div>';
-}
-
-async function editNews(id) {
-  const { data } = await SB.from('news').select('*').eq('id', id).single();
-  if (!data) return;
-  document.getElementById('newsId').value = id;
-  document.getElementById('newsTitle').value = data.title||'';
-  document.getElementById('newsContent').value = data.content||data.body||'';
-  document.getElementById('newsCategory').value = data.category||'general';
-  document.getElementById('newsSource').value = data.source||'';
-  document.getElementById('newsModalTitle').textContent = 'Редактировать новость';
-  openModal('newsModal');
-}
-
-function openNewsModal() {
-  document.getElementById('newsId').value = '';
-  document.getElementById('newsTitle').value = '';
-  document.getElementById('newsContent').value = '';
-  document.getElementById('newsSource').value = adminUser?.name||'Администрация';
-  document.getElementById('newsModalTitle').textContent = 'Новая новость';
-  openModal('newsModal');
-}
-
-async function saveNews() {
-  const id = document.getElementById('newsId').value;
-  const cat = document.getElementById('newsCategory').value;
-  const icons = {announcement:'📢',achievement:'🏆',safety:'🛡️',general:'📌'};
-  const rec = {
-    title: document.getElementById('newsTitle').value,
-    content: document.getElementById('newsContent').value,
-    source: document.getElementById('newsSource').value||adminUser?.name,
-    category: cat, icon: icons[cat]||'📰',
-    date: new Date().toISOString()
+// ── ROLES PAGE ─────────────────────────────────────────────────────
+function renderRoles(){
+  const perms={
+    admin:   ['Все права системы','Управление пользователями','Управление заявками','Публикация новостей','Редактирование достижений','Магазин','Настройка ролей'],
+    manager: ['Просмотр всех заявок','Смена статусов','Назначение исполнителей','Установка дедлайнов','Публикация новостей'],
+    engineer:['Создание заявок','Просмотр ленты','Комментарии','Лайки','Реферальная программа'],
+    master:  ['Создание заявок','Просмотр своего участка','Комментарии','Лайки'],
+    staff:   ['Создание заявок','Просмотр ленты','Комментарии','Лайки','Реферальная программа'],
   };
-  if (id) { await SB.from('news').update(rec).eq('id', id); toast('Новость обновлена'); }
-  else { await SB.from('news').insert(rec); toast('Новость опубликована'); }
-  closeModal('newsModal');
-  loadNewsPage();
-}
-
-async function deleteNews(id) {
-  if (!confirm('Удалить новость?')) return;
-  await SB.from('news').delete().eq('id', id);
-  toast('Новость удалена', 'info');
-  loadNewsPage();
-}
-
-// ── ACHIEVEMENTS PAGE ─────────────────────────────────────────────────────
-async function loadAchPage() {
-  const { data } = await SB.from('achievements').select('*');
-  const grid = document.getElementById('achGrid');
-  if (!grid) return;
-  grid.innerHTML = (data||[]).map(a => `
-    <div class="card" style="padding:16px;border-radius:12px;text-align:center">
-      <div style="font-size:36px;margin-bottom:8px">${a.icon}</div>
-      <div style="font-size:14px;font-weight:700;color:var(--t1)">${a.title}</div>
-      <div style="font-size:12px;color:var(--t3);margin-top:4px">${a.description||a.desc||''}</div>
-      <div style="display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap">
-        <span class="badge" style="background:rgba(102,126,234,.1);color:var(--acc)">${a.target_type} ≥ ${a.target}</span>
-        <span class="badge" style="background:rgba(251,191,36,.1);color:#78350f">+${a.points} б.</span>
+  document.getElementById('rolesContent').innerHTML=Object.entries(ROLES).map(([key,r])=>`
+    <div style="border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:10px;display:flex;align-items:flex-start;gap:14px">
+      <div style="font-size:32px">${r.icon}</div>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="font-size:15px;font-weight:700">${r.label}</div>
+          <span class="b ${r.cls}">${key}</span>
+          <span style="margin-left:auto;font-size:12px;color:var(--t3)">${allUsers.filter(u=>(u.role||'staff')===key).length} сотрудников</span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${(perms[key]||[]).map(p=>`<span style="background:rgba(102,126,234,.08);color:var(--acc);padding:2px 9px;border-radius:999px;font-size:11px">✓ ${p}</span>`).join('')}
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--t3)">* Детальная настройка прав — в следующей версии</div>
       </div>
-      <div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
-        <button class="btn btn-ghost btn-sm" onclick="editAch('${a.id}')">✏️ Изменить</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteAch('${a.id}')">🗑️</button>
-      </div>
-    </div>`).join('') || '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🏅</div><div>Достижений пока нет</div></div>';
+    </div>`).join('');
 }
 
-function openAchModal() {
-  document.getElementById('achId').value=''; document.getElementById('achIcon').value='🏆';
-  document.getElementById('achTitle').value=''; document.getElementById('achDesc').value='';
-  document.getElementById('achTarget').value='1'; document.getElementById('achPoints').value='10';
-  openModal('achModal');
+// ── NEWS ───────────────────────────────────────────────────────────
+async function loadNewsPage(){
+  const{data}=await SB.from('news').select('*').order('date',{ascending:false});
+  const list=document.getElementById('newsList');if(!list)return;
+  const ci={announcement:'📢',achievement:'🏆',safety:'🛡️',general:'📌'};
+  list.innerHTML=(data||[]).map(n=>`<div class="card" style="border-radius:12px"><div style="padding:12px 16px;display:flex;gap:10px;align-items:flex-start"><div style="width:36px;height:36px;border-radius:9px;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${n.icon||ci[n.category]||'📰'}</div><div style="flex:1"><div style="font-size:13px;font-weight:700">${n.title}</div><div style="font-size:11px;color:var(--t3)">${n.source||'Администрация'} · ${fd(n.date||n.created_at)}</div><div style="font-size:12px;color:var(--t2);margin-top:4px">${(n.content||n.body||'').substring(0,100)}…</div></div><div style="display:flex;gap:5px;flex-shrink:0"><button class="btn bg bsm" onclick="editNews(${n.id})">✏️</button><button class="btn bd bsm" onclick="delNews(${n.id})">🗑️</button></div></div></div>`).join('')||'<div style="text-align:center;padding:40px;color:var(--t3)">Новостей пока нет</div>';
 }
+async function editNews(id){const{data}=await SB.from('news').select('*').eq('id',id).single();if(!data)return;document.getElementById('nId').value=id;document.getElementById('nTitle').value=data.title||'';document.getElementById('nContent').value=data.content||data.body||'';document.getElementById('nCat').value=data.category||'general';document.getElementById('nSrc').value=data.source||'';document.getElementById('nMTitle').textContent='Редактировать';openModal('newsModal');}
+function openNewsModal(){document.getElementById('nId').value='';document.getElementById('nTitle').value='';document.getElementById('nContent').value='';document.getElementById('nSrc').value=adminUser?.name||'';document.getElementById('nMTitle').textContent='Новая новость';openModal('newsModal');}
+async function saveNews(){const id=document.getElementById('nId').value;const cat=document.getElementById('nCat').value;const icons={announcement:'📢',achievement:'🏆',safety:'🛡️',general:'📌'};const rec={title:document.getElementById('nTitle').value,content:document.getElementById('nContent').value,source:document.getElementById('nSrc').value||adminUser?.name,category:cat,icon:icons[cat]||'📰',date:new Date().toISOString()};if(id){await SB.from('news').update(rec).eq('id',id);toast('Обновлено');}else{await SB.from('news').insert(rec);toast('Опубликовано ✅');}closeModal('newsModal');loadNewsPage();}
+async function delNews(id){if(!confirm('Удалить?'))return;await SB.from('news').delete().eq('id',id);toast('Удалено','info');loadNewsPage();}
 
-async function editAch(id) {
-  const { data } = await SB.from('achievements').select('*').eq('id', id).single();
-  if (!data) return;
-  document.getElementById('achId').value = id;
-  document.getElementById('achIcon').value = data.icon||'🏆';
-  document.getElementById('achTitle').value = data.title||'';
-  document.getElementById('achDesc').value = data.description||data.desc||'';
-  document.getElementById('achTargetType').value = data.target_type||'posts';
-  document.getElementById('achTarget').value = data.target||1;
-  document.getElementById('achPoints').value = data.points||10;
-  openModal('achModal');
-}
+// ── ACHIEVEMENTS ───────────────────────────────────────────────────
+async function loadAchPage(){const{data}=await SB.from('achievements').select('*');const g=document.getElementById('achGrid');if(!g)return;g.innerHTML=(data||[]).map(a=>`<div class="card" style="padding:13px;text-align:center;border-radius:12px"><div style="font-size:30px;margin-bottom:5px">${a.icon}</div><div style="font-size:13px;font-weight:700">${a.title}</div><div style="font-size:11px;color:var(--t3);margin-top:2px">${a.description||a.desc||''}</div><div style="display:flex;justify-content:center;gap:5px;margin-top:7px"><span class="b" style="background:rgba(102,126,234,.1);color:var(--acc)">${a.target_type||''} ≥ ${a.target}</span><span class="b" style="background:rgba(251,191,36,.1);color:#78350f">+${a.points}б</span></div><div style="display:flex;gap:5px;justify-content:center;margin-top:9px"><button class="btn bg bsm" onclick="editAch('${a.id}')">✏️</button><button class="btn bd bsm" onclick="delAch('${a.id}')">🗑️</button></div></div>`).join('')||'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--t3)">Достижений нет</div>';}
+function openAchModal(){document.getElementById('aId').value='';document.getElementById('aIcon').value='🏆';document.getElementById('aTitle').value='';document.getElementById('aDesc').value='';document.getElementById('aTarget').value='1';document.getElementById('aPoints').value='10';openModal('achModal');}
+async function editAch(id){const{data}=await SB.from('achievements').select('*').eq('id',id).single();if(!data)return;document.getElementById('aId').value=id;document.getElementById('aIcon').value=data.icon||'🏆';document.getElementById('aTitle').value=data.title||'';document.getElementById('aDesc').value=data.description||data.desc||'';document.getElementById('aTType').value=data.target_type||'posts';document.getElementById('aTarget').value=data.target||1;document.getElementById('aPoints').value=data.points||10;openModal('achModal');}
+async function saveAch(){const id=document.getElementById('aId').value;const rec={icon:document.getElementById('aIcon').value,title:document.getElementById('aTitle').value,description:document.getElementById('aDesc').value,target_type:document.getElementById('aTType').value,target:parseInt(document.getElementById('aTarget').value),points:parseInt(document.getElementById('aPoints').value)};let err;if(id){({error:err}=await SB.from('achievements').update(rec).eq('id',id));}else{({error:err}=await SB.from('achievements').insert(rec));}if(err){toast('Ошибка: '+err.message,'err');return;}toast(id?'Обновлено':'Создано ✅');closeModal('achModal');loadAchPage();}
+async function delAch(id){if(!confirm('Удалить?'))return;await SB.from('achievements').delete().eq('id',id);toast('Удалено','info');loadAchPage();}
 
-async function saveAch() {
-  const id = document.getElementById('achId').value;
-  const rec = {
-    icon: document.getElementById('achIcon').value,
-    title: document.getElementById('achTitle').value,
-    description: document.getElementById('achDesc').value,
-    target_type: document.getElementById('achTargetType').value,
-    target: parseInt(document.getElementById('achTarget').value),
-    points: parseInt(document.getElementById('achPoints').value)
-  };
-  if (id) {
-    const { error } = await SB.from('achievements').update(rec).eq('id', id);
-    if (error) { toast('Ошибка: ' + error.message, 'error'); return; }
-    toast('Достижение обновлено');
-  } else {
-    // Try numeric id first, fallback to text
-    const { error } = await SB.from('achievements').insert(rec);
-    if (error) { toast('Ошибка: ' + error.message, 'error'); return; }
-    toast('Достижение создано ✅');
-  }
-  closeModal('achModal'); loadAchPage();
-}
-
-async function deleteAch(id) {
-  if (!confirm('Удалить достижение?')) return;
-  await SB.from('achievements').delete().eq('id', id);
-  toast('Удалено', 'info'); loadAchPage();
-}
-
-// ── SHOP PAGE ──────────────────────────────────────────────────────────────
-async function loadShopPage() {
-  const { data } = await SB.from('shop_items').select('*').order('points');
-  const grid = document.getElementById('shopGrid');
-  if (!grid) return;
-  grid.innerHTML = (data||[]).map(item => `
-    <div class="card" style="padding:16px;border-radius:12px;text-align:center">
-      <div style="font-size:36px;margin-bottom:8px">${item.icon}</div>
-      <div style="font-size:14px;font-weight:700;color:var(--t1)">${item.title}</div>
-      <div style="font-size:16px;font-weight:800;color:var(--acc);margin-top:6px">${item.points} баллов</div>
-      <div style="display:flex;gap:6px;justify-content:center;margin-top:12px">
-        <button class="btn btn-ghost btn-sm" onclick="editShopItem(${item.id})">✏️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteShopItem(${item.id})">🗑️</button>
-      </div>
-    </div>`).join('') || '<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🎁</div><div>Товаров пока нет</div></div>';
-}
-
-function openShopModal() {
-  document.getElementById('shopItemId').value=''; document.getElementById('shopIcon').value='🎁';
-  document.getElementById('shopTitle').value=''; document.getElementById('shopPoints').value='100';
-  document.getElementById('shopColor').value=''; openModal('shopModal');
-}
-
-async function editShopItem(id) {
-  const { data } = await SB.from('shop_items').select('*').eq('id', id).single();
-  if (!data) return;
-  document.getElementById('shopItemId').value=id; document.getElementById('shopIcon').value=data.icon||'🎁';
-  document.getElementById('shopTitle').value=data.title||''; document.getElementById('shopPoints').value=data.points||100;
-  document.getElementById('shopColor').value=data.color||''; openModal('shopModal');
-}
-
-async function saveShopItem() {
-  const id = document.getElementById('shopItemId').value;
-  const rec = { icon: document.getElementById('shopIcon').value, title: document.getElementById('shopTitle').value, points: parseInt(document.getElementById('shopPoints').value), color: document.getElementById('shopColor').value };
-  if (id) { await SB.from('shop_items').update(rec).eq('id', id); toast('Товар обновлён'); }
-  else { await SB.from('shop_items').insert(rec); toast('Товар добавлен'); }
-  closeModal('shopModal'); loadShopPage();
-}
-
-async function deleteShopItem(id) {
-  if (!confirm('Удалить товар?')) return;
-  await SB.from('shop_items').delete().eq('id', id);
-  toast('Удалено', 'info'); loadShopPage();
-}
-
-// ── NOTIFICATIONS ─────────────────────────────────────────────────────────
-async function notifyUser(userId, title, message, postId=null) {
-  try {
-    await SB.from('notifications').insert({user_id:userId, title, message, type:'status_update', post_id:postId, read:false, date:new Date().toISOString()});
-    const { data:u } = await SB.from('users').select('telegram_id').eq('id', userId).single();
-    if (u?.telegram_id && BOT) {
-      fetch(`https://api.telegram.org/bot${BOT}/sendMessage`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({chat_id: u.telegram_id, text: `${title}\n\n${message}`})
-      }).catch(()=>{});
-    }
-  } catch(e) {}
-}
-
-// Init
-refreshAll();
+// ── SHOP ───────────────────────────────────────────────────────────
+async function loadShopPage(){const{data}=await SB.from('shop_items').select('*').order('points');const g=document.getElementById('shopGrid');if(!g)return;g.innerHTML=(data||[]).map(i=>`<div class="card" style="padding:13px;text-align:center;border-radius:12px"><div style="font-size:30px;margin-bottom:5px">${i.icon}</div><div style="font-size:13px;font-weight:700">${i.title}</div><div style="font-size:15px;font-weight:800;color:var(--acc);margin-top:4px">${i.points} б.</div><div style="display:flex;gap:5px;justify-content:center;margin-top:9px"><button class="btn bg bsm" onclick="editShop(${i.id})">✏️</button><button class="btn bd bsm" onclick="delShop(${i.id})">🗑️</button></div></div>`).join('')||'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--t3)">Товаров нет</div>';}
+function openShopModal(){document.getElementById('sId').value='';document.getElementById('sIcon').value='🎁';document.getElementById('sTitle').value='';document.getElementById('sPoints').value='100';document.getElementById('sColor').value='';openModal('shopModal');}
+async function editShop(id){const{data}=await SB.from('shop_items').select('*').eq('id',id).single();if(!data)return;document.getElementById('sId').value=id;document.getElementById('sIcon').value=data.icon||'🎁';document.getElementById('sTitle').value=data.title||'';document.getElementById('sPoints').value=data.points||100;document.getElementById('sColor').value=data.color||'';openModal('shopModal');}
+async function saveShopItem(){const id=document.getElementById('sId').value;const rec={icon:document.getElementById('sIcon').value,title:document.getElementById('sTitle').value,points:parseInt(document.getElementById('sPoints').value),color:document.getElementById('sColor').value};if(id){await SB.from('shop_items').update(rec).eq('id',id);toast('Обновлено');}else{await SB.from('shop_items').insert(rec);toast('Добавлено ✅');}closeModal('shopModal');loadShopPage();}
+async function delShop(id){if(!confirm('Удалить?'))return;await SB.from('shop_items').delete().eq('id',id);toast('Удалено','info');loadShopPage();}
 </script>
 </body>
 </html>
