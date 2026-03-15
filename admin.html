@@ -1001,11 +1001,15 @@ async function saveAch() {
     target: parseInt(document.getElementById('achTarget').value),
     points: parseInt(document.getElementById('achPoints').value)
   };
-  if (id) { await SB.from('achievements').update(rec).eq('id', id); toast('Достижение обновлено'); }
-  else {
-    rec.id = 'ach_' + Date.now();
-    await SB.from('achievements').insert(rec);
-    toast('Достижение создано');
+  if (id) {
+    const { error } = await SB.from('achievements').update(rec).eq('id', id);
+    if (error) { toast('Ошибка: ' + error.message, 'error'); return; }
+    toast('Достижение обновлено');
+  } else {
+    // Try numeric id first, fallback to text
+    const { error } = await SB.from('achievements').insert(rec);
+    if (error) { toast('Ошибка: ' + error.message, 'error'); return; }
+    toast('Достижение создано ✅');
   }
   closeModal('achModal'); loadAchPage();
 }
