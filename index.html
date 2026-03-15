@@ -81,6 +81,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Ari
 .dot{width:10px;height:10px;border-radius:50%;background:var(--acc);animation:dotbounce .8s ease infinite}
 .dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
 @keyframes dotbounce{0%,100%{transform:translateY(0);opacity:.5}50%{transform:translateY(-10px);opacity:1}}
+@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(10px)}20%,80%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0}}
 
 /* ── FEED CARDS ──────────────────────────── */
 #feedList{padding:8px}
@@ -200,6 +201,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
           <option value="Цех 2">Цех 2</option>
         </select>
       </div>
+      <div><label class="lbl">Реферальный код (необязательно)</label><input class="inp" id="rRef" placeholder="REF_12345" style="text-transform:uppercase"></div>
       <button class="btn-main grad" type="submit" id="regBtn" style="margin-top:4px">Начать работу</button>
     </form>
   </div>
@@ -293,6 +295,7 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
     <div style="background:var(--bg2);padding-top:calc(env(safe-area-inset-top,0px) + 90px);padding-bottom:20px;padding-left:16px;padding-right:16px;border-bottom:1px solid var(--bd);position:relative;text-align:center">
       <!-- Icon buttons — below TG buttons -->
       <div style="position:absolute;top:calc(env(safe-area-inset-top,0px) + 58px);right:12px;display:flex;gap:6px">
+        <button onclick="openReferralModal()" title="Пригласить" style="width:34px;height:34px;border-radius:50%;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">🎁</button>
         <button onclick="toggleDark()" id="darkBtn" title="Тема" style="width:34px;height:34px;border-radius:50%;background:var(--bg3);border:1px solid var(--bd);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">🌙</button>
         <button onclick="logout()" title="Выйти" style="width:34px;height:34px;border-radius:50%;background:#fef2f2;border:1px solid #fecaca;display:flex;align-items:center;justify-content:center;cursor:pointer">
           <svg width="15" height="15" fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>
@@ -567,6 +570,28 @@ label.lbl{display:block;font-size:11px;font-weight:700;color:var(--t3);text-tran
   </div>
 </div>
 
+<!-- USER PROFILE MODAL -->
+<div class="modal-bg" id="userProfileModal">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;color:var(--t1)">Профиль</span>
+      <button class="modal-close" onclick="closeModal('userProfileModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="userProfileBody" style="padding:20px;text-align:center"></div>
+  </div>
+</div>
+
+<!-- REFERRAL MODAL -->
+<div class="modal-bg" id="referralModal">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-head">
+      <span style="font-size:15px;font-weight:700;color:var(--t1)">🎁 Реферальная программа</span>
+      <button class="modal-close" onclick="closeModal('referralModal')">&times;</button>
+    </div>
+    <div class="modal-body" id="referralBody" style="padding:20px"></div>
+  </div>
+</div>
+
 <!-- LEVELS MODAL -->
 <div class="modal-bg" id="levelsModal">
   <div class="modal-box">
@@ -698,7 +723,176 @@ const fmtDate = iso => { const d = new Date(iso); return `${String(d.getDate()).
 const initials = name => (name||'?').split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
 const DEPT_MAP = {production:'Производство', warehouse:'Склад', office:'Офис'};
 
-// ── SWIPE BETWEEN TABS (п.6) ─────────────────────────────────────────────
+// ── USERS CACHE (for @mentions and mini-profile) ──────────────────────────
+let allUsers = [];
+async function loadAllUsers() {
+  const { data } = await SB.from('users').select('id,name,department,points,is_trained,profile_pic').order('points', {ascending:false});
+  allUsers = data || [];
+  mentionUsers = allUsers.map(u => u.name);
+}
+
+// ── MINI USER PROFILE ─────────────────────────────────────────────────────
+async function openUserProfile(userId, authorName, isAnon) {
+  if (isAnon || !authorName || authorName === 'Аноним') return;
+  const body = document.getElementById('userProfileBody');
+  body.innerHTML = '<div class="loading-dots" style="justify-content:center"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  openModal('userProfileModal');
+  // Find user
+  let u = allUsers.find(x => x.id === userId || x.name === authorName);
+  if (!u && userId) {
+    const { data } = await SB.from('users').select('*').eq('id', userId).single();
+    u = data;
+  }
+  if (!u) { body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--t3)">Пользователь не найден</div>'; return; }
+  const lv = lvlInfo(u.points || 0);
+  const userPosts = posts.filter(p => p.author_id === u.id || p.author === u.name);
+  const ideas = userPosts.filter(p => p.type === 'idea').length;
+  const risks = userPosts.filter(p => p.type === 'risk').length;
+  const totalLikes = userPosts.reduce((s, p) => s + (p.likes || 0), 0);
+  const rank = allUsers.findIndex(x => x.id === u.id) + 1;
+  const DEPT_MAP = {production:'Производство',warehouse:'Склад',office:'Офис'};
+  body.innerHTML = `
+    <div style="margin-bottom:16px">
+      <div style="position:relative;display:inline-block;margin-bottom:10px">
+        ${u.profile_pic
+          ? `<img src="${u.profile_pic}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--bd)">`
+          : `<div class="avatar grad" style="width:80px;height:80px;font-size:26px;margin:0 auto">${initials(u.name)}</div>`
+        }
+        ${u.is_trained ? '<div style="position:absolute;bottom:2px;right:2px;width:22px;height:22px;border-radius:50%;background:#22c55e;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" fill="none" stroke="#fff" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></div>' : ''}
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--t1)">${u.name}</div>
+      <div style="font-size:13px;color:var(--t3);margin-top:2px">${DEPT_MAP[u.department]||u.department||'—'}</div>
+      <div style="margin-top:8px;display:flex;justify-content:center">
+        <span class="level-badge ${lv.cls}" style="font-size:12px">${lv.label}</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div style="background:var(--bg3);border-radius:12px;padding:10px">
+        <div style="font-size:20px;font-weight:800;color:var(--acc)">${u.points||0}</div>
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase">Баллов</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:12px;padding:10px">
+        <div style="font-size:20px;font-weight:800;color:var(--t1)">${userPosts.length}</div>
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase">Заявок</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:12px;padding:10px">
+        <div style="font-size:20px;font-weight:800;color:#f59e0b">${rank > 0 ? '#'+rank : '—'}</div>
+        <div style="font-size:10px;color:var(--t3);text-transform:uppercase">Рейтинг</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:center">
+      <div style="background:var(--bg3);border-radius:10px;padding:8px">
+        <div style="font-size:16px;font-weight:700;color:#059669">💡 ${ideas}</div>
+        <div style="font-size:10px;color:var(--t3)">Идей</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:8px">
+        <div style="font-size:16px;font-weight:700;color:#dc2626">⚠️ ${risks}</div>
+        <div style="font-size:10px;color:var(--t3)">Рисков</div>
+      </div>
+    </div>
+    ${u.id !== user?.empId ? `
+    <button onclick="insertMentionFromProfile('${u.name}')" style="width:100%;margin-top:14px;padding:10px;border-radius:12px;background:rgba(102,126,234,.1);border:1px solid rgba(102,126,234,.3);color:var(--acc);font-size:13px;font-weight:700;cursor:pointer">
+      @Упомянуть в комментарии
+    </button>` : ''}`;
+}
+
+function insertMentionFromProfile(name) {
+  closeModal('userProfileModal');
+  const input = document.getElementById('commentText');
+  if (input) {
+    input.value += `@${name} `;
+    input.focus();
+  }
+}
+
+// ── REFERRAL SYSTEM ───────────────────────────────────────────────────────
+const REFERRAL_BONUS = 50; // баллов за приглашённого
+
+function openReferralModal() {
+  const body = document.getElementById('referralBody');
+  const refCode = `REF_${user?.empId}`;
+  const myReferrals = allUsers.filter(u => u.referred_by === user?.empId);
+  const earned = myReferrals.length * REFERRAL_BONUS;
+  body.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:40px;margin-bottom:8px">🎁</div>
+      <div style="font-size:16px;font-weight:700;color:var(--t1)">Пригласи коллегу — получи баллы!</div>
+      <div style="font-size:13px;color:var(--t3);margin-top:6px;line-height:1.5">
+        За каждого коллегу который зарегистрируется по твоему коду — ты получаешь <strong style="color:var(--acc)">${REFERRAL_BONUS} баллов</strong>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:14px;padding:16px;margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;margin-bottom:6px">Твой реферальный код</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;font-size:20px;font-weight:800;color:var(--acc);font-family:monospace;letter-spacing:.1em">${refCode}</div>
+        <button onclick="copyRefCode('${refCode}')" style="padding:8px 14px;border-radius:10px;background:var(--acc);color:#fff;border:none;font-size:12px;font-weight:700;cursor:pointer">Копировать</button>
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:14px;padding:14px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--t1)">Приглашено коллег</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:2px">Заработано баллов</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-weight:800;color:var(--t1)">${myReferrals.length}</div>
+          <div style="font-size:14px;font-weight:700;color:var(--acc)">+${earned} б.</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--t2);line-height:1.6;background:rgba(102,126,234,.06);border-radius:12px;padding:12px">
+      📋 <strong>Как работает:</strong><br>
+      1. Скопируй свой код<br>
+      2. Отправь коллеге<br>
+      3. Коллега вводит код при регистрации<br>
+      4. Ты получаешь ${REFERRAL_BONUS} баллов автоматически!
+    </div>`;
+  openModal('referralModal');
+}
+
+async function copyRefCode(code) {
+  try {
+    await navigator.clipboard.writeText(code);
+    showToast('Код скопирован!');
+  } catch {
+    // fallback for TG WebApp
+    const el = document.createElement('textarea');
+    el.value = code; document.body.appendChild(el);
+    el.select(); document.execCommand('copy');
+    document.body.removeChild(el);
+    showToast('Код скопирован!');
+  }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:999;pointer-events:none;animation:fadeInOut 2s ease';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2000);
+}
+
+// ── EDGE FUNCTION SETUP (Supabase) ────────────────────────────────────────
+// Deploy this to Supabase Edge Functions:
+// supabase functions deploy send-push
+// File: supabase/functions/send-push/index.ts
+/*
+  import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+  const BOT_TOKEN = Deno.env.get('BOT_TOKEN')!
+  serve(async (req) => {
+    const { user_id, title, message } = await req.json()
+    const sb = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+    const { data: u } = await sb.from('users').select('telegram_id').eq('id', user_id).single()
+    if (u?.telegram_id) {
+      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ chat_id: u.telegram_id, text: `🔔 ${title}\n\n${message}` })
+      })
+    }
+    return new Response('ok')
+  })
+*/
 function setupSwipe() {
   const feedEl = document.getElementById('secFeed');
   let startX = 0, startY = 0;
@@ -722,8 +916,12 @@ function goToStatusFeed(status) {
   document.querySelectorAll('.feed-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'my'));
   showSec('feed');
   renderFeed();
-  // Reset filter after showing
-  setTimeout(() => { currentStatusFilter = 'all'; }, 100);
+}
+// Reset status filter when switching tabs
+const _origSwitchTab = switchTab;
+function switchTab(t) {
+  currentStatusFilter = 'all';
+  _origSwitchTab(t);
 }
 
 // ── ACH BADGE (п.11) ──────────────────────────────────────────────────────
@@ -1073,9 +1271,9 @@ function renderFeed(reset=true) {
     return `<div class="feed-card">
       <div class="card-header">
         <div style="display:flex;align-items:center;gap:10px">
-          <div class="avatar grad">${initials(p.author)}</div>
+          <div class="avatar grad" style="cursor:pointer" onclick="event.stopPropagation();openUserProfile('${p.author_id||''}','${(p.author||'').replace(/'/g,"\\'")}',${p.anonymous?'true':'false'})">${initials(p.author)}</div>
           <div>
-            <div style="font-size:13px;font-weight:700;color:var(--t1)">${p.author||'Аноним'}</div>
+            <div style="font-size:13px;font-weight:700;color:var(--t1);cursor:pointer" onclick="event.stopPropagation();openUserProfile('${p.author_id||''}','${(p.author||'').replace(/'/g,"\\'")}',${p.anonymous?'true':'false'})">${p.author||'Аноним'}</div>
             <div style="font-size:11px;color:var(--t3)">📍 ${p.location||'—'} · ${fmtDate(p.date||p.created_at)}</div>
           </div>
         </div>
@@ -1142,6 +1340,12 @@ function showDetail(id) {
 }
 
 // ── COMMENTS ──────────────────────────────────────────────────────────────
+function highlightMentions(text) {
+  return text.replace(/@([а-яёa-z0-9_\-\.]+(?:\s[а-яёa-z]+)?)/gi, m =>
+    `<span style="color:var(--acc);font-weight:600">${m}</span>`
+  );
+}
+
 function showComments(id) {
   const p = posts.find(x => x.id == id);
   if (!p) return;
@@ -1149,16 +1353,69 @@ function showComments(id) {
   document.getElementById('commentPostId').value = id;
   document.getElementById('commentCount').textContent = comms.length;
   document.getElementById('commentsList').innerHTML = comms.length
-    ? comms.map(c => `<div style="display:flex;gap:8px;margin-bottom:10px">
-        <div class="avatar grad" style="width:30px;height:30px;font-size:10px;flex-shrink:0">${initials(c.author)}</div>
-        <div><div style="font-size:12px;font-weight:700;color:var(--t1)">${c.author}</div><div style="font-size:13px;color:var(--t2)">${c.text}</div></div>
-      </div>`).join('')
+    ? comms.map(c => {
+        const timeStr = c.date ? (() => { const d = new Date(c.date); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })() : '';
+        const isMe = c.author === user?.name;
+        return `<div style="display:flex;gap:8px;margin-bottom:12px;${isMe?'flex-direction:row-reverse':''}">
+          <div class="avatar grad" style="width:32px;height:32px;font-size:10px;flex-shrink:0;cursor:pointer" onclick="openUserProfile('','${c.author.replace(/'/g,"\\'")}',false)">${initials(c.author)}</div>
+          <div style="max-width:80%;${isMe?'align-items:flex-end;':''}display:flex;flex-direction:column;gap:2px">
+            <div style="font-size:11px;font-weight:700;color:var(--t3);${isMe?'text-align:right':''}">${c.author} ${timeStr?`· ${timeStr}`:''}</div>
+            <div style="font-size:13px;color:var(--t1);background:${isMe?'rgba(102,126,234,.12)':'var(--bg3)'};padding:8px 12px;border-radius:${isMe?'14px 4px 14px 14px':'4px 14px 14px 14px'}">
+              ${highlightMentions(c.text)}
+            </div>
+          </div>
+        </div>`;
+      }).join('')
     : '<div style="text-align:center;padding:20px;color:var(--t3);font-size:13px">Пока нет комментариев</div>';
   openModal('commentsModal');
 }
 
+// Autocomplete for @mentions
+let mentionUsers = [];
+function setupMentionAutocomplete() {
+  const input = document.getElementById('commentText');
+  if (!input) return;
+  input.addEventListener('input', () => {
+    const val = input.value;
+    const atIdx = val.lastIndexOf('@');
+    if (atIdx < 0) { hideMentions(); return; }
+    const query = val.slice(atIdx + 1).toLowerCase();
+    if (query.length < 1) { hideMentions(); return; }
+    const matches = mentionUsers.filter(u => u.toLowerCase().includes(query)).slice(0, 5);
+    if (!matches.length) { hideMentions(); return; }
+    showMentionList(matches, atIdx);
+  });
+}
+
+function showMentionList(names, atIdx) {
+  let list = document.getElementById('mentionList');
+  if (!list) {
+    list = document.createElement('div');
+    list.id = 'mentionList';
+    list.style.cssText = `position:absolute;bottom:100%;left:12px;right:12px;background:var(--bg2);border:1px solid var(--bd);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.15);z-index:200;overflow:hidden;margin-bottom:4px`;
+    document.getElementById('commentForm').parentElement.style.position = 'relative';
+    document.getElementById('commentForm').parentElement.appendChild(list);
+  }
+  list.innerHTML = names.map(n => `
+    <div onclick="insertMention('${n}',${atIdx})" style="padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t1);hover:background:var(--bg3)">
+      <div class="avatar grad" style="width:26px;height:26px;font-size:9px">${initials(n)}</div>${n}
+    </div>`).join('');
+}
+
+function insertMention(name, atIdx) {
+  const input = document.getElementById('commentText');
+  input.value = input.value.slice(0, atIdx) + '@' + name + ' ';
+  hideMentions();
+  input.focus();
+}
+
+function hideMentions() {
+  document.getElementById('mentionList')?.remove();
+}
+
 document.getElementById('commentForm').addEventListener('submit', async e => {
   e.preventDefault();
+  hideMentions();
   const id = document.getElementById('commentPostId').value;
   const text = document.getElementById('commentText').value.trim();
   if (!text || !user) return;
@@ -1172,8 +1429,17 @@ document.getElementById('commentForm').addEventListener('submit', async e => {
   showComments(id);
   renderFeed();
   bumpTask('comm');
+  // Уведомление автору поста
   if (p.author_id && p.author_id !== user.empId) {
     await pushNotif(p.author_id, '💬 Новый комментарий', `${user.name} прокомментировал вашу заявку ${pad(p.id)}: «${text.substring(0,60)}»`, p.id, 'comment');
+  }
+  // Уведомления за @упоминания
+  const mentions = [...new Set((text.match(/@([^\s,!?.]+(?:\s[^\s@,!?.]+)?)/g)||[]).map(m=>m.slice(1).trim()))];
+  for (const name of mentions) {
+    const mentioned = allUsers.find(u => u.name === name);
+    if (mentioned && mentioned.id !== user.empId && mentioned.id !== p.author_id) {
+      await pushNotif(mentioned.id, '👋 Вас упомянули', `${user.name} упомянул вас в заявке ${pad(p.id)}: «${text.substring(0,60)}»`, p.id, 'comment');
+    }
   }
 });
 
@@ -1477,9 +1743,11 @@ async function launchApp(u) {
   // Load feed
   loadPosts();
   loadNotifBadge();
+  loadAllUsers(); // for @mentions and mini-profiles
   if (u.role === 'admin') { const b = document.getElementById('addNewsBtn'); if(b) b.style.display=''; }
   setupSwipe();
   setupInfiniteScroll();
+  setTimeout(setupMentionAutocomplete, 500);
   // Realtime — only subscribe once
   if (!window._rtSubscribed) {
     window._rtSubscribed = true;
@@ -1561,17 +1829,33 @@ document.getElementById('regForm').addEventListener('submit', async e => {
     await launchApp(mapUser(ex)); return;
   }
   const tgUser = tg?.initDataUnsafe?.user;
+  const refCode = document.getElementById('rRef').value.trim().toUpperCase();
+  const referredBy = refCode.startsWith('REF_') ? refCode.replace('REF_', '') : null;
   const rec = {
     id: empId, name: document.getElementById('rFio').value,
     phone: document.getElementById('rPhone').value,
     email: document.getElementById('rEmail').value,
     department: document.getElementById('rDept').value,
     points: 0, role: empId === '11111' ? 'admin' : 'user',
-    telegram_id: tgUser ? String(tgUser.id) : null
+    telegram_id: tgUser ? String(tgUser.id) : null,
+    referred_by: referredBy || null
   };
   const { data: saved, error } = await SB.from('users').insert(rec).select().single();
   btn.disabled = false; btn.textContent = 'Начать работу';
   if (error) { alert('Ошибка: ' + error.message); return; }
+  // Начислить баллы реферреру
+  if (referredBy) {
+    const { data: refUser } = await SB.from('users').select('id,name,points').eq('id', referredBy).single();
+    if (refUser) {
+      const newPoints = (refUser.points || 0) + REFERRAL_BONUS;
+      await SB.from('users').update({ points: newPoints }).eq('id', referredBy);
+      await SB.from('notifications').insert({
+        user_id: referredBy, title: '🎁 Реферальный бонус!',
+        message: `По вашему коду зарегистрировался новый сотрудник. +${REFERRAL_BONUS} баллов!`,
+        type: 'achievement', read: false, date: new Date().toISOString()
+      });
+    }
+  }
   await launchApp(mapUser(saved));
 });
 
