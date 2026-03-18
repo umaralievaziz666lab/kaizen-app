@@ -484,14 +484,18 @@ const PT={dashboard:'Дашборд',requests:'Заявки',users:'Пользо
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+id)?.classList.add('active');
-  document.querySelectorAll('.ni').forEach(n=>{if(n.textContent.includes(PT[id]?.slice(0,4)))n.classList.add('active');});
+  const pg=document.getElementById('page-'+id);
+  if(pg) pg.classList.add('active');
+  document.querySelectorAll('.ni').forEach(n=>{if(n.textContent.trim().startsWith(PT[id]?.slice(0,4)||'~~~'))n.classList.add('active');});
   document.getElementById('pgTitle').textContent=PT[id]||id;
-  if(id==='news')loadNewsPage();
-  if(id==='achievements')loadAchPage();
-  if(id==='shop')loadShopPage();
-  if(id==='departments')loadDepts();
-  if(id==='roles')renderRoles();
+  // Page-specific init
+  if(id==='requests') { filterReqs(); }
+  if(id==='users')    { filterUsers(); }
+  if(id==='news')     { loadNewsPage(); }
+  if(id==='achievements'){ loadAchPage(); }
+  if(id==='shop')     { loadShopPage(); }
+  if(id==='departments'){ loadDepts(); }
+  if(id==='roles')    { renderRoles(); }
 }
 
 // ── REFRESH ALL ───────────────────────────────────────────────────
@@ -503,12 +507,23 @@ async function refreshAll(){
 
 // ── LOAD DATA ──────────────────────────────────────────────────────
 async function loadReqs(){
-  const{data}=await SB.from('requests').select('*').order('date',{ascending:false});
-  allReqs=data||[];
-  document.getElementById('nbReq').textContent=allReqs.filter(r=>r.status==='new').length;
-  filterReqs();
-  // Refresh recent on dashboard
-  const rb=document.getElementById('recentReqs'); if(rb){rb.innerHTML='';allReqs.slice(0,7).forEach(r=>rb.appendChild(mkReqRow(r)));}
+  try{
+    const{data, error}=await SB.from('requests').select('*').order('created_at',{ascending:false});
+    if(error){
+      // Fallback: try without ordering if column issue
+      const{data:d2, error:e2}=await SB.from('requests').select('*');
+      if(e2){console.error('loadReqs error:', e2); return;}
+      allReqs=(d2||[]).sort((a,b)=>new Date(b.date||b.created_at||0)-new Date(a.date||a.created_at||0));
+    } else {
+      allReqs=data||[];
+    }
+    console.log('Loaded requests:', allReqs.length);
+    const nb=document.getElementById('nbReq');
+    if(nb)nb.textContent=allReqs.filter(r=>r.status==='new').length;
+    filterReqs();
+    const rb=document.getElementById('recentReqs');
+    if(rb){ rb.innerHTML=''; allReqs.slice(0,7).forEach(r=>{try{rb.appendChild(mkReqRow(r));}catch(e){}});}
+  }catch(e){console.error('loadReqs exception:', e);}
 }
 async function loadUsers(){
   const{data}=await SB.from('users').select('*').order('points',{ascending:false});
@@ -568,35 +583,54 @@ function mkReqRow(r){
 
 // ── REQUESTS TABLE ─────────────────────────────────────────────────
 function filterReqs(){
-  const q=(document.getElementById('rqSearch')?.value||'').toLowerCase();
-  const st=document.getElementById('rqSt')?.value||'all';
-  const tp=document.getElementById('rqTp')?.value||'all';
-  const lc=document.getElementById('rqLoc')?.value||'all';
-  let d=allReqs;
-  if(q)d=d.filter(r=>String(r.id).includes(q)||(r.author||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q));
-  if(st!=='all')d=d.filter(r=>r.status===st);
-  if(tp!=='all')d=d.filter(r=>r.type===tp);
-  if(lc!=='all')d=d.filter(r=>r.location===lc);
-  document.getElementById('rqCount').textContent=`(${d.length})`;
-  const tbody=document.getElementById('rqTable');tbody.innerHTML='';
-  d.forEach(r=>{
-    const st2=STA[r.status]||STA.new;
-    const media=pm(r.media);
-    const thumb=media[0]?`<img src="${media[0]}" class="mthumb" onclick="event.stopPropagation();openGal('${media[0]}')" onerror="this.style.display='none'">`:'—';
-    let dlHtml='—';
-    if(r.deadline){const dl=Math.ceil((new Date(r.deadline)-Date.now())/86400000);dlHtml=`<span class="${dl<=7?'dl-warn':''}">${fd(r.deadline)}${dl<=7&&dl>0?` (${dl}д)`:dl<=0?' ⚠️':''}</span>`;}
-    const tr=document.createElement('tr');tr.style.cursor='pointer';tr.onclick=()=>openReqModal(r.id);
-    tr.innerHTML=`<td style="font-family:monospace;font-size:11px;color:var(--acc)">${pad(r.id)}</td>
-      <td><span class="b ${r.type==='idea'?'b-idea':'b-risk'}">${r.type==='idea'?'💡':'⚠️'} ${r.type==='idea'?'Идея':'Риск'}</span></td>
-      <td>${r.anonymous?'<em style="color:var(--t3)">Аноним</em>':r.author||'—'}</td>
-      <td>${r.location||'—'}</td>
-      <td onclick="event.stopPropagation()">${thumb}</td>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.description||'—'}</td>
-      <td><span class="b ${st2.c}">${st2.l}</span></td>
-      <td>${r.assigned_to||'<span style="color:var(--t3)">—</span>'}</td>
-      <td>${dlHtml}</td>`;
-    tbody.appendChild(tr);
-  });
+  try {
+    const q=(document.getElementById('rqSearch')?.value||'').toLowerCase();
+    const st=document.getElementById('rqSt')?.value||'all';
+    const tp=document.getElementById('rqTp')?.value||'all';
+    const lc=document.getElementById('rqLoc')?.value||'all';
+    let d=[...allReqs];
+    if(q)d=d.filter(r=>String(r.id).includes(q)||(r.author||'').toLowerCase().includes(q)||(r.description||'').toLowerCase().includes(q));
+    if(st!=='all')d=d.filter(r=>r.status===st);
+    if(tp!=='all')d=d.filter(r=>r.type===tp);
+    if(lc!=='all')d=d.filter(r=>r.location===lc);
+    const countEl=document.getElementById('rqCount');
+    if(countEl)countEl.textContent=`(${d.length})`;
+    const tbody=document.getElementById('rqTable');
+    if(!tbody)return;
+    tbody.innerHTML='';
+    if(!d.length){
+      tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--t3)">Нет заявок</td></tr>`;
+      return;
+    }
+    d.forEach(r=>{
+      try{
+        const st2=STA[r.status]||STA.new;
+        let media=[];
+        try{media=Array.isArray(r.media)?r.media:(r.media?JSON.parse(r.media):[]);}catch(e){media=[];}
+        const thumb=media.length>0?`<img src="${media[0]}" class="mthumb" onclick="event.stopPropagation();openGal('${media[0]}')" onerror="this.style.display='none'">`:
+          `<span style="color:var(--t3);font-size:12px">—</span>`;
+        let dlHtml=`<span style="color:var(--t3)">—</span>`;
+        if(r.deadline){
+          const dl=Math.ceil((new Date(r.deadline)-Date.now())/86400000);
+          dlHtml=`<span class="${dl<=7?'dl-warn':''}" style="font-size:12px">${fd(r.deadline)}${dl<=7&&dl>0?` <small>(${dl}д)</small>`:''}${dl<=0?' ⚠️':''}</span>`;
+        }
+        const tr=document.createElement('tr');
+        tr.style.cursor='pointer';
+        tr.onclick=()=>openReqModal(r.id);
+        tr.innerHTML=`
+          <td style="font-family:monospace;font-size:11px;color:var(--acc);white-space:nowrap">${pad(r.id)}</td>
+          <td><span class="b ${r.type==='idea'?'b-idea':'b-risk'}">${r.type==='idea'?'💡 Идея':'⚠️ Риск'}</span></td>
+          <td style="white-space:nowrap">${r.anonymous?'<em style="color:var(--t3)">Аноним</em>':(r.author||'—')}</td>
+          <td style="white-space:nowrap">${r.location||'—'}</td>
+          <td onclick="event.stopPropagation()" style="text-align:center">${thumb}</td>
+          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)">${r.description||'—'}</td>
+          <td><span class="b ${st2.c}">${st2.l}</span></td>
+          <td style="white-space:nowrap;color:var(--t2)">${r.assigned_to||'<span style="color:var(--t3)">—</span>'}</td>
+          <td style="white-space:nowrap">${dlHtml}</td>`;
+        tbody.appendChild(tr);
+      }catch(rowErr){console.warn('Row render error for req',r.id,rowErr);}
+    });
+  }catch(e){console.error('filterReqs error:',e);}
 }
 
 // ── REQUEST MODAL ──────────────────────────────────────────────────
