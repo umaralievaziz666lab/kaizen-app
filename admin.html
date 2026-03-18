@@ -508,16 +508,17 @@ async function refreshAll(){
 // ── LOAD DATA ──────────────────────────────────────────────────────
 async function loadReqs(){
   try{
-    // Select only columns that definitely exist - avoid change_log/deadline until migrations run
     const{data, error}=await SB.from('requests')
-      .select('id,type,description,location,author,author_id,date,status,likes,comments,media,assigned_to,risk_event_type,risk_urgency,anonymous,admin_comment')
+      .select('id,type,description,location,author,author_id,date,status,likes,comments,media,assigned_to,anonymous,admin_comment,risk_event_type,risk_urgency')
       .order('id',{ascending:false});
     if(error){
       console.error('loadReqs error:', error);
-      // Last resort - select everything with no ordering
-      const{data:d2}=await SB.from('requests').select('id,type,description,location,author,status,likes,comments,media,date,anonymous');
-      allReqs=(d2||[]);
-      console.log('Fallback loaded:', allReqs.length);
+      // Minimal fallback
+      const{data:d2, error:e2}=await SB.from('requests')
+        .select('id,type,description,location,author,status,likes,comments,media,date,anonymous')
+        .order('id',{ascending:false});
+      if(e2){ console.error('loadReqs fallback error:', e2); return; }
+      allReqs=d2||[];
     } else {
       allReqs=data||[];
     }
