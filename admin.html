@@ -508,12 +508,16 @@ async function refreshAll(){
 // ── LOAD DATA ──────────────────────────────────────────────────────
 async function loadReqs(){
   try{
-    const{data, error}=await SB.from('requests').select('*').order('created_at',{ascending:false});
+    // Select only columns that definitely exist - avoid change_log/deadline until migrations run
+    const{data, error}=await SB.from('requests')
+      .select('id,type,description,location,author,author_id,date,status,likes,comments,media,assigned_to,risk_event_type,risk_urgency,anonymous,admin_comment')
+      .order('id',{ascending:false});
     if(error){
-      // Fallback: try without ordering if column issue
-      const{data:d2, error:e2}=await SB.from('requests').select('*');
-      if(e2){console.error('loadReqs error:', e2); return;}
-      allReqs=(d2||[]).sort((a,b)=>new Date(b.date||b.created_at||0)-new Date(a.date||a.created_at||0));
+      console.error('loadReqs error:', error);
+      // Last resort - select everything with no ordering
+      const{data:d2}=await SB.from('requests').select('id,type,description,location,author,status,likes,comments,media,date,anonymous');
+      allReqs=(d2||[]);
+      console.log('Fallback loaded:', allReqs.length);
     } else {
       allReqs=data||[];
     }
@@ -727,20 +731,33 @@ async function saveReq(){
   const r=allReqs.find(x=>x.id==editReqId);if(!r)return;
   const newSt=document.getElementById('stSelect').value;
   const ass=document.getElementById('assVal').value||document.getElementById('assInput').value||null;
-  const dl=document.getElementById('dlInput').value||null;
+  const dl=document.getElementById('dlInput')?.value||null;
   const ac=document.getElementById('acText').value||null;
-  // Build change_log
-  const logs=pm(r.change_log||'[]');
   const prevSt=r.status;
-  if(newSt!==r.status)logs.push({who:adminUser.name,action:`Статус: «${STA[r.status]?.l}» → «${STA[newSt]?.l}»`,date:new Date().toISOString()});
-  if(ass!==r.assigned_to)logs.push({who:adminUser.name,action:`Назначен: ${ass||'—'}`,date:new Date().toISOString()});
-  if(dl!==r.deadline?.slice?.(0,10))logs.push({who:adminUser.name,action:`Дедлайн: ${dl?fd(dl):'убран'}`,date:new Date().toISOString()});
-  await SB.from('requests').update({status:newSt,assigned_to:ass,deadline:dl,admin_comment:ac,change_log:logs}).eq('id',editReqId);
-  Object.assign(r,{status:newSt,assigned_to:ass,deadline:dl,admin_comment:ac,change_log:logs});
-  if(newSt!==prevSt&&r.author_id){
-    await SB.from('notifications').insert({user_id:r.author_id,title:'🔄 Статус изменён',message:`Заявка ${pad(editReqId)}: «${STA[newSt]?.l}»${ac?'\n'+ac:''}`,type:'status_update',post_id:editReqId,read:false,date:new Date().toISOString()});
+
+  // Base update — always safe columns
+  const updateData={status:newSt, assigned_to:ass, admin_comment:ac};
+
+  // Try to add deadline and change_log (require migrations.sql)
+  try {
+    const logs=pm(r.change_log||'[]');
+    if(newSt!==r.status)logs.push({who:adminUser.name,action:`Статус: «${STA[r.status]?.l}» → «${STA[newSt]?.l}»`,date:new Date().toISOString()});
+    if(ass!==r.assigned_to)logs.push({who:adminUser.name,action:`Назначен: ${ass||'—'}`,date:new Date().toISOString()});
+    updateData.change_log = logs;
+    if(dl) updateData.deadline = dl;
+  }catch(e){}
+
+  const{error}=await SB.from('requests').update(updateData).eq('id',editReqId);
+  if(error){
+    // Fallback without new columns
+    await SB.from('requests').update({status:newSt,assigned_to:ass,admin_comment:ac}).eq('id',editReqId);
   }
-  closeModal('reqModal');filterReqs();toast('Заявка сохранена ✅');
+
+  Object.assign(r,{...updateData});
+  if(newSt!==prevSt&&r.author_id){
+    await SB.from('notifications').insert({user_id:r.author_id,title:'🔄 Статус изменён',message:`Заявка ${pad(editReqId)}: «${STA[newSt]?.l}»${ac?'\n'+ac:''}`,type:'status_update',post_id:editReqId,read:false,date:new Date().toISOString()}).catch(()=>{});
+  }
+  closeModal('reqModal');filterReqs();renderDash();toast('Заявка сохранена ✅');
 }
 
 function openLogs(id){
