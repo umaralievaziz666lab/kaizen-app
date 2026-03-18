@@ -1237,7 +1237,6 @@ async function loadPosts(reset=true) {
   if (reset) {
     pageOffset = 0; hasMorePosts = true; posts = [];
     if (list) list.innerHTML = '<div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
-    // Load my liked posts
     if (user) {
       const { data: likedData } = await SB.from('likes').select('post_id').eq('user_id', user.empId);
       likedPosts = new Set((likedData||[]).map(l => l.post_id));
@@ -1245,14 +1244,26 @@ async function loadPosts(reset=true) {
   }
   if (!hasMorePosts || isLoadingMore) return;
   isLoadingMore = true;
-  const { data, error } = await SB.from('requests')
-    .select('*').order('date', {ascending:false})
-    .range(pageOffset, pageOffset + PAGE_SIZE - 1);
+  // Order by id DESC — новые заявки выше (большой id = новее)
+  let data = null, error = null;
+  ({ data, error } = await SB.from('requests')
+    .select('id,type,description,location,author,author_id,date,status,likes,comments,media,assigned_to,anonymous,risk_event_type,risk_urgency,admin_comment')
+    .order('id', {ascending: false})
+    .range(pageOffset, pageOffset + PAGE_SIZE - 1));
+  if (error) {
+    // Fallback — minimal select
+    ({ data, error } = await SB.from('requests')
+      .select('id,type,description,location,author,author_id,date,status,likes,comments,media,anonymous')
+      .order('id', {ascending: false})
+      .range(pageOffset, pageOffset + PAGE_SIZE - 1));
+  }
   isLoadingMore = false;
   if (!error && data) {
     posts = reset ? data : [...posts, ...data];
     hasMorePosts = data.length === PAGE_SIZE;
     pageOffset += data.length;
+  } else {
+    console.error('loadPosts error:', error);
   }
   renderFeed(reset);
 }
