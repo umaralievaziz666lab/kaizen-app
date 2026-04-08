@@ -1244,28 +1244,23 @@ async function loadPosts(reset=true) {
   }
   if (!hasMorePosts || isLoadingMore) return;
   isLoadingMore = true;
-  // Order by id DESC — новые заявки выше (большой id = новее)
-  let data = null, error = null;
-  ({ data, error } = await SB.from('requests')
-    .select('id,type,description,location,author,author_id,date,status,likes,comments,media,assigned_to,anonymous,risk_event_type,risk_urgency,admin_comment')
+  // select(*) — самый надёжный вариант, order by id desc = новые сверху
+  const { data, error } = await SB.from('requests')
+    .select('*')
     .order('id', {ascending: false})
-    .range(pageOffset, pageOffset + PAGE_SIZE - 1));
-  if (error) {
-    // Fallback — minimal select
-    ({ data, error } = await SB.from('requests')
-      .select('id,type,description,location,author,author_id,date,status,likes,comments,media,anonymous')
-      .order('id', {ascending: false})
-      .range(pageOffset, pageOffset + PAGE_SIZE - 1));
-  }
+    .range(pageOffset, pageOffset + PAGE_SIZE - 1);
   isLoadingMore = false;
-  if (!error && data) {
+  if (error) {
+    console.error('loadPosts error:', error.message);
+    if (list && reset) list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--t3)"><div style="font-size:32px;margin-bottom:8px">⚠️</div><div>Ошибка загрузки. Попробуйте обновить.</div></div>';
+    return;
+  }
+  if (data) {
     posts = reset ? data : [...posts, ...data];
     hasMorePosts = data.length === PAGE_SIZE;
     pageOffset += data.length;
-  } else {
-    console.error('loadPosts error:', error);
   }
-  renderFeed(reset);
+  renderFeed();
 }
 
 function setupInfiniteScroll() {
@@ -1279,9 +1274,11 @@ function setupInfiniteScroll() {
   });
 }
 
-function renderFeed(reset=true) {
+function renderFeed() {
   const list = document.getElementById('feedList');
   if (!list) return;
+  // If still loading — keep dots
+  if (isLoadingMore && posts.length === 0) return;
   let data = [...posts];
   const q = (document.getElementById('searchInput')?.value || '').trim().toLowerCase();
   if (q) data = data.filter(p =>
@@ -1291,7 +1288,6 @@ function renderFeed(reset=true) {
   if (locFilter !== 'all') data = data.filter(p => p.location === locFilter);
   if (currentTab === 'my') data = data.filter(p => p.author_id === user?.empId || p.author === user?.name);
   else if (currentTab === 'assigned') data = data.filter(p => p.assigned_to === user?.name);
-  // пункт 8: filter by status from profile stat cards
   if (currentStatusFilter !== 'all') data = data.filter(p => p.status === currentStatusFilter);
   const type = document.getElementById('selType')?.value || 'all';
   if (type !== 'all') data = data.filter(p => p.type === type);
