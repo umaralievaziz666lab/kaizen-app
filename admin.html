@@ -508,27 +508,30 @@ async function refreshAll(){
 // ── LOAD DATA ──────────────────────────────────────────────────────
 async function loadReqs(){
   try{
-    const{data, error}=await SB.from('requests')
-      .select('id,type,description,location,author,author_id,date,status,likes,comments,media,assigned_to,anonymous,admin_comment,risk_event_type,risk_urgency')
-      .order('id',{ascending:false});
+    // select(*) is safest - avoids column name issues
+    // order by id desc = newest first
+    const{data, error}=await SB.from('requests').select('*').order('id',{ascending:false});
     if(error){
-      console.error('loadReqs error:', error);
-      // Minimal fallback
-      const{data:d2, error:e2}=await SB.from('requests')
-        .select('id,type,description,location,author,status,likes,comments,media,date,anonymous')
-        .order('id',{ascending:false});
-      if(e2){ console.error('loadReqs fallback error:', e2); return; }
-      allReqs=d2||[];
-    } else {
-      allReqs=data||[];
+      console.error('loadReqs error:', error.message);
+      toast('Ошибка загрузки заявок: '+error.message, 'err');
+      return;
     }
+    allReqs = data || [];
     console.log('Loaded requests:', allReqs.length);
+    // Update badge
     const nb=document.getElementById('nbReq');
-    if(nb)nb.textContent=allReqs.filter(r=>r.status==='new').length;
+    if(nb) nb.textContent = allReqs.filter(r=>r.status==='new').length;
+    // Render table (only if page is visible)
     filterReqs();
+    // Render recent on dashboard
     const rb=document.getElementById('recentReqs');
-    if(rb){ rb.innerHTML=''; allReqs.slice(0,7).forEach(r=>{try{rb.appendChild(mkReqRow(r));}catch(e){}});}
-  }catch(e){console.error('loadReqs exception:', e);}
+    if(rb){
+      rb.innerHTML='';
+      allReqs.slice(0,7).forEach(r=>{try{rb.appendChild(mkReqRow(r));}catch(e){console.warn(e);}});
+    }
+  }catch(e){
+    console.error('loadReqs exception:', e);
+  }
 }
 async function loadUsers(){
   const{data}=await SB.from('users').select('*').order('points',{ascending:false});
