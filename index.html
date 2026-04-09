@@ -625,8 +625,8 @@ let currentStatusFilter = 'all'; // for stat card filter (пункт 8)
 let locFilter = 'all';
 let isDark = store.get('dark') === '1';
 let likedPosts = new Set(); // пункт 3: которые я лайкнул
-let pageOffset = 0;         // пункт 1: пагинация
-const PAGE_SIZE = 15;
+let pageOffset = 0;
+const PAGE_SIZE = 8;  // первые 8 — быстро, остальные по мере скролла
 let isLoadingMore = false;
 let hasMorePosts = true;
 
