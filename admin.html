@@ -506,28 +506,43 @@ async function refreshAll(){
 }
 
 // ── LOAD DATA ──────────────────────────────────────────────────────
-async function loadReqs(){
+let reqOffset = 0;
+const REQ_PAGE = 50; // загружать по 50 за раз в админке
+
+async function loadReqs(reset=true){
   try{
-    // select(*) is safest - avoids column name issues
-    // order by id desc = newest first
-    const{data, error}=await SB.from('requests').select('*').order('id',{ascending:false});
+    if(reset){ reqOffset=0; allReqs=[]; }
+    // Исключаем media из запроса списка — base64 огромный, грузим только в модалке
+    const{data, error}=await SB.from('requests')
+      .select('id,type,description,location,author,author_id,date,status,likes,anonymous,assigned_to,admin_comment,deadline')
+      .order('id',{ascending:false})
+      .range(reqOffset, reqOffset + REQ_PAGE - 1);
+
     if(error){
-      console.error('loadReqs error:', error.message);
-      toast('Ошибка загрузки заявок: '+error.message, 'err');
-      return;
+      // Fallback без новых колонок
+      const{data:d2, error:e2}=await SB.from('requests')
+        .select('id,type,description,location,author,author_id,date,status,likes,anonymous,assigned_to,admin_comment')
+        .order('id',{ascending:false})
+        .range(reqOffset, reqOffset + REQ_PAGE - 1);
+      if(e2){
+        console.error('loadReqs error:', e2.message);
+        toast('Ошибка: '+e2.message, 'err');
+        return;
+      }
+      allReqs = reset ? (d2||[]) : [...allReqs, ...(d2||[])];
+    } else {
+      allReqs = reset ? (data||[]) : [...allReqs, ...(data||[])];
+      reqOffset += (data||[]).length;
     }
-    allReqs = data || [];
+
     console.log('Loaded requests:', allReqs.length);
-    // Update badge
     const nb=document.getElementById('nbReq');
     if(nb) nb.textContent = allReqs.filter(r=>r.status==='new').length;
-    // Render table (only if page is visible)
     filterReqs();
-    // Render recent on dashboard
     const rb=document.getElementById('recentReqs');
     if(rb){
       rb.innerHTML='';
-      allReqs.slice(0,7).forEach(r=>{try{rb.appendChild(mkReqRow(r));}catch(e){console.warn(e);}});
+      allReqs.slice(0,7).forEach(r=>{try{rb.appendChild(mkReqRow(r));}catch(e){}});
     }
   }catch(e){
     console.error('loadReqs exception:', e);
@@ -602,69 +617,87 @@ function filterReqs(){
     if(tp!=='all')d=d.filter(r=>r.type===tp);
     if(lc!=='all')d=d.filter(r=>r.location===lc);
     const countEl=document.getElementById('rqCount');
-    if(countEl)countEl.textContent=`(${d.length})`;
+    if(countEl)countEl.textContent=`(${d.length}${allReqs.length>=50?' из всех':''})`;
     const tbody=document.getElementById('rqTable');
     if(!tbody)return;
     tbody.innerHTML='';
     if(!d.length){
       tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--t3)">Нет заявок</td></tr>`;
-      return;
+    } else {
+      d.forEach(r=>{
+        try{
+          const st2=STA[r.status]||STA.new;
+          // media не загружается в список — только иконка
+          const hasMedia = r.has_media;
+          const thumb = `<span style="color:var(--t3);font-size:12px">—</span>`;
+          let dlHtml=`<span style="color:var(--t3)">—</span>`;
+          if(r.deadline){
+            const dl=Math.ceil((new Date(r.deadline)-Date.now())/86400000);
+            dlHtml=`<span class="${dl<=7?'dl-warn':''}" style="font-size:12px">${fd(r.deadline)}${dl<=7&&dl>0?` (${dl}д)`:''}${dl<=0?' ⚠️':''}</span>`;
+          }
+          const tr=document.createElement('tr');
+          tr.style.cursor='pointer';
+          tr.onclick=()=>openReqModal(r.id);
+          tr.innerHTML=`
+            <td style="font-family:monospace;font-size:11px;color:var(--acc);white-space:nowrap">${pad(r.id)}</td>
+            <td><span class="b ${r.type==='idea'?'b-idea':'b-risk'}">${r.type==='idea'?'💡 Идея':'⚠️ Риск'}</span></td>
+            <td style="white-space:nowrap">${r.anonymous?'<em style="color:var(--t3)">Аноним</em>':(r.author||'—')}</td>
+            <td style="white-space:nowrap">${r.location||'—'}</td>
+            <td style="text-align:center;color:var(--t3);font-size:11px">🖼</td>
+            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)">${r.description||'—'}</td>
+            <td><span class="b ${st2.c}">${st2.l}</span></td>
+            <td style="white-space:nowrap;color:var(--t2)">${r.assigned_to||'<span style="color:var(--t3)">—</span>'}</td>
+            <td style="white-space:nowrap">${dlHtml}</td>`;
+          tbody.appendChild(tr);
+        }catch(rowErr){console.warn('Row error',r.id,rowErr);}
+      });
     }
-    d.forEach(r=>{
-      try{
-        const st2=STA[r.status]||STA.new;
-        let media=[];
-        try{media=Array.isArray(r.media)?r.media:(r.media?JSON.parse(r.media):[]);}catch(e){media=[];}
-        const thumb=media.length>0?`<img src="${media[0]}" class="mthumb" onclick="event.stopPropagation();openGal('${media[0]}')" onerror="this.style.display='none'">`:
-          `<span style="color:var(--t3);font-size:12px">—</span>`;
-        let dlHtml=`<span style="color:var(--t3)">—</span>`;
-        if(r.deadline){
-          const dl=Math.ceil((new Date(r.deadline)-Date.now())/86400000);
-          dlHtml=`<span class="${dl<=7?'dl-warn':''}" style="font-size:12px">${fd(r.deadline)}${dl<=7&&dl>0?` <small>(${dl}д)</small>`:''}${dl<=0?' ⚠️':''}</span>`;
-        }
-        const tr=document.createElement('tr');
-        tr.style.cursor='pointer';
-        tr.onclick=()=>openReqModal(r.id);
-        tr.innerHTML=`
-          <td style="font-family:monospace;font-size:11px;color:var(--acc);white-space:nowrap">${pad(r.id)}</td>
-          <td><span class="b ${r.type==='idea'?'b-idea':'b-risk'}">${r.type==='idea'?'💡 Идея':'⚠️ Риск'}</span></td>
-          <td style="white-space:nowrap">${r.anonymous?'<em style="color:var(--t3)">Аноним</em>':(r.author||'—')}</td>
-          <td style="white-space:nowrap">${r.location||'—'}</td>
-          <td onclick="event.stopPropagation()" style="text-align:center">${thumb}</td>
-          <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)">${r.description||'—'}</td>
-          <td><span class="b ${st2.c}">${st2.l}</span></td>
-          <td style="white-space:nowrap;color:var(--t2)">${r.assigned_to||'<span style="color:var(--t3)">—</span>'}</td>
-          <td style="white-space:nowrap">${dlHtml}</td>`;
-        tbody.appendChild(tr);
-      }catch(rowErr){console.warn('Row render error for req',r.id,rowErr);}
-    });
+    // Load more button если загружено ровно REQ_PAGE
+    if(allReqs.length >= REQ_PAGE){
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td colspan="9" style="text-align:center;padding:12px">
+        <button class="btn bg" onclick="loadReqs(false)" style="font-size:12px">Загрузить ещё заявки…</button>
+      </td>`;
+      tbody.appendChild(tr);
+    }
   }catch(e){console.error('filterReqs error:',e);}
 }
 
 // ── REQUEST MODAL ──────────────────────────────────────────────────
-function openReqModal(id){
+async function openReqModal(id){
   const r=allReqs.find(x=>x.id==id);if(!r)return;
   editReqId=id;
   document.getElementById('reqMTitle').textContent=`${pad(id)} — ${r.type==='idea'?'💡 Идея':'⚠️ Риск'}`;
-  const media=pm(r.media);
-  const comms=pm(r.comments);
-  const mediaThumbs=media.length?`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">${media.map(m=>{const isV=m.startsWith('data:video');return isV?`<video src="${m}" style="width:100px;height:75px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="openGal('${m}')">`:`<img src="${m}" style="width:100px;height:75px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--bd)" onclick="openGal('${m}')">`}).join('')}</div>`:'' ;
+  buildReqModalBody(r,[],pm(r.comments||'[]'),'loading');
+  openModal('reqModal');
+  try{
+    const{data:full}=await SB.from('requests').select('media,comments,change_log').eq('id',id).single();
+    if(full){
+      r.media=full.media; r.comments=full.comments; r.change_log=full.change_log;
+      buildReqModalBody(r, pm(full.media), pm(full.comments||'[]'), 'loaded');
+    }
+  }catch(e){}
+}
+
+function buildReqModalBody(r, media, comms, mediaState){
+  const mediaSec = mediaState==='loading'
+    ? `<div><div class="lbl">Медиафайлы</div><div style="color:var(--t3);font-size:12px;padding:6px 0">⏳ Загрузка…</div></div>`
+    : !media.length
+      ? ''
+      : `<div><div class="lbl">Медиафайлы (${media.length})</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${
+          media.map(m=>{const isV=m.startsWith('data:video');return isV
+            ?`<video src="${m}" style="width:100px;height:75px;object-fit:cover;border-radius:6px;cursor:pointer" onclick="openGal('${m}')">`
+            :`<img src="${m}" style="width:100px;height:75px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid var(--bd)" onclick="openGal('${m}')">`;}).join('')
+        }</div></div>`;
   document.getElementById('reqMBody').innerHTML=`
     <div style="display:flex;flex-direction:column;gap:16px">
-      <!-- Info row -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;background:var(--bg3);border-radius:10px;padding:12px">
         <div><div class="lbl" style="margin-bottom:2px">Автор</div><div style="font-size:13px;font-weight:600">${r.anonymous?'🎭 Аноним':r.author||'—'}</div></div>
         <div><div class="lbl" style="margin-bottom:2px">Участок</div><div style="font-size:13px">${r.location||'—'}</div></div>
-        <div><div class="lbl" style="margin-bottom:2px">Дата подачи</div><div style="font-size:13px">${fdt(r.date||r.created_at)}</div></div>
+        <div><div class="lbl" style="margin-bottom:2px">Дата</div><div style="font-size:13px">${fdt(r.date||r.created_at)}</div></div>
       </div>
-      <!-- Description -->
-      <div>
-        <div class="lbl">Описание</div>
-        <div style="font-size:14px;color:var(--t1);line-height:1.6;background:var(--bg3);padding:12px;border-radius:10px">${r.description||'—'}</div>
-      </div>
-      <!-- Media -->
-      ${media.length?`<div><div class="lbl">Медиафайлы (${media.length})</div>${mediaThumbs}</div>`:''}
-      <!-- Assignee + Deadline -->
+      <div><div class="lbl">Описание</div><div style="font-size:14px;color:var(--t1);line-height:1.6;background:var(--bg3);padding:12px;border-radius:10px">${r.description||'—'}</div></div>
+      ${mediaSec}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div style="position:relative">
           <label class="lbl">Ответственный</label>
@@ -672,40 +705,26 @@ function openReqModal(id){
           <input type="hidden" id="assVal" value="${r.assigned_to||''}">
           <div id="assAC" class="aclist" style="display:none"></div>
         </div>
-        <div>
-          <label class="lbl">Дедлайн</label>
-          <input class="inp" id="dlInput" type="date" value="${r.deadline?r.deadline.slice(0,10):''}">
-        </div>
+        <div><label class="lbl">Дедлайн</label><input class="inp" id="dlInput" type="date" value="${r.deadline?r.deadline.slice(0,10):''}"></div>
       </div>
-      <!-- Status select -->
-      <div>
-        <label class="lbl">Статус заявки</label>
-        <select class="inp" id="stSelect">
-          ${Object.entries(STA).map(([k,v])=>`<option value="${k}" ${r.status===k?'selected':''}>${v.l}</option>`).join('')}
-        </select>
+      <div><label class="lbl">Статус заявки</label>
+        <select class="inp" id="stSelect">${Object.entries(STA).map(([k,v])=>`<option value="${k}" ${r.status===k?'selected':''}>${v.l}</option>`).join('')}</select>
       </div>
-      <!-- Admin comment -->
-      <div>
-        <label class="lbl">Комментарий администратора</label>
-        <textarea class="inp" id="acText" rows="2" style="resize:none" placeholder="Видит автор заявки…">${r.admin_comment||''}</textarea>
+      <div><label class="lbl">Комментарий администратора</label>
+        <textarea class="inp" id="acText" rows="2" style="resize:none">${r.admin_comment||''}</textarea>
       </div>
-      <!-- Logs button -->
-      <div>
-        <button class="btn bg" onclick="openLogs(${id})" style="font-size:12px">📋 История изменений ${pm(r.change_log||'[]').length?`(${pm(r.change_log||'[]').length})`:'(пусто)'}</button>
-      </div>
-      <!-- Comments -->
+      <div><button class="btn bg" onclick="openLogs(${r.id})" style="font-size:12px">📋 История изменений</button></div>
       <div>
         <div class="lbl">Комментарии (${comms.length})</div>
-        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:220px;overflow-y:auto;padding-right:4px">
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:220px;overflow-y:auto">
           ${comms.map(c=>`<div style="background:var(--bg3);border-radius:8px;padding:8px 12px"><div style="font-size:11px;font-weight:700;color:var(--t3)">${c.author} · ${fdt(c.date)}</div><div style="font-size:13px;color:var(--t1);margin-top:2px">${c.text}</div></div>`).join('')||'<div style="color:var(--t3);font-size:13px">Нет комментариев</div>'}
         </div>
         <div style="display:flex;gap:8px;margin-top:10px">
           <input class="inp" id="newComm" placeholder="Написать комментарий…" style="flex:1">
-          <button class="btn bp" onclick="addAdminComm(${id})">Отправить</button>
+          <button class="btn bp" onclick="addAdminComm(${r.id})">Отправить</button>
         </div>
       </div>
     </div>`;
-  openModal('reqModal');
 }
 
 function filterAss(){
